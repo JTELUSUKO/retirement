@@ -17,6 +17,14 @@ export const defaultPlan: Plan = {
   socialSecurityAtFRA: 2_800,
   socialSecurityClaimAge: 67,
   incomeStreams: [],
+  annuityPurchase: {
+    enabled: false,
+    amount: 150_000,
+    purchaseAge: 65,
+    payoutRate: null,
+    inflationAdjusted: false,
+    fundedFrom: 'pretax',
+  },
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -34,6 +42,7 @@ export const clearedPlan = (plan: Plan): Plan => ({
   annualSpending: 0,
   socialSecurityAtFRA: 0,
   incomeStreams: [],
+  annuityPurchase: { ...plan.annuityPurchase, enabled: false },
 })
 
 /** Upgrade a plan saved by an older version of the app. */
@@ -66,11 +75,18 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
     }
     state.plan = { ...rest, incomeStreams: annualPension > 0 ? [pension] : [] }
   }
+  // v5 → v6: optional annuity purchase (off by default)
+  if (version < 6) {
+    state.plan = {
+      ...state.plan,
+      annuityPurchase: state.plan.annuityPurchase ?? { ...defaultPlan.annuityPurchase, purchaseAge: state.plan.retirementAge },
+    }
+  }
   return state
 }
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 5
+export const PLAN_VERSION = 6
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -81,6 +97,7 @@ interface PlanState {
   update: (patch: Partial<Plan>) => void
   updateAssumptions: (patch: Partial<Plan['assumptions']>) => void
   updateHealthcare: (patch: Partial<Plan['healthcare']>) => void
+  updateAnnuity: (patch: Partial<Plan['annuityPurchase']>) => void
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
@@ -105,6 +122,7 @@ export const usePlanStore = create<PlanState>()(
         update: (patch) => edit((p) => ({ ...p, ...patch })),
         updateAssumptions: (patch) => edit((p) => ({ ...p, assumptions: { ...p.assumptions, ...patch } })),
         updateHealthcare: (patch) => edit((p) => ({ ...p, healthcare: { ...p.healthcare, ...patch } })),
+        updateAnnuity: (patch) => edit((p) => ({ ...p, annuityPurchase: { ...p.annuityPurchase, ...patch } })),
         updateAccount: (id, patch) =>
           edit((p) => ({ ...p, accounts: p.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
         addAccount: () =>

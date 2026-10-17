@@ -1,4 +1,5 @@
 import { memo, useDeferredValue, useMemo } from 'react'
+import { AnnuityComparison } from '../components/AnnuityComparison'
 import { BucketChart } from '../components/BucketChart'
 import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
@@ -11,6 +12,11 @@ import { formatUSD, formatUSDCompact } from '../utils/format'
 const Results = memo(function Results({ plan }: { plan: Plan }) {
   const result = useMemo(() => projectPlan(plan), [plan])
   const mc = useMemo(() => runMonteCarlo(plan), [plan])
+  // With an annuity, also run the plan without it so the trade-off is visible
+  const withoutAnnuity = useMemo(() => {
+    if (!plan.annuityPurchase.enabled) return null
+    return runMonteCarlo({ ...plan, annuityPurchase: { ...plan.annuityPurchase, enabled: false } })
+  }, [plan])
   const lasts = result.depletionAge === null
   const success = Math.round(mc.successRate * 100)
   const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
@@ -58,6 +64,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
         today's dollars, including medical costs rising faster than inflation.
       </p>
+
+      {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Range of outcomes by age</h2>

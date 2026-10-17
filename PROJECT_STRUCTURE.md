@@ -27,6 +27,8 @@ retirement/
 │   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
 │   │   ├── income.ts            # Other income streams (annuity, pension, work, rental) by age
 │   │   ├── income.test.ts
+│   │   ├── annuity.ts           # Buying an annuity: payout-rate estimate, taxable share (exclusion ratio)
+│   │   ├── annuity.test.ts
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -43,6 +45,8 @@ retirement/
 │   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
+│   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
+│   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
@@ -99,6 +103,13 @@ One row per year; the age is your age at the **start** of that year.
 - **Other income** (annuities, pensions, part-time work, rental) counts in retired years between its start and end
   ages. "Rises with inflation" amounts are in today's dollars; fixed amounts are the actual dollars paid and lose
   buying power over time. Only the taxable share is taxed.
+- **Income surplus:** income beyond spending and tax is reinvested in a taxable account.
+- **Buying an annuity** (at or after retirement): the premium (today's dollars, inflated to the purchase year)
+  leaves pre-tax or after-tax savings at the start of the purchase year; payments start that year, for life.
+  Payout = premium × payout rate (your quote, or an estimate by age; ×0.88 joint, ×0.72 inflation-adjusted).
+  Pre-tax-funded payments are fully taxable; after-tax-funded ones are taxed only on the earnings part (IRS
+  exclusion ratio with Table V life expectancy). No refund/period-certain options; nothing passes to heirs.
+  The dashboard runs the simulation with and without it to show the trade-off.
 - Birth year is estimated as current year − age (used for the RMD start age).
 
 ## How taxes work
@@ -150,7 +161,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 | Phase | New files |
 |---|---|
-| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income (annuities, pensions, work, rental) · next: buy an annuity from savings and compare |
+| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income · ✅ annuity purchase with comparison |
 | 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 

@@ -2,6 +2,7 @@ import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets, withdrawProportionally } fro
 import { CONFIG_2026 } from './config/2026'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { benefitAtClaimAge } from './socialSecurity'
+import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcareCost } from './healthcare'
 import { incomeAtAge } from './income'
 import { federalIncomeTax } from './taxes'
@@ -40,6 +41,9 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   Roth, cash and taxable-account withdrawals are untaxed (capital gains are not
  *   modeled). Taxes during working years are not modeled.
  * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
+ * - Income beyond spending and tax is reinvested in a taxable account.
+ * - An annuity purchase (at or after retirement) moves the premium out of savings at the
+ *   start of the purchase year; payments start that year and last for life.
  * - Then every account grows for the year (cash earns inflation; others earn the
  *   market return), and working years add contributions at year end.
  * - "Savings at retirement" is the total balance at the start of the retirement-age year.
@@ -109,6 +113,11 @@ export function simulatePath(
   const taxIndexAtStart = (1 + plan.assumptions.inflation) ** (startYear - CONFIG_2026.year)
   const ssYearly = benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge) * 12
 
+  // Annuity bought during the projection: fixed nominal payment (or one indexed to inflation)
+  let annuity: { payment: number; priceLevelAtPurchase: number; taxableShare: number } | null = null
+  const purchase = plan.annuityPurchase
+  const afterTax = [...indexesIn('cash'), ...indexesIn('taxable')]
+
   const years: YearResult[] = []
   let depletionAge: number | null = null
   let balanceAtRetirement = total()
@@ -131,6 +140,22 @@ export function simulatePath(
       balanceAtRetirementReal = startBalanceReal
     }
 
+    // Buy the annuity at the start of the purchase year (after recording the start balance)
+    let annuityPremium = 0
+    if (purchase.enabled && age === purchase.purchaseAge) {
+      const sources = purchase.fundedFrom === 'pretax' ? pretax : afterTax
+      annuityPremium = withdrawProportionally(balances, sources, purchase.amount * priceLevel)
+      const payment = annuityPremium * payoutRate(purchase, plan.filingStatus)
+      annuity = {
+        payment,
+        priceLevelAtPurchase: priceLevel,
+        taxableShare: annuityTaxableShare(purchase.fundedFrom, age, plan.filingStatus, annuityPremium, payment),
+      }
+    }
+    const annuityIncome = annuity
+      ? annuity.payment * (purchase.inflationAdjusted ? priceLevel / annuity.priceLevelAtPurchase : 1)
+      : 0
+
     let spending = 0
     let healthcare = 0
     let ssIncome = 0
@@ -141,8 +166,9 @@ export function simulatePath(
       other = incomeAtAge(plan.incomeStreams, age, priceLevel)
       if (age >= plan.socialSecurityClaimAge) ssIncome = ssYearly * priceLevel
     }
-    const income = other.amount + ssIncome
-    const gap = Math.max(spending - income, 0)
+    const income = other.amount + ssIncome + annuityIncome
+    // Negative when income exceeds spending; the surplus (after tax) is reinvested below
+    const gap = spending - income
     const rmdRequired = requiredMinimumDistribution(
       age,
       birthYear,
@@ -154,11 +180,12 @@ export function simulatePath(
     // passes because the marginal rate is well below 100%.
     let tax = 0
     let taxableIncome = 0
-    let draw = drawDown(balances, gap, rmdRequired, healthcare)
+    let draw = drawDown(balances, Math.max(gap, 0), rmdRequired, healthcare)
     if (retired) {
       for (let pass = 0; pass < 25; pass++) {
         const result = federalIncomeTax({
-          ordinaryIncome: draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable,
+          ordinaryIncome:
+            draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityIncome * (annuity?.taxableShare ?? 0),
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
@@ -170,10 +197,12 @@ export function simulatePath(
         const settled = Math.abs(result.tax + penalty - tax) < 0.5
         tax = result.tax + penalty
         if (settled) break
-        draw = drawDown(balances, gap + tax, rmdRequired, healthcare)
+        draw = drawDown(balances, Math.max(gap + tax, 0), rmdRequired, healthcare)
       }
     }
     balances.splice(0, balances.length, ...draw.balances)
+    const surplus = Math.max(-(gap + tax), 0)
+    balances[firstTaxable] += surplus
     if (draw.shortfall > 0.005 && depletionAge === null) depletionAge = age
 
     // Growth, then year-end contributions while working (HSA contributions stop at Medicare age)
@@ -207,6 +236,9 @@ export function simulatePath(
       startByBucketReal,
       income,
       otherIncome: other.amount,
+      annuityIncome,
+      annuityPremium,
+      surplusReinvested: surplus,
       spending,
       healthcare,
       tax,

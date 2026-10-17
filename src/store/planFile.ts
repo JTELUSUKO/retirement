@@ -53,6 +53,13 @@ function shapeProblem(plan: unknown): string | null {
     }
   }
 
+  const annuity = plan.annuityPurchase
+  if (!isObj(annuity)) return '“annuityPurchase” is missing'
+  if (typeof annuity.enabled !== 'boolean' || typeof annuity.inflationAdjusted !== 'boolean') return 'the annuity settings are incomplete'
+  if (!isNum(annuity.amount) || !isNum(annuity.purchaseAge)) return 'the annuity settings are incomplete'
+  if (annuity.payoutRate !== null && !isNum(annuity.payoutRate)) return 'the annuity payout rate must be a number or empty'
+  if (annuity.fundedFrom !== 'pretax' && annuity.fundedFrom !== 'aftertax') return 'the annuity funding source is invalid'
+
   if (!Array.isArray(plan.incomeStreams)) return '“incomeStreams” must be a list'
   for (const [i, s] of plan.incomeStreams.entries()) {
     if (!isObj(s) || typeof s.id !== 'string' || typeof s.name !== 'string') return `income ${i + 1} is incomplete`

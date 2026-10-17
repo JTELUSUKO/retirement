@@ -44,6 +44,8 @@ export interface Plan {
   socialSecurityClaimAge: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
+  /** Optional: turn part of your savings into lifetime income. */
+  annuityPurchase: AnnuityPurchase
   healthcare: HealthcareCosts
   assumptions: Assumptions
 }
@@ -66,6 +68,20 @@ export interface IncomeStream {
   inflationAdjusted: boolean
   /** Share taxed as ordinary income, 0–1 (e.g. 1 for a pension or an annuity bought in an IRA). */
   taxableShare: number
+}
+
+/** Buying an immediate annuity with savings: payments start in the purchase year, for life. */
+export interface AnnuityPurchase {
+  enabled: boolean
+  /** Premium in today's dollars (scaled to the purchase year with inflation). */
+  amount: number
+  purchaseAge: number
+  /** Yearly payment ÷ premium from a real quote, e.g. 0.07; null = use the estimate. */
+  payoutRate: number | null
+  /** Payments rise with inflation (starts lower). Otherwise a fixed dollar amount. */
+  inflationAdjusted: boolean
+  /** "pretax" = IRA rollover (payments fully taxable); "aftertax" = taxable or cash money. */
+  fundedFrom: 'pretax' | 'aftertax'
 }
 
 /** Healthcare costs in retirement, per person per year in today's dollars. */
@@ -105,6 +121,12 @@ export interface YearResult {
   income: number
   /** Other income (pensions, annuities, work, rental) received this year. */
   otherIncome: number
+  /** Payments from a purchased annuity this year (included in income). */
+  annuityIncome: number
+  /** Savings used to buy the annuity this year (not spending; leaves the portfolio). */
+  annuityPremium: number
+  /** Income left over after spending and tax, reinvested in a taxable account. */
+  surplusReinvested: number
   /** Total spending need for the year, including healthcare. */
   spending: number
   /** Healthcare costs for the year (included in spending). */

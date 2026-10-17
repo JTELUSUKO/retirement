@@ -12,6 +12,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Approximate federal income tax on retirement withdrawals and Social Security
 - Healthcare costs before and after Medicare, paid from your HSA first
 - Other income: annuities, pensions, part-time work and rental income
+- What buying an annuity with part of your savings would do to your odds and what you leave behind
 - A year-by-year table
 
 Your data never leaves your browser. Use **Export** to save a backup file and **Import** to restore it.

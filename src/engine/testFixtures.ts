@@ -13,6 +13,14 @@ export const basePlan: Plan = {
   socialSecurityAtFRA: 0,
   socialSecurityClaimAge: 67,
   incomeStreams: [],
+  annuityPurchase: {
+    enabled: false,
+    amount: 0,
+    purchaseAge: 65,
+    payoutRate: null,
+    inflationAdjusted: false,
+    fundedFrom: 'pretax',
+  },
   healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
   assumptions: {
     returnPreRetirement: 0,

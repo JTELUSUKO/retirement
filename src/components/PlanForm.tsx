@@ -1,5 +1,6 @@
 import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
@@ -108,6 +109,10 @@ export function PlanForm() {
 
       <Section title="Other income in retirement">
         <IncomeList />
+      </Section>
+
+      <Section title="Annuity">
+        <AnnuitySection />
       </Section>
 
       <Section title="Healthcare in retirement">

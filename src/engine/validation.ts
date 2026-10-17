@@ -36,6 +36,18 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     plan.healthcare.medicareAnnual,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
+  const annuity = plan.annuityPurchase
+  if (annuity.enabled) {
+    if (annuity.purchaseAge < retirementAge || annuity.purchaseAge > lifeExpectancy) {
+      issues.push({ field: 'annuityPurchase', message: 'Buy the annuity at or after your retirement age, and before your “plan to age”.' })
+    }
+    if (annuity.amount <= 0) {
+      issues.push({ field: 'annuityPurchase', message: 'Enter how much to put into the annuity.' })
+    }
+    if (annuity.payoutRate !== null && (annuity.payoutRate <= 0 || annuity.payoutRate > 0.3)) {
+      issues.push({ field: 'annuityPurchase', message: 'Annuity payout rate should be between 0% and 30%.' })
+    }
+  }
   for (const stream of plan.incomeStreams) {
     if (stream.endAge !== null && stream.endAge < stream.startAge) {
       issues.push({ field: 'incomeStreams', message: `“${stream.name}” ends before it starts.` })

@@ -44,17 +44,18 @@ describe('plan store: clear, load example, undo', () => {
 
 describe('plan store: migrations', () => {
   it('upgrades a v2 plan (no filing status, no healthcare)', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, ...rest } = defaultPlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, ...rest } = defaultPlan
     const v2plan = { ...rest, annualPension: 0 }
     const migrated = migratePlanState({ plan: v2plan }, 2)
     expect(migrated.plan.filingStatus).toBe('single')
     expect(migrated.plan.healthcare).toEqual(defaultPlan.healthcare)
     expect(migrated.plan.annualSpending).toBe(defaultPlan.annualSpending)
+    expect(migrated.plan.annuityPurchase).toMatchObject({ enabled: false, purchaseAge: defaultPlan.retirementAge })
   })
 })
 
 describe('plan store: v4 → v5 pension migration', () => {
-  const { incomeStreams: _i, ...rest } = defaultPlan
+  const { incomeStreams: _i, annuityPurchase: _a, ...rest } = defaultPlan
 
   it('turns a pension into an inflation-adjusted, fully taxable income stream for life', () => {
     const { plan } = migratePlanState({ plan: { ...rest, annualPension: 24_000 } }, 4)
