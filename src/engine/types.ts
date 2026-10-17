@@ -1,5 +1,10 @@
 export type AccountType = '401k' | 'traditional-ira' | 'roth' | 'hsa' | 'taxable' | 'cash'
 
+/** How an account is taxed; decides withdrawal order and RMDs. */
+export type TaxBucket = 'pretax' | 'roth' | 'taxable' | 'cash' | 'hsa'
+
+export type BucketAmounts = Record<TaxBucket, number>
+
 export interface Account {
   id: string
   name: string
@@ -50,7 +55,15 @@ export interface YearResult {
   /** End-of-year balance in today's dollars. */
   balanceReal: number
   contributions: number
+  /** Total taken from savings this year (RMD used for spending + other withdrawals). */
   withdrawal: number
+  /** Required minimum distribution taken from pre-tax accounts this year. */
+  rmd: number
+  /** Part of the RMD not needed for spending, reinvested in a taxable account. */
+  rmdReinvested: number
+  withdrawalsByBucket: BucketAmounts
+  /** Start-of-year balances by tax bucket, in today's dollars. */
+  startByBucketReal: BucketAmounts
   income: number
   spending: number
 }
@@ -61,6 +74,8 @@ export interface ProjectionResult {
   balanceAtRetirementReal: number
   /** First age at which the portfolio cannot cover spending, or null if it lasts. */
   depletionAge: number | null
+  /** Age RMDs start, based on birth year (start year − current age). */
+  rmdStartAge: number
 }
 
 export interface PercentileYear {

@@ -10,6 +10,12 @@ body {
   --chart-ink: #64748b;
   --chart-text: #0f172a;
   --chart-tooltip-bg: #ffffff;
+  /* Account-type series: categorical slots 1–5, validated on #ffffff */
+  --series-pretax: #2a78d6;
+  --series-roth: #eb6834;
+  --series-taxable: #1baf7a;
+  --series-cash: #eda100;
+  --series-hsa: #e87ba4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,5 +25,11 @@ body {
     --chart-ink: #94a3b8;
     --chart-text: #f1f5f9;
     --chart-tooltip-bg: #0f172a;
+    /* Same hues stepped for the dark surface, validated on #0f172a */
+    --series-pretax: #3987e5;
+    --series-roth: #d95926;
+    --series-taxable: #199e70;
+    --series-cash: #c98500;
+    --series-hsa: #d55181;
   }
 }

@@ -9,6 +9,8 @@ export const defaultPlan: Plan = {
   accounts: [
     { id: '1', name: '401(k)', type: '401k', balance: 450_000, annualContribution: 24_500, employerMatch: 6_000 },
     { id: '2', name: 'Roth IRA', type: 'roth', balance: 80_000, annualContribution: 7_500, employerMatch: 0 },
+    { id: '3', name: 'Brokerage', type: 'taxable', balance: 60_000, annualContribution: 6_000, employerMatch: 0 },
+    { id: '4', name: 'Emergency fund', type: 'cash', balance: 30_000, annualContribution: 0, employerMatch: 0 },
   ],
   annualSpending: 70_000,
   socialSecurityAtFRA: 2_800,
