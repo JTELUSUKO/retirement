@@ -16,6 +16,8 @@ export interface Scenario {
   name: string
   overrides: ScenarioOverrides
   stress: StressTest
+  /** Chart color slot (1–3), fixed when created so removing another scenario never repaints this one. */
+  slot: number
 }
 
 /** Return in the first year of retirement under the crash stress test. */

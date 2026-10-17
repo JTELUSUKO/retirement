@@ -88,6 +88,13 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 7) {
     state.plan = { ...state.plan, scenarios: state.plan.scenarios ?? [] }
   }
+  // v7 → v8: scenarios get a fixed chart color slot
+  if (version < 8) {
+    state.plan = {
+      ...state.plan,
+      scenarios: state.plan.scenarios.map((sc, i) => ({ ...sc, slot: sc.slot ?? i + 1 })),
+    }
+  }
   return state
 }
 
@@ -95,7 +102,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 7
+export const PLAN_VERSION = 8
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -113,7 +120,7 @@ interface PlanState {
   addIncome: () => void
   updateIncome: (id: string, patch: Partial<IncomeStream>) => void
   removeIncome: (id: string) => void
-  addScenario: (scenario: Omit<Scenario, 'id'>) => void
+  addScenario: (scenario: Omit<Scenario, 'id' | 'slot'>) => void
   updateScenario: (id: string, patch: Partial<Scenario>) => void
   removeScenario: (id: string) => void
   clear: () => void
@@ -167,11 +174,12 @@ export const usePlanStore = create<PlanState>()(
           edit((p) => ({ ...p, incomeStreams: p.incomeStreams.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
         removeIncome: (id) => edit((p) => ({ ...p, incomeStreams: p.incomeStreams.filter((i) => i.id !== id) })),
         addScenario: (scenario) =>
-          edit((p) =>
-            p.scenarios.length >= MAX_SCENARIOS
-              ? p
-              : { ...p, scenarios: [...p.scenarios, { ...scenario, id: crypto.randomUUID() }] },
-          ),
+          edit((p) => {
+            if (p.scenarios.length >= MAX_SCENARIOS) return p
+            const used = new Set(p.scenarios.map((sc) => sc.slot))
+            const slot = [1, 2, 3].find((n) => !used.has(n))!
+            return { ...p, scenarios: [...p.scenarios, { ...scenario, id: crypto.randomUUID(), slot }] }
+          }),
         updateScenario: (id, patch) =>
           edit((p) => ({ ...p, scenarios: p.scenarios.map((sc) => (sc.id === id ? { ...sc, ...patch } : sc)) })),
         removeScenario: (id) => edit((p) => ({ ...p, scenarios: p.scenarios.filter((sc) => sc.id !== id) })),

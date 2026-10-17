@@ -98,6 +98,14 @@ export function PlanForm() {
         <p className="text-xs text-slate-500">
           Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
+        {plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
+          <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
+            ⚠ Your ssa.gov estimate assumes you keep earning until {CONFIG_2026.socialSecurity.fullRetirementAge}. Stopping
+            work at {plan.retirementAge} means fewer earning years, which can lower your benefit, especially if you have
+            fewer than 35 years of earnings. Your my Social Security account can show how changing your future earnings
+            affects the estimate; otherwise use a somewhat lower amount here.
+          </p>
+        )}
       </Section>
 
       <Section title="Other income in retirement">

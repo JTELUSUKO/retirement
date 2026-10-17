@@ -25,6 +25,11 @@ body {
   --series-taxable: #1baf7a;
   --series-cash: #eda100;
   --series-hsa: #e87ba4;
+  /* Scenario comparison: categorical slots 1–4 (your plan = slot 1) */
+  --scenario-0: #2a78d6;
+  --scenario-1: #eb6834;
+  --scenario-2: #1baf7a;
+  --scenario-3: #eda100;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +45,10 @@ body {
     --series-taxable: #199e70;
     --series-cash: #c98500;
     --series-hsa: #d55181;
+    --scenario-0: #3987e5;
+    --scenario-1: #d95926;
+    --scenario-2: #199e70;
+    --scenario-3: #c98500;
   }
 }
 
@@ -54,6 +63,10 @@ body {
   --chart-ink: #64748b;
   --chart-text: #0f172a;
   --chart-tooltip-bg: #ffffff;
+  --scenario-0: #2a78d6;
+  --scenario-1: #eb6834;
+  --scenario-2: #1baf7a;
+  --scenario-3: #eda100;
 }
 
 @media print {

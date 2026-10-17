@@ -51,6 +51,7 @@ retirement/
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
+│   │   ├── ScenarioChart.tsx    # Median savings by age per scenario, de-collided end labels (wide screens)
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
@@ -150,6 +151,8 @@ One row per year; the age is your age at the **start** of that year.
 - **Stress tests** adjust every simulated year: *crash* forces a −30% return in the first retirement year;
   *high inflation* adds 3 points to inflation for the first 10 retirement years.
 - Each scenario runs its own Monte Carlo; up to 3 scenarios. Scenarios are saved with the plan and in backups.
+- Each scenario has a fixed color **slot** (1–3) chosen at creation, so removing one never repaints the others;
+  your plan is always slot 0.
 
 ## Printable summary
 

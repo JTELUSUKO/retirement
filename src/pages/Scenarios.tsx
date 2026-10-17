@@ -1,5 +1,7 @@
 import { useDeferredValue, useMemo, type ReactNode } from 'react'
 import { NumberField } from '../components/NumberField'
+import { ScenarioChart, type ScenarioSeries } from '../components/ScenarioChart'
+import { scenarioColor } from '../utils/buckets'
 import {
   AGE_LIMITS,
   applyScenario,
@@ -29,6 +31,20 @@ export function Scenarios() {
     ],
     [deferredPlan],
   )
+
+  // Valid columns only; color slot 0 = your plan, scenarios keep their own slot
+  const columns = [
+    { key: 'base', name: 'Your plan', slot: 0 },
+    ...deferredPlan.scenarios.map((sc) => ({ key: sc.id, name: sc.name, slot: sc.slot })),
+  ]
+  const chartSeries: ScenarioSeries[] = columns.flatMap((c, i) => {
+    const mc = results[i]?.monteCarlo
+    return mc ? [{ ...c, values: mc.years.map((y) => ({ age: y.age, value: y.p50 })) }] : []
+  })
+  const retirementAges = [
+    deferredPlan.retirementAge,
+    ...deferredPlan.scenarios.map((sc) => applyScenario(deferredPlan, sc).retirementAge),
+  ]
 
   if (plan.annualSpending === 0) {
     return (
@@ -95,10 +111,16 @@ export function Scenarios() {
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
               <th className={`${cell} w-56`} />
-              <th scope="col" className={`${cell} text-right font-medium`}>Your plan</th>
+              <th scope="col" className={`${cell} text-right font-medium`}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-0.5 w-3" style={{ background: scenarioColor(0) }} aria-hidden />
+                  Your plan
+                </span>
+              </th>
               {plan.scenarios.map((s) => (
                 <th key={s.id} scope="col" className={`${cell} min-w-44 text-right`}>
                   <div className="flex items-center gap-1">
+                    <span className="h-0.5 w-3 shrink-0" style={{ background: scenarioColor(s.slot) }} aria-hidden />
                     <input
                       className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-right font-medium hover:border-slate-300 focus:border-slate-300 dark:hover:border-slate-700"
                       value={s.name}
@@ -257,6 +279,22 @@ export function Scenarios() {
           </tbody>
         </table>
       </div>
+
+      {chartSeries.length > 1 && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="font-medium">Median savings by age</h2>
+          <p className="text-sm text-slate-500">Typical-market outcome for each column, in today's dollars. Dashed lines mark retirement ages.</p>
+          <ScenarioChart series={chartSeries} retirementAges={retirementAges} />
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+            {chartSeries.map((s) => (
+              <span key={s.key} className="flex items-center gap-1.5">
+                <span className="h-0.5 w-4" style={{ background: scenarioColor(s.slot) }} />
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {plan.scenarios.length === 0 && (
         <p className="text-sm text-slate-500">Add a scenario above to see it next to your plan.</p>

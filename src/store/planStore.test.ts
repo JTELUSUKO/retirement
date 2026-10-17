@@ -89,6 +89,20 @@ describe('plan store: scenarios', () => {
     expect(state().plan.scenarios).toEqual([])
   })
 
+  it('keeps each scenario’s color slot when another is removed, and reuses the free slot', () => {
+    add(); add(); add()
+    expect(state().plan.scenarios.map((s) => s.slot)).toEqual([1, 2, 3])
+    state().removeScenario(state().plan.scenarios[0].id)
+    expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3])
+    add()
+    expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3, 1])
+  })
+
+  it('gives v7 scenarios slots by position', () => {
+    const v7 = { ...defaultPlan, scenarios: [{ id: 'a', name: 'A', overrides: {}, stress: 'none' }] }
+    expect(migratePlanState({ plan: v7 }, 7).plan.scenarios[0].slot).toBe(1)
+  })
+
   it('upgrades a v6 plan with no scenarios', () => {
     const { scenarios: _s, ...v6 } = defaultPlan
     expect(migratePlanState({ plan: v6 }, 6).plan.scenarios).toEqual([])

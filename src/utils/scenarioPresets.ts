@@ -1,7 +1,7 @@
 import { STRESS_LABEL, type Plan, type Scenario } from '../engine'
 import { formatUSDCompact } from './format'
 
-type Preset = { key: string; label: string; make: (plan: Plan) => Omit<Scenario, 'id'> }
+type Preset = { key: string; label: string; make: (plan: Plan) => Omit<Scenario, 'id' | 'slot'> }
 
 /** One-click what-ifs, built from the current plan. */
 export const SCENARIO_PRESETS: Preset[] = [

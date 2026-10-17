@@ -50,7 +50,7 @@ describe('plan backup files', () => {
   })
 
   it('rejects a scenario with an unknown stress test', () => {
-    expectError(fileWith({ plan: { ...defaultPlan, scenarios: [{ id: 'a', name: 'X', overrides: {}, stress: 'meteor' }] } }), /stress test/)
+    expectError(fileWith({ plan: { ...defaultPlan, scenarios: [{ id: 'a', name: 'X', overrides: {}, stress: 'meteor', slot: 1 }] } }), /stress test/)
   })
 
   it('rejects a file with no plan at all', () => {

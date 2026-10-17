@@ -15,3 +15,6 @@ export const BUCKET_COLOR: Record<TaxBucket, string> = {
   cash: 'var(--series-cash)',
   hsa: 'var(--series-hsa)',
 }
+
+/** Scenario comparison colors: slot 0 = your plan, 1–3 = scenarios (fixed per scenario). */
+export const scenarioColor = (slot: number) => `var(--scenario-${slot})`

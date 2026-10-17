@@ -5,7 +5,7 @@ import { applyScenario, CRASH_RETURN, stressAdjust, type Scenario } from './scen
 import { basePlan } from './testFixtures'
 import type { Plan } from './types'
 
-const scenario = (extra: Partial<Scenario>): Scenario => ({ id: 's', name: 'S', overrides: {}, stress: 'none', ...extra })
+const scenario = (extra: Partial<Scenario>): Scenario => ({ id: 's', name: 'S', overrides: {}, stress: 'none', slot: 1, ...extra })
 
 // Working from 55, retiring at 60, $500k growing at 5%, inflation 2%
 const plan: Plan = {
