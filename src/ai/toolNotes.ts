@@ -1,0 +1,19 @@
+import { formatUSD } from '../utils/format'
+
+/** Plain-language note for a tool call shown under Claude's answer. */
+export function describeToolCall(name: string, input: unknown, isError: boolean): string {
+  if (isError) return 'A calculation request was invalid; Claude retried.'
+  if (name === 'get_plan_results') return 'Checked your plan’s results'
+  if (name === 'run_what_if' && typeof input === 'object' && input) {
+    const i = input as Record<string, unknown>
+    const parts: string[] = []
+    if (typeof i.retirementAge === 'number') parts.push(`retire at ${i.retirementAge}`)
+    if (typeof i.annualSpending === 'number') parts.push(`spend ${formatUSD(i.annualSpending)}/yr`)
+    if (typeof i.socialSecurityClaimAge === 'number') parts.push(`Social Security at ${i.socialSecurityClaimAge}`)
+    if (typeof i.annuityEnabled === 'boolean') parts.push(i.annuityEnabled ? 'with the annuity' : 'without the annuity')
+    if (i.stress === 'crash') parts.push('market crash at retirement')
+    if (i.stress === 'high-inflation') parts.push('high inflation')
+    return `Ran a what-if: ${parts.join(', ') || 'no changes'}`
+  }
+  return `Ran ${name}`
+}

@@ -17,7 +17,10 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - A printable one-document summary (save as PDF)
 - Side-by-side what-if scenarios (retire earlier, spend less, claim Social Security later) and stress tests (market crash, high inflation)
 
-Your data never leaves your browser. Use **Export** to save a backup file and **Import** to restore it.
+Your data stays in your browser. Use **Export** to save a backup file and **Import** to restore it.
+
+**Ask Claude** (optional): paste your own Anthropic API key to chat about your plan. Claude runs what-ifs with the
+app's own calculations. Your plan is sent to Anthropic only when you ask a question, and usage is billed to your key.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
 > Projections use simplified assumptions (a fixed withdrawal order, federal tax only, no capital gains).

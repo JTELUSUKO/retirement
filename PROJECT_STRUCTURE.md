@@ -43,6 +43,15 @@ retirement/
 │   │   ├── socialSecurity.ts    # Benefit adjustment for claiming at ages 62–70
 │   │   ├── socialSecurity.test.ts
 │   │   └── index.ts             # Public exports of the engine
+│   ├── ai/                      # "Ask Claude" assistant (Claude API, called from the browser)
+│   │   ├── chat.ts              # Streaming tool-use loop: append-only history, fallbacks, caching, errors
+│   │   ├── chat.test.ts         # Loop tested with a fake fetch replaying streamed responses
+│   │   ├── prompt.ts            # Model id, frozen system prompt, plan snapshot
+│   │   ├── tools.ts             # Read-only tools: get_plan_results, run_what_if (run the engine locally)
+│   │   ├── tools.test.ts
+│   │   ├── toolNotes.ts         # Plain-language notes for tool calls shown in the chat
+│   │   ├── apiKey.ts            # Visitor's own API key: sessionStorage, or localStorage if remembered
+│   │   └── chatStore.ts         # In-memory conversation (not saved)
 │   ├── store/
 │   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/import/undo
 │   │   ├── planStore.test.ts
@@ -64,13 +73,13 @@ retirement/
 │   ├── pages/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
 │   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
-│   │   └── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
+│   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare / #summary)
+│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare / #summary / #ask)
 │   ├── main.tsx                 # React entry point
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
@@ -93,6 +102,8 @@ retirement/
    Pages show a getting-started checklist (`missingEssentials`) until age, retirement age, plan-to age and
    spending are entered. **Load example** fills a sample plan; **Clear all** returns to blank.
 5. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
+   The one exception is **Ask Claude**: with the visitor's own API key, the plan is sent to api.anthropic.com
+   (directly from the browser) when they ask a question.
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
 6. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
@@ -166,6 +177,19 @@ One row per year; the age is your age at the **start** of that year.
 - **Print / Save as PDF** uses the browser's print dialog; the app header and buttons are hidden in print,
   sections avoid page breaks, and `print-color-adjust: exact` keeps chart fills and legend swatches.
 
+## Ask Claude (Phase 4)
+
+- **Bring your own key:** the visitor pastes an Anthropic API key, kept in `sessionStorage` (or `localStorage` if
+  "remember" is ticked). The SDK runs in the browser (`dangerouslyAllowBrowser`) and calls api.anthropic.com
+  directly; there is no server. Usage is billed to the visitor's key.
+- **Model:** `claude-opus-5-5`, streaming, effort `medium`, server-side refusal fallback (`fallbacks: "default"`,
+  beta `server-side-fallback-2026-07-01`), automatic prompt caching of the conversation.
+- **Tools run locally:** `get_plan_results` and `run_what_if` call `evaluatePlan`, so every number Claude quotes
+  comes from the engine. Tools are read-only; Claude can't change the plan.
+- **Append-only history:** the system prompt is frozen; the plan travels as a snapshot in the user's message and
+  is re-sent only when it changes. Earlier turns are never edited (required for preserved thinking, good for caching).
+- The chat is kept in memory only. The SDK is lazy-loaded with the Ask page.
+
 ## How the Monte Carlo works
 
 - Each run draws a random return for every year from a **lognormal** distribution, using the
@@ -195,7 +219,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 |---|---|
 | 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income · ✅ annuity purchase with comparison |
 | 3: Scenarios | ✅ export/import · ✅ scenario comparison + stress tests · ✅ printable summary |
-| 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
+| 4: AI assistant | ✅ `src/ai/` + `pages/Ask.tsx` (bring-your-own-key, no server) |
 
 ## Scripts
 
