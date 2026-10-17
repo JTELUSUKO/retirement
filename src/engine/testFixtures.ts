@@ -28,6 +28,7 @@ export const basePlan: Plan = {
     fundedFrom: 'pretax',
   },
   scenarios: [],
+  rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
   healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
   assumptions: {
     returnPreRetirement: 0,

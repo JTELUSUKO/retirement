@@ -69,6 +69,18 @@ function shapeProblem(plan: unknown): string | null {
     return 'the survivor settings are incomplete'
   }
 
+  const conv = plan.rothConversion
+  if (
+    !isObj(conv) ||
+    typeof conv.enabled !== 'boolean' ||
+    typeof conv.stayUnderIrmaa !== 'boolean' ||
+    !isNum(conv.fillToRate) ||
+    !isNum(conv.fromAge) ||
+    !isNum(conv.toAge)
+  ) {
+    return 'the Roth conversion settings are incomplete'
+  }
+
   const annuity = plan.annuityPurchase
   if (!isObj(annuity)) return '“annuityPurchase” is missing'
   if (typeof annuity.enabled !== 'boolean' || typeof annuity.inflationAdjusted !== 'boolean') return 'the annuity settings are incomplete'

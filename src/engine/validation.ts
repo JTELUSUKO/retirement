@@ -96,6 +96,15 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     }
   }
 
+  const conv = plan.rothConversion
+  if (conv.enabled) {
+    if (![0.1, 0.12, 0.22, 0.24, 0.32].some((r) => Math.abs(r - conv.fillToRate) < 1e-9)) {
+      issues.push({ field: 'rothConversion', message: 'Choose a tax bracket to fill with Roth conversions.' })
+    }
+    if (conv.fromAge && conv.toAge && conv.toAge < conv.fromAge) {
+      issues.push({ field: 'rothConversion', message: 'Roth conversions must end after they start.' })
+    }
+  }
   const annuity = plan.annuityPurchase
   if (annuity.enabled) {
     if (annuity.purchaseAge < retirementAge || annuity.purchaseAge > lifeExpectancy) {

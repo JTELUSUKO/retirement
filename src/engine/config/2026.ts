@@ -42,6 +42,19 @@ export const CONFIG_2026 = {
     /** HSA contributions also stop here (no contributions once on Medicare). */
     eligibilityAge: 65,
   },
+  /**
+   * Medicare income-related monthly adjustment amounts (IRMAA), CMS 2026 fact sheet: per person per month, by
+   * MAGI from two years earlier. [single upper bound, joint upper bound, Part B extra, Part D extra].
+   * The last tier has no upper bound.
+   */
+  irmaa: [
+    [109_000, 218_000, 0, 0],
+    [137_000, 274_000, 81.2, 14.5],
+    [171_000, 342_000, 202.9, 37.5],
+    [205_000, 410_000, 324.6, 60.4],
+    [500_000, 750_000, 446.3, 83.3],
+    [Infinity, Infinity, 487.0, 91.0],
+  ] as [number, number, number, number][],
   federalTax: {
     /** Ordinary income brackets: [upper bound of bracket, rate]. Indexed to inflation each year. */
     brackets: {

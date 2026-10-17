@@ -25,6 +25,8 @@ retirement/
 │   │   ├── taxes.ts             # Federal income tax + taxable Social Security
 │   │   ├── taxes.test.ts
 │   │   ├── returns.ts           # Median (typical) return from average return + volatility
+│   │   ├── irmaa.ts             # Medicare income surcharges (CMS 2026 tiers)
+│   │   ├── phaseB.test.ts       # IRMAA and Roth conversion tests
 │   │   ├── contributions.ts     # 2026 IRS contribution-limit warnings (401(k), IRA, HSA; age catch-ups)
 │   │   ├── phaseA.test.ts       # Typical returns, early-withdrawal penalty, capital gains/NIIT, limits
 │   │   ├── stateTax.ts          # State income tax (brackets, deductions, retirement exemptions, SS)
@@ -68,7 +70,9 @@ retirement/
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
 │   │   ├── GettingStarted.tsx   # Checklist shown until the essentials are filled in
-│   │   ├── OutcomeComparison.tsx# Two simulations side by side (used by the annuity and survivor panels)
+│   │   ├── OutcomeComparison.tsx# Two simulations side by side (annuity, survivor, Roth conversion panels)
+│   │   ├── RothConversionSection.tsx    # "Tax strategy": Roth conversion settings
+│   │   ├── RothConversionComparison.tsx # With vs. without conversions, incl. lifetime tax + IRMAA, after-tax left
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── SurvivorComparison.tsx# Both live vs. one dies at the chosen age
 │   │   ├── SurvivorSection.tsx  # Couples: "If one of you dies first" inputs
@@ -235,6 +239,20 @@ One row per year; the age is your age at the **start** of that year.
 - **Append-only history:** the system prompt is frozen; the plan travels as a snapshot in the user's message and
   is re-sent only when it changes. Earlier turns are never edited (required for preserved thinking, good for caching).
 - The chat is kept in memory only. The SDK is lazy-loaded with the Ask page.
+
+## Roth conversions and IRMAA
+
+- **IRMAA:** each person 65+ pays the CMS 2026 Part B + Part D surcharge for the household's MAGI (AGI incl.
+  taxable Social Security and gains) from **two years earlier**, using that year's filing status. Years before
+  retirement aren't counted (salary isn't modeled). Thresholds are indexed with inflation; amounts grow with
+  healthcare costs. Surcharges are part of healthcare spending (the HSA can pay them).
+- **Roth conversions** (optional): in each year of the window (default retirement → the year before RMDs),
+  after spending withdrawals, pre-tax money moves to a Roth account (a hidden one is created if needed) until
+  taxable ordinary income reaches the top of the chosen federal bracket. The amount is solved numerically, so the
+  extra Social Security that becomes taxable is accounted for. Optionally MAGI stays under the first IRMAA
+  threshold from age 63. Conversion tax is paid from savings; conversions never owe the 10% penalty.
+- The dashboard compares with vs. without conversions, including lifetime tax + IRMAA and money left **after tax
+  on remaining pre-tax savings** (estimated at the filled bracket), since pre-tax totals overstate what's left.
 
 ## Returns
 

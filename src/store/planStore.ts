@@ -33,6 +33,7 @@ export const examplePlan: Plan = {
     fundedFrom: 'pretax',
   },
   scenarios: [],
+  rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -152,6 +153,13 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 12) {
     state.plan = { ...state.plan, accounts: state.plan.accounts.map((a) => ({ ...a, costBasis: a.costBasis ?? null })) }
   }
+  // v12 → v13: optional Roth conversions (off)
+  if (version < 13) {
+    state.plan = {
+      ...state.plan,
+      rothConversion: state.plan.rothConversion ?? { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
+    }
+  }
   return state
 }
 
@@ -159,7 +167,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 12
+export const PLAN_VERSION = 13
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -171,6 +179,7 @@ interface PlanState {
   updateAssumptions: (patch: Partial<Plan['assumptions']>) => void
   updateHealthcare: (patch: Partial<Plan['healthcare']>) => void
   updateAnnuity: (patch: Partial<Plan['annuityPurchase']>) => void
+  updateRothConversion: (patch: Partial<Plan['rothConversion']>) => void
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
@@ -199,6 +208,7 @@ export const usePlanStore = create<PlanState>()(
         updateAssumptions: (patch) => edit((p) => ({ ...p, assumptions: { ...p.assumptions, ...patch } })),
         updateHealthcare: (patch) => edit((p) => ({ ...p, healthcare: { ...p.healthcare, ...patch } })),
         updateAnnuity: (patch) => edit((p) => ({ ...p, annuityPurchase: { ...p.annuityPurchase, ...patch } })),
+        updateRothConversion: (patch) => edit((p) => ({ ...p, rothConversion: { ...p.rothConversion, ...patch } })),
         updateAccount: (id, patch) =>
           edit((p) => ({ ...p, accounts: p.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
         addAccount: () =>

@@ -40,6 +40,13 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
         annualSpending: { type: 'number', description: 'Yearly spending in retirement, today’s dollars, excluding healthcare.' },
         socialSecurityClaimAge: { type: 'integer', description: 'Age to claim Social Security, 62–70.' },
         annuityEnabled: { type: 'boolean', description: 'Turn the plan’s configured annuity purchase on or off.' },
+        rothConversionRate: {
+          type: 'number',
+          enum: [0, 0.1, 0.12, 0.22, 0.24, 0.32],
+          description:
+            'Roth conversions: fill this federal bracket each year from retirement through the year before RMDs ' +
+            '(0 = no conversions). Keeps the plan’s IRMAA setting if it has one, otherwise stays under IRMAA from 63.',
+        },
         survivorDeathAge: {
           type: 'integer',
           description:
@@ -67,16 +74,17 @@ export interface WhatIfInput {
   socialSecurityClaimAge?: number
   annuityEnabled?: boolean
   survivorDeathAge?: number
+  rothConversionRate?: number
   stress?: StressTest
 }
 
 /** Validate a run_what_if input; returns an error message or the typed input. */
 export function parseWhatIf(input: unknown): { ok: true; value: WhatIfInput } | { ok: false; error: string } {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return { ok: false, error: 'input must be an object' }
-  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'survivorDeathAge', 'stress']
+  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'survivorDeathAge', 'rothConversionRate', 'stress']
   const obj = input as Record<string, unknown>
   for (const key of Object.keys(obj)) if (!allowed.includes(key)) return { ok: false, error: `unknown field "${key}"` }
-  for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge']) {
+  for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge', 'rothConversionRate']) {
     if (obj[key] !== undefined && (typeof obj[key] !== 'number' || !Number.isFinite(obj[key]))) {
       return { ok: false, error: `"${key}" must be a number` }
     }
@@ -102,6 +110,8 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     typicalReturnsOutcome: e.depletionAge === null ? `lasts past ${endLabel(plan)}` : `runs out at ${ageLabel(plan, e.depletionAge)}`,
     savingsLeftAtEnd: { typicalMarkets: round(e.leftTypical), poorMarkets10thPercentile: round(e.leftPoor) },
     lifetimeFederalTax: round(e.lifetimeFederalTax),
+    lifetimeMedicareSurcharges: round(e.projection!.years.reduce((sum, y) => sum + y.irmaa / y.priceLevel, 0)),
+    lifetimeRothConversions: round(e.projection!.years.reduce((sum, y) => sum + y.rothConversion / y.priceLevel, 0)),
     lifetimeStateTax: round(e.lifetimeStateTax),
     lifetimeHealthcare: round(e.lifetimeHealthcare),
     socialSecurityMonthlyAtClaimAge: round(householdSocialSecurityMonthly(plan)),
@@ -135,12 +145,28 @@ export function executeTool(plan: Plan, name: string, input: unknown): { content
     if (parsed.value.survivorDeathAge !== undefined && plan.filingStatus !== 'married') {
       return { content: JSON.stringify({ error: 'survivorDeathAge only applies to married couples (filing jointly).' }), isError: true }
     }
-    const { stress = 'none', ...overrides } = parsed.value
+    const { stress = 'none', rothConversionRate, ...overrides } = parsed.value
     const scenario: Scenario = { id: 'what-if', name: 'What-if', overrides, stress, slot: 1 }
-    const changed = applyScenario(plan, scenario)
+    const base = applyScenario(plan, scenario)
+    const changed: Plan =
+      rothConversionRate === undefined
+        ? base
+        : {
+            ...base,
+            rothConversion: {
+              ...base.rothConversion,
+              enabled: rothConversionRate > 0,
+              fillToRate: rothConversionRate > 0 ? rothConversionRate : base.rothConversion.fillToRate,
+              stayUnderIrmaa: base.rothConversion.enabled ? base.rothConversion.stayUnderIrmaa : true,
+            },
+          }
     return {
       content: JSON.stringify({
-        changes: { ...overrides, ...(stress !== 'none' ? { stress: STRESS_LABEL[stress] } : {}) },
+        changes: {
+          ...overrides,
+          ...(rothConversionRate !== undefined ? { rothConversionRate } : {}),
+          ...(stress !== 'none' ? { stress: STRESS_LABEL[stress] } : {}),
+        },
         withChanges: summarize(changed, evaluatePlan(changed, stress)),
         currentPlan: summarize(plan, evaluatePlan(plan)),
       }),

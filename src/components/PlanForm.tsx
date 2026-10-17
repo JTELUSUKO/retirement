@@ -5,6 +5,7 @@ import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
+import { RothConversionSection } from './RothConversionSection'
 import { StateField } from './StateField'
 import { SurvivorSection } from './SurvivorSection'
 
@@ -167,6 +168,10 @@ export function PlanForm() {
 
       <Section title="Annuity">
         <AnnuitySection />
+      </Section>
+
+      <Section title="Tax strategy">
+        <RothConversionSection />
       </Section>
 
       <Section title="Healthcare in retirement">

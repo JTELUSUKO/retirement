@@ -50,7 +50,7 @@ describe('plan store: clear, load example, undo', () => {
 
 describe('plan store: migrations', () => {
   it('upgrades a v2 plan (no filing status, no healthcare)', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, spouseSocialSecurityAtFRA: _ss, survivor: _sv, spouseCurrentAge: _sa, spouseClaimAge: _sc, ...rest } = examplePlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, spouseSocialSecurityAtFRA: _ss, survivor: _sv, spouseCurrentAge: _sa, spouseClaimAge: _sc, rothConversion: _rc, ...rest } = examplePlan
     const v2plan = { ...rest, annualPension: 0 }
     const migrated = migratePlanState({ plan: v2plan }, 2)
     expect(migrated.plan.filingStatus).toBe('single')
@@ -102,6 +102,11 @@ describe('plan store: scenarios', () => {
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3])
     add()
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3, 1])
+  })
+
+  it('upgrades a v12 plan with Roth conversions off', () => {
+    const { rothConversion: _r, ...v12 } = examplePlan
+    expect(migratePlanState({ plan: v12 }, 12).plan.rothConversion.enabled).toBe(false)
   })
 
   it('upgrades a v11 plan: brokerage cost basis unknown', () => {

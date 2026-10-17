@@ -35,3 +35,5 @@ export {
 export { medianReturn } from './returns'
 export { contributionWarnings, k401Limit } from './contributions'
 export type { ContributionWarning } from './contributions'
+export { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'
+export { bracketTop } from './taxes'

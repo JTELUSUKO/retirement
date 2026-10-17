@@ -206,6 +206,14 @@ export function Summary() {
                   ? `${formatUSD(plan.socialSecurityAtFRA)}/mo (you, claiming at ${plan.socialSecurityClaimAge}) + ${formatUSD(plan.spouseSocialSecurityAtFRA)}/mo (spouse, claiming at ${plan.spouseClaimAge}), at 67 amounts`
                   : `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67, claiming at ${plan.socialSecurityClaimAge}`,
               ],
+              ...(plan.rothConversion.enabled
+                ? ([
+                    [
+                      'Roth conversions',
+                      `Fill the ${Math.round(plan.rothConversion.fillToRate * 100)}% bracket from ${plan.rothConversion.fromAge || plan.retirementAge} through ${plan.rothConversion.toAge || 'the year before RMDs'}${plan.rothConversion.stayUnderIrmaa ? ', staying under the IRMAA threshold from 63' : ''}`,
+                    ],
+                  ] as [string, string][])
+                : []),
               ...(survivorFromAge(plan) !== Infinity
                 ? ([
                     [
@@ -336,8 +344,11 @@ export function Summary() {
               compounded return.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, Medicare surcharges (IRMAA), Roth
-              conversions, ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Medicare income surcharges (IRMAA, CMS 2026 tiers) are charged per person 65+ from income two years
+              earlier. Optional Roth conversions fill a chosen federal bracket.
+            </li>
+            <li>
+              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>

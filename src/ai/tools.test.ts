@@ -35,6 +35,13 @@ describe('assistant tools', () => {
     expect(executeTool(examplePlan, 'run_what_if', { survivorDeathAge: 75 }).isError).toBe(true)
   })
 
+  it('runs a Roth conversion what-if and reports conversions and surcharges', () => {
+    const data = JSON.parse(executeTool(examplePlan, 'run_what_if', { rothConversionRate: 0.22 }).content)
+    expect(data.withChanges.lifetimeRothConversions).toBeGreaterThan(0)
+    expect(data.currentPlan.lifetimeRothConversions).toBe(0)
+    expect(data.withChanges).toHaveProperty('lifetimeMedicareSurcharges')
+  })
+
   it('rejects unknown fields and wrong types', () => {
     expect(parseWhatIf({ retireAge: 60 }).ok).toBe(false)
     expect(parseWhatIf({ annualSpending: '50k' }).ok).toBe(false)

@@ -37,6 +37,10 @@ export interface TaxResult {
   tax: number
   capitalGainsTax: number
   niit: number
+  /** Adjusted gross income (ordinary + gains + taxable Social Security); MAGI for IRMAA */
+  agi: number
+  /** Taxable income excluding capital gains (what fills the ordinary brackets) */
+  taxableOrdinary: number
   taxableIncome: number
 }
 
@@ -94,5 +98,13 @@ export function federalIncomeTax(input: TaxInput): TaxResult {
     capitalGainsTax,
     niit,
     taxableIncome: taxableOrdinary + taxableGains,
+    agi: grossIncome,
+    taxableOrdinary,
   }
+}
+
+/** Top of the ordinary bracket taxed at `rate` (taxable income), indexed; Infinity for the top bracket. */
+export function bracketTop(rate: number, status: FilingStatus, priceLevel: number): number {
+  const bracket = T.brackets[status].find(([, r]) => Math.abs(r - rate) < 1e-9)
+  return bracket ? bracket[0] * priceLevel : 0
 }

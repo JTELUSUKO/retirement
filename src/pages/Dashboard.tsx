@@ -1,5 +1,6 @@
 import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
+import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
@@ -24,6 +25,12 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const success = Math.round(mc.successRate * 100)
   const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
+  // With Roth conversions on, also run the plan without them
+  const noConversions = useMemo(() => {
+    if (!plan.rothConversion.enabled) return null
+    const off = { ...plan, rothConversion: { ...plan.rothConversion, enabled: false } }
+    return { mc: runMonteCarlo(off), projection: projectPlan(off) }
+  }, [plan])
   // Household benefit while both are alive
   const ssMonthly = householdSocialSecurityMonthly(plan)
   // Couples who model an early death: also run the plan with both living
@@ -35,6 +42,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
   const lifetimeStateTaxReal = retiredYears.reduce((sum, y) => sum + y.stateTax / y.priceLevel, 0)
+  const lifetimeIrmaaReal = retiredYears.reduce((sum, y) => sum + y.irmaa / y.priceLevel, 0)
   const lifetimeHealthReal = retiredYears.reduce((sum, y) => sum + y.healthcare / y.priceLevel, 0)
   const avgTaxRate =
     retiredYears.reduce((sum, y) => sum + y.tax, 0) /
@@ -74,11 +82,21 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals, including capital gains on brokerage sales and any early-withdrawal penalty. Local taxes aren't included.
         <br />
         Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
-        today's dollars, including medical costs rising faster than inflation.
+        today's dollars, including medical costs rising faster than inflation
+        {lifetimeIrmaaReal > 0 ? ` and ${formatUSDCompact(lifetimeIrmaaReal)} of Medicare income surcharges (IRMAA)` : ''}.
       </p>
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
       {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}
+      {noConversions && (
+        <RothConversionComparison
+          plan={plan}
+          withConversions={mc}
+          without={noConversions.mc}
+          withProjection={result}
+          withoutProjection={noConversions.projection}
+        />
+      )}
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Range of outcomes by age</h2>

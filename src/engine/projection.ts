@@ -8,8 +8,12 @@ import { healthcarePerPerson } from './healthcare'
 import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
-import { federalIncomeTax, taxableSocialSecurity } from './taxes'
-import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
+import { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'
+import { bracketTop, federalIncomeTax, taxableSocialSecurity } from './taxes'
+import type { FilingStatus, Plan, ProjectionResult, TaxBucket, YearResult } from './types'
+
+/** Id of the hidden Roth account that receives conversions when the plan has none. */
+export const CONVERTED_ROTH_ID = 'converted-roth'
 
 /** Typical qualified-dividend yield of a stock-heavy brokerage account, taxed yearly in retirement. */
 export const QUALIFIED_DIVIDEND_YIELD = 0.015
@@ -73,6 +77,9 @@ export function simulatePath(
   if (!accounts.some((a) => a.type === 'taxable')) {
     accounts.push({ id: REINVESTED_RMD_ID, name: 'Reinvested RMDs', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: 0 })
   }
+  if (plan.rothConversion.enabled && !accounts.some((a) => a.type === 'roth')) {
+    accounts.push({ id: CONVERTED_ROTH_ID, name: 'Converted Roth', type: 'roth', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: null })
+  }
   const balances = accounts.map((a) => a.balance)
   // Cost basis of taxable (brokerage) accounts; unused for other account types
   const basis = accounts.map((a) => (a.type === 'taxable' ? (a.costBasis ?? a.balance) : 0))
@@ -84,6 +91,7 @@ export function simulatePath(
   const total = () => balances.reduce((sum, b) => sum + b, 0)
 
   const isTaxable = bucketOf.map((b) => b === 'taxable')
+  const rothTarget = bucketOf.indexOf('roth')
   const { penalty: EARLY_PENALTY, ruleOf55Age } = CONFIG_2026.federalTax.earlyWithdrawal
   // Rule of 55: 401(k)s can be withdrawn without the 10% penalty if you leave work at 55 or later
   const penaltyFreeEarly = pretax.filter((i) => accounts[i].type === '401k' && plan.retirementAge >= ruleOf55Age)
@@ -110,12 +118,32 @@ export function simulatePath(
     return { taken, gains }
   }
 
+  // Withdrawal order as account groups; before 59½, penalty-free pre-tax money comes before penalized money
+  type Group = { bucket: TaxBucket; idx: number[]; penalized?: boolean }
+  const normalGroups: Group[] = WITHDRAWAL_ORDER.map((bucket) => ({ bucket, idx: indexesIn(bucket) }))
+  const earlyGroups: Group[] = WITHDRAWAL_ORDER.flatMap((bucket): Group[] =>
+    bucket === 'pretax'
+      ? [
+          { bucket, idx: penaltyFreeEarly },
+          { bucket, idx: penalizedEarly, penalized: true },
+        ]
+      : [{ bucket, idx: indexesIn(bucket) }],
+  )
+
   /**
    * Take the RMD, then `need` dollars from copies of the balances: the HSA pays up to `medicalCost` first
    * (tax-free), then accounts in withdrawal order. Before 59½, penalty-free money is used before pre-tax money
    * that would owe the 10% penalty. Pure: lets the tax loop try different amounts before committing.
    */
-  const drawDown = (from: number[], fromBasis: number[], need: number, rmdRequired: number, medicalCost: number, age: number) => {
+  const drawDown = (
+    from: number[],
+    fromBasis: number[],
+    need: number,
+    rmdRequired: number,
+    medicalCost: number,
+    age: number,
+    convert = 0,
+  ) => {
     const next = [...from]
     const nextBasis = [...fromBasis]
     const withdrawalsByBucket = emptyBuckets()
@@ -133,16 +161,7 @@ export function simulatePath(
     remaining -= hsaMedical
 
     // 59 is treated as after 59½ (withdrawals assumed in the second half of that year)
-    const early = age < 59
-    const groups: { bucket: TaxBucket; idx: number[]; penalized?: boolean }[] = WITHDRAWAL_ORDER.flatMap((bucket) =>
-      bucket === 'pretax' && early
-        ? [
-            { bucket, idx: penaltyFreeEarly },
-            { bucket, idx: penalizedEarly, penalized: true },
-          ]
-        : [{ bucket, idx: indexesIn(bucket) }],
-    )
-    for (const g of groups) {
+    for (const g of age < 59 ? earlyGroups : normalGroups) {
       if (remaining <= 0) break
       const { taken, gains } = take(next, nextBasis, g.idx, remaining)
       withdrawalsByBucket[g.bucket] += taken
@@ -150,10 +169,18 @@ export function simulatePath(
       if (g.penalized) penalized += taken
       remaining -= taken
     }
+    // Roth conversion: move pre-tax money (left after spending) into the first Roth account
+    const pretaxLeft = pretax.reduce((sum, i) => sum + next[i], 0)
+    const converted = convert > 0 && rothTarget >= 0 ? take(next, nextBasis, pretax, convert).taken : 0
+    if (converted > 0) next[rothTarget] += converted
     const extraPretax = withdrawalsByBucket.pretax - Math.min(rmd, need)
     return {
       balances: next,
       basis: nextBasis,
+      /** Pre-tax money moved to Roth (taxable, no penalty) */
+      converted,
+      /** Pre-tax balance available for conversion after this year's withdrawals */
+      pretaxLeft,
       withdrawalsByBucket,
       rmd,
       rmdReinvested,
@@ -180,6 +207,12 @@ export function simulatePath(
 
   const endAge = planEndAge(plan)
   const years: YearResult[] = []
+  // Filing status behind each year's MAGI (IRMAA uses the status of the return two years earlier)
+  const magiStatus: FilingStatus[] = []
+  // Roth conversion window (your ages); 0 = retirement age / the year before RMDs start
+  const conv = plan.rothConversion
+  const convFrom = conv.fromAge || plan.retirementAge
+  const convTo = conv.toAge || rmdStartAge(startYear - plan.currentAge) - 1
   let depletionAge: number | null = null
   let balanceAtRetirement = total()
   let balanceAtRetirementReal = balanceAtRetirement
@@ -223,11 +256,19 @@ export function simulatePath(
     const household = householdAt(plan, age)
     let spending = 0
     let healthcare = 0
+    let irmaa = 0
     let ssIncome = 0
     let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
       const healthcareToday = household.livingAges.reduce((sum, a) => sum + healthcarePerPerson(plan, a), 0)
-      healthcare = healthcareToday * priceLevel * (1 + plan.healthcare.excessInflation) ** t
+      const healthLevel = priceLevel * (1 + plan.healthcare.excessInflation) ** t
+      // Medicare surcharges: each person 65+ pays by the household MAGI from two years earlier (retired years only)
+      const lookback = years[t - 2]
+      const onMedicare = household.livingAges.filter((a) => a >= CONFIG_2026.medicare.eligibilityAge).length
+      if (lookback && lookback.magi > 0 && onMedicare > 0) {
+        irmaa = irmaaPerPersonYearly(lookback.magi, magiStatus[t - 2], priceLevel * taxIndexAtStart) * onMedicare * healthLevel
+      }
+      healthcare = healthcareToday * healthLevel + irmaa
       const baseSpending = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1)
       spending = baseSpending * priceLevel + healthcare
       other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
@@ -251,25 +292,32 @@ export function simulatePath(
     let taxableIncome = 0
     let capitalGains = 0
     let earlyWithdrawalPenalty = 0
+    let magi = 0
+    let conversion = 0
     // Qualified dividends from brokerage accounts (taxed in retirement; reinvested, so they add to basis)
     const dividends = balances.reduce((sum, b, i) => sum + (isTaxable[i] ? b * QUALIFIED_DIVIDEND_YIELD : 0), 0)
     let draw = drawDown(balances, basis, Math.max(gap, 0), rmdRequired, healthcare, age)
     if (retired) {
       const annuityTaxable = annuityIncome * (annuity?.taxableShare ?? 0)
       const taxPriceLevel = priceLevel * taxIndexAtStart
-      for (let pass = 0; pass < 25; pass++) {
-        const ordinaryIncome = draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityTaxable
-        capitalGains = draw.realizedGains + dividends + purchaseGains
-        const result = federalIncomeTax({
+      const converting = conv.enabled && age >= convFrom && age <= convTo
+      const seniors = household.livingAges.filter((a) => a >= 65).length
+      const federalFor = (ordinaryIncome: number, gains: number) =>
+        federalIncomeTax({
           ordinaryIncome,
-          capitalGains,
+          capitalGains: gains,
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
           status: household.taxStatus,
           priceLevel: taxPriceLevel,
-          seniors: household.livingAges.filter((a) => a >= 65).length,
+          seniors,
         })
+      for (let pass = 0; pass < 25; pass++) {
+        const baseOrdinary = draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityTaxable
+        const ordinaryIncome = baseOrdinary + draw.converted
+        capitalGains = draw.realizedGains + dividends + purchaseGains
+        const result = federalFor(ordinaryIncome, capitalGains)
         earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
         const hsaPenalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
@@ -279,20 +327,37 @@ export function simulatePath(
           age: Math.max(...household.livingAges),
           // States tax capital gains as ordinary income
           ordinaryIncome: ordinaryIncome + capitalGains,
-          retirementIncome: draw.pretaxWithdrawn + other.taxableRetirement + annuityTaxable,
+          retirementIncome: draw.pretaxWithdrawn + draw.converted + other.taxableRetirement + annuityTaxable,
           taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome + capitalGains, ssIncome, household.taxStatus),
           retirementExclusionPerPerson: plan.stateRetirementExclusion,
           priceLevel: taxPriceLevel,
         })
         taxableIncome = result.taxableIncome
+        magi = result.agi
         federalTax = result.tax + hsaPenalty + earlyWithdrawalPenalty
         stateTax = state
-        const settled = Math.abs(federalTax + stateTax - tax) < 0.5
+
+        // Conversion that fills the chosen bracket (and stays under IRMAA if asked), given this pass's withdrawals
+        let nextConversion = 0
+        if (converting) {
+          const available = draw.pretaxLeft
+          const target = bracketTop(conv.fillToRate, household.taxStatus, taxPriceLevel)
+          nextConversion = solveIncreasing((c) => federalFor(baseOrdinary + c, capitalGains).taxableOrdinary, target, available)
+          // Income at 63+ sets Medicare premiums two years later
+          if (conv.stayUnderIrmaa && Math.max(...household.livingAges) >= 63) {
+            const cap = irmaaFirstThreshold(household.taxStatus, taxPriceLevel) * 0.99
+            nextConversion = Math.min(nextConversion, solveIncreasing((c) => federalFor(baseOrdinary + c, capitalGains).agi, cap, available))
+          }
+        }
+
+        const settled = Math.abs(federalTax + stateTax - tax) < 0.5 && Math.abs(nextConversion - conversion) < 1
         tax = federalTax + stateTax
+        conversion = nextConversion
         if (settled) break
-        draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age)
+        draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age, conversion)
       }
     }
+    magiStatus[t] = household.taxStatus
     balances.splice(0, balances.length, ...draw.balances)
     basis.splice(0, basis.length, ...draw.basis)
     const surplus = Math.max(-(gap + tax), 0)
@@ -347,6 +412,9 @@ export function simulatePath(
       federalTax,
       capitalGains: retired ? capitalGains : 0,
       earlyWithdrawalPenalty,
+      rothConversion: draw.converted,
+      irmaa,
+      magi: retired ? magi : 0,
       stateTax,
       taxableIncome,
     })
@@ -370,4 +438,23 @@ export function projectPlan(
     withAdjust((_, retired) => ({ return: retired ? post : pre, inflation: a.inflation }), adjust),
     startYear,
   )
+}
+
+/**
+ * Largest x in [0, max] with f(x) ≤ target, for f increasing (taxable income as a function of a conversion).
+ * Newton steps on the local slope, which is 1 to ~1.85 (more Social Security becomes taxable).
+ */
+function solveIncreasing(f: (x: number) => number, target: number, max: number): number {
+  if (max <= 0 || f(0) >= target) return 0
+  if (f(max) <= target) return max
+  let x = Math.min(target - f(0), max)
+  for (let i = 0; i < 6; i++) {
+    const fx = f(x)
+    if (Math.abs(fx - target) < 1) break
+    const slope = Math.max((f(x + 100) - fx) / 100, 1)
+    x = Math.min(Math.max(x - (fx - target) / slope, 0), max)
+  }
+  // Never overshoot the target
+  while (x > 0 && f(x) > target + 1) x = Math.max(x - (f(x) - target), 0)
+  return x
 }

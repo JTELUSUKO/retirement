@@ -54,6 +54,8 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
                   <th className={th}>Contributions</th>
                   <th className={th}>Withdrawal</th>
                   <th className={th}>Healthcare</th>
+                  <th className={th}>of which IRMAA</th>
+                  <th className={th}>Roth conversion</th>
                   <th className={th}>RMD</th>
                   <th className={th}>Federal tax</th>
                   <th className={th}>State tax</th>
@@ -69,6 +71,8 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
                     <td className={td}>{formatUSD(y.contributions)}</td>
                     <td className={td}>{formatUSD(y.withdrawal)}</td>
                     <td className={td}>{formatUSD(y.healthcare)}</td>
+                    <td className={td}>{formatUSD(y.irmaa)}</td>
+                    <td className={td}>{formatUSD(y.rothConversion)}</td>
                     <td className={td}>{formatUSD(y.rmd)}</td>
                     <td className={td}>{formatUSD(y.federalTax)}</td>
                     <td className={td}>{formatUSD(y.stateTax)}</td>

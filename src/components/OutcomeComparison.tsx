@@ -12,6 +12,8 @@ interface Props {
   changedLabel: string
   base: MonteCarloResult
   changed: MonteCarloResult
+  /** Extra rows, e.g. lifetime tax; `lowerIsBetter` marks which side is bold */
+  extraRows?: { label: string; base: number; changed: number; format: (n: number) => string; lowerIsBetter?: boolean }[]
 }
 
 function compare(changed: number, base: number): 'changed' | 'base' | null {
@@ -21,7 +23,7 @@ function compare(changed: number, base: number): 'changed' | 'base' | null {
 }
 
 /** Two simulations side by side: chance the money lasts and savings left, with the better value in bold. */
-export function OutcomeComparison({ title, description, endAge, baseLabel, changedLabel, base, changed }: Props) {
+export function OutcomeComparison({ title, description, endAge, baseLabel, changedLabel, base, changed, extraRows = [] }: Props) {
   const last = (mc: MonteCarloResult) => mc.years.at(-1)!
   const rows = [
     {
@@ -42,6 +44,15 @@ export function OutcomeComparison({ title, description, endAge, baseLabel, chang
       changed: formatUSDCompact(last(changed).p10),
       better: compare(last(changed).p10, last(base).p10),
     },
+    ...extraRows.map((r) => {
+      const better = compare(r.changed, r.base)
+      return {
+        label: r.label,
+        base: r.format(r.base),
+        changed: r.format(r.changed),
+        better: r.lowerIsBetter ? (better === 'changed' ? 'base' : better === 'base' ? 'changed' : null) : better,
+      }
+    }),
   ]
 
   return (
@@ -62,7 +73,7 @@ export function OutcomeComparison({ title, description, endAge, baseLabel, chang
               <td className="py-1.5">{r.label}</td>
               <td className={`py-1.5 text-right ${r.better === 'base' ? 'font-semibold' : ''}`}>{r.base}</td>
               <td className={`py-1.5 text-right ${r.better === 'changed' ? 'font-semibold' : ''}`}>
-                {r.changed} {r.better === 'changed' ? '▲' : r.better === 'base' ? '▼' : ''}
+                {r.changed}
               </td>
             </tr>
           ))}

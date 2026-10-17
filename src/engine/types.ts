@@ -58,6 +58,8 @@ export interface Plan {
   spouseClaimAge: number
   /** Married couples: what happens if one spouse dies first. */
   survivor: SurvivorSettings
+  /** Optional Roth conversions in low-income years ("fill the bracket"). */
+  rothConversion: RothConversionSettings
   socialSecurityClaimAge: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
@@ -120,6 +122,20 @@ export interface SurvivorSettings {
   spendingShare: number
 }
 
+/**
+ * Each year from `fromAge` to `toAge` (your ages; 0 = retirement age / the year before RMDs start), move pre-tax
+ * money to Roth until taxable ordinary income reaches the top of the `fillToRate` federal bracket. Optionally keep
+ * income under the first Medicare surcharge (IRMAA) threshold in years that set Medicare premiums.
+ */
+export interface RothConversionSettings {
+  enabled: boolean
+  /** Federal bracket rate to fill, e.g. 0.12 or 0.22 */
+  fillToRate: number
+  fromAge: number
+  toAge: number
+  stayUnderIrmaa: boolean
+}
+
 /** Healthcare costs in retirement, per person per year in today's dollars. */
 export interface HealthcareCosts {
   /** Premiums + out-of-pocket before Medicare (only if you retire before 65). */
@@ -179,6 +195,12 @@ export interface YearResult {
   capitalGains: number
   /** 10% early-withdrawal penalty (pre-tax withdrawals before 59½), included in federalTax */
   earlyWithdrawalPenalty: number
+  /** Pre-tax money converted to Roth this year (nominal; taxable as ordinary income) */
+  rothConversion: number
+  /** Medicare income surcharges this year (nominal; included in healthcare) */
+  irmaa: number
+  /** Modified AGI this year (nominal), used for IRMAA two years later */
+  magi: number
   stateTax: number
   /** Taxable income after deductions. */
   taxableIncome: number
