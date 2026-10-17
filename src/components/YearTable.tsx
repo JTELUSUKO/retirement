@@ -39,7 +39,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
   return (
     <div>
       <div role="tablist" className="mt-3 flex gap-1">
-        {tab('average', 'Average returns')}
+        {tab('average', 'Typical returns')}
         {tab('accounts', 'By account type')}
         {tab('simulated', 'Simulation range')}
       </div>
@@ -142,7 +142,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
         {
           {
             average: 'Start balance is in today’s dollars; other columns are in future dollars for that year.',
-            accounts: 'Start-of-year balances by account type in today’s dollars, with average returns.',
+            accounts: 'Start-of-year balances by account type in today’s dollars, with typical returns.',
             simulated: 'Start-of-year balance in today’s dollars across 1,000 simulated markets.',
           }[view]
         }

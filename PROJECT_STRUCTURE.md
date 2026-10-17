@@ -24,6 +24,9 @@ retirement/
 │   │   ├── rmd.test.ts
 │   │   ├── taxes.ts             # Federal income tax + taxable Social Security
 │   │   ├── taxes.test.ts
+│   │   ├── returns.ts           # Median (typical) return from average return + volatility
+│   │   ├── contributions.ts     # 2026 IRS contribution-limit warnings (401(k), IRA, HSA; age catch-ups)
+│   │   ├── phaseA.test.ts       # Typical returns, early-withdrawal penalty, capital gains/NIIT, limits
 │   │   ├── stateTax.ts          # State income tax (brackets, deductions, retirement exemptions, SS)
 │   │   ├── stateTax.test.ts
 │   │   ├── survivor.ts          # Couples: household by age (widowed, tax status, people), Social Security
@@ -150,6 +153,12 @@ One row per year; the age is your age at the **start** of that year.
 
 - **Taxed as income:** pre-tax withdrawals (including the whole RMD, even the part reinvested), the taxable share of other income,
   and the taxable part of Social Security (IRS provisional-income test, up to 85%).
+- **Brokerage accounts:** each tracks its cost basis (user-entered; empty = same as balance). Sales realize gains
+  above basis proportionally; a 1.5% qualified-dividend yield is taxed each retirement year and reinvested (raising
+  basis). Gains and dividends are taxed at 0/15/20% stacked on ordinary income (2026 thresholds $49,450 /
+  $98,900 and $545,500 / $613,700), plus the 3.8% NIIT above $200k / $250k MAGI. States tax them as ordinary income.
+- **Early withdrawals:** pre-tax withdrawals before 59½ owe a 10% penalty (the year you turn 59 is treated as after
+  59½). Rule of 55: 401(k)s are penalty-free if you retire at 55+, and are used before penalized pre-tax money.
 - **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
   plus a 20% penalty before 65.
 - **Not taxed:** Roth, cash, and taxable-account withdrawals
@@ -226,6 +235,13 @@ One row per year; the age is your age at the **start** of that year.
 - **Append-only history:** the system prompt is frozen; the plan travels as a snapshot in the user's message and
   is re-sent only when it changes. Earlier turns are never edited (required for preserved thinking, good for caching).
 - The chat is kept in memory only. The SDK is lazy-loaded with the Ask page.
+
+## Returns
+
+- Return inputs are **average** (arithmetic) yearly returns. The Monte Carlo draws lognormal returns with that
+  average. The "typical returns" projection uses the **median** return, (1 + mean) / √(1 + σ² / (1 + mean)²) − 1,
+  so it tracks the middle of the simulation instead of beating it.
+- Contribution limits are checked against 2026 IRS limits (warnings only; the plan uses what you enter).
 
 ## How the Monte Carlo works
 

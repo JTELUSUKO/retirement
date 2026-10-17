@@ -1,5 +1,6 @@
-import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets, withdrawProportionally } from './accounts'
+import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets } from './accounts'
 import { CONFIG_2026 } from './config/2026'
+import { medianReturn } from './returns'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { householdAt, planEndAge, socialSecurityAt } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
@@ -9,6 +10,9 @@ import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
 import { federalIncomeTax, taxableSocialSecurity } from './taxes'
 import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
+
+/** Typical qualified-dividend yield of a stock-heavy brokerage account, taxed yearly in retirement. */
+export const QUALIFIED_DIVIDEND_YIELD = 0.015
 
 /** Penalty on non-medical HSA withdrawals before 65. */
 export const HSA_PENALTY = 0.2
@@ -40,8 +44,10 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  * - Federal income tax (retired years) is paid from savings too: pre-tax withdrawals
  *   (including the whole RMD), the taxable share of other income, taxable Social Security and non-medical HSA
  *   withdrawals are taxed (plus a 20% penalty on non-medical HSA money before 65).
- *   Roth, cash and taxable-account withdrawals are untaxed (capital gains are not
- *   modeled). Taxes during working years are not modeled.
+ *   Roth and cash withdrawals are untaxed. Selling taxable (brokerage) investments realizes capital gains above
+ *   cost basis, and brokerage accounts pay qualified dividends each year; both are taxed at capital-gains
+ *   rates (plus NIIT), and as ordinary income by states. Pre-tax withdrawals before 59½ owe a 10% penalty
+ *   (401(k)s are exempt under the Rule of 55 if you retire at 55+). Taxes during working years are not modeled.
  * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
  * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
  * - Married couples can model one spouse dying first (see survivor.ts): from that age the survivor keeps
@@ -65,9 +71,11 @@ export function simulatePath(
   const accounts = [...plan.accounts]
   // RMD excess needs a taxable account to land in; add a hidden one if there isn't any.
   if (!accounts.some((a) => a.type === 'taxable')) {
-    accounts.push({ id: REINVESTED_RMD_ID, name: 'Reinvested RMDs', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0 })
+    accounts.push({ id: REINVESTED_RMD_ID, name: 'Reinvested RMDs', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: 0 })
   }
   const balances = accounts.map((a) => a.balance)
+  // Cost basis of taxable (brokerage) accounts; unused for other account types
+  const basis = accounts.map((a) => (a.type === 'taxable' ? (a.costBasis ?? a.balance) : 0))
   const bucketOf = accounts.map((a) => BUCKET_OF[a.type])
   const indexesIn = (bucket: TaxBucket) => bucketOf.flatMap((b, i) => (b === bucket ? [i] : []))
   const pretax = indexesIn('pretax')
@@ -75,33 +83,77 @@ export function simulatePath(
   const firstTaxable = bucketOf.indexOf('taxable')
   const total = () => balances.reduce((sum, b) => sum + b, 0)
 
+  const isTaxable = bucketOf.map((b) => b === 'taxable')
+  const { penalty: EARLY_PENALTY, ruleOf55Age } = CONFIG_2026.federalTax.earlyWithdrawal
+  // Rule of 55: 401(k)s can be withdrawn without the 10% penalty if you leave work at 55 or later
+  const penaltyFreeEarly = pretax.filter((i) => accounts[i].type === '401k' && plan.retirementAge >= ruleOf55Age)
+  const penalizedEarly = pretax.filter((i) => !penaltyFreeEarly.includes(i))
+
   /**
-   * Take the RMD, then `need` dollars from a copy of `from`: the HSA pays up to
-   * `medicalCost` first (tax-free), then accounts in withdrawal order.
-   * Pure: lets the tax loop try different amounts before committing.
+   * Take `amount` proportionally from the accounts `idx` in (bal, bas), tracking capital gains realized from
+   * taxable accounts (the part of each sale above its share of cost basis).
    */
-  const drawDown = (from: number[], need: number, rmdRequired: number, medicalCost: number) => {
+  const take = (bal: number[], bas: number[], idx: number[], amount: number) => {
+    const available = idx.reduce((sum, i) => sum + bal[i], 0)
+    if (available <= 0 || amount <= 0) return { taken: 0, gains: 0 }
+    const taken = Math.min(amount, available)
+    let gains = 0
+    for (const i of idx) {
+      const part = taken * (bal[i] / available)
+      if (isTaxable[i] && bal[i] > 0) {
+        const basisShare = Math.min(bas[i] / bal[i], 1)
+        gains += part * (1 - basisShare)
+        bas[i] -= part * basisShare
+      }
+      bal[i] -= part
+    }
+    return { taken, gains }
+  }
+
+  /**
+   * Take the RMD, then `need` dollars from copies of the balances: the HSA pays up to `medicalCost` first
+   * (tax-free), then accounts in withdrawal order. Before 59½, penalty-free money is used before pre-tax money
+   * that would owe the 10% penalty. Pure: lets the tax loop try different amounts before committing.
+   */
+  const drawDown = (from: number[], fromBasis: number[], need: number, rmdRequired: number, medicalCost: number, age: number) => {
     const next = [...from]
+    const nextBasis = [...fromBasis]
     const withdrawalsByBucket = emptyBuckets()
-    const rmd = withdrawProportionally(next, pretax, rmdRequired)
+    const rmd = take(next, nextBasis, pretax, rmdRequired).taken
     withdrawalsByBucket.pretax += Math.min(rmd, need)
     const rmdReinvested = Math.max(rmd - need, 0)
     next[firstTaxable] += rmdReinvested
+    nextBasis[firstTaxable] += rmdReinvested
     let remaining = Math.max(need - rmd, 0)
+    let realizedGains = 0
+    let penalized = 0
 
-    const hsaMedical = withdrawProportionally(next, hsa, Math.min(medicalCost, remaining))
+    const hsaMedical = take(next, nextBasis, hsa, Math.min(medicalCost, remaining)).taken
     withdrawalsByBucket.hsa += hsaMedical
     remaining -= hsaMedical
 
-    for (const bucket of WITHDRAWAL_ORDER) {
+    // 59 is treated as after 59½ (withdrawals assumed in the second half of that year)
+    const early = age < 59
+    const groups: { bucket: TaxBucket; idx: number[]; penalized?: boolean }[] = WITHDRAWAL_ORDER.flatMap((bucket) =>
+      bucket === 'pretax' && early
+        ? [
+            { bucket, idx: penaltyFreeEarly },
+            { bucket, idx: penalizedEarly, penalized: true },
+          ]
+        : [{ bucket, idx: indexesIn(bucket) }],
+    )
+    for (const g of groups) {
       if (remaining <= 0) break
-      const taken = withdrawProportionally(next, indexesIn(bucket), remaining)
-      withdrawalsByBucket[bucket] += taken
+      const { taken, gains } = take(next, nextBasis, g.idx, remaining)
+      withdrawalsByBucket[g.bucket] += taken
+      realizedGains += gains
+      if (g.penalized) penalized += taken
       remaining -= taken
     }
     const extraPretax = withdrawalsByBucket.pretax - Math.min(rmd, need)
     return {
       balances: next,
+      basis: nextBasis,
       withdrawalsByBucket,
       rmd,
       rmdReinvested,
@@ -109,6 +161,10 @@ export function simulatePath(
       pretaxWithdrawn: rmd + extraPretax,
       /** HSA money used for non-medical spending (taxable; 20% penalty before 65). */
       hsaNonMedical: withdrawalsByBucket.hsa - hsaMedical,
+      /** Capital gains realized by selling taxable investments */
+      realizedGains,
+      /** Pre-tax withdrawals subject to the 10% early-withdrawal penalty */
+      penalized,
       shortfall: remaining,
     }
   }
@@ -147,9 +203,12 @@ export function simulatePath(
 
     // Buy the annuity at the start of the purchase year (after recording the start balance)
     let annuityPremium = 0
+    let purchaseGains = 0
     if (purchase.enabled && age === purchase.purchaseAge) {
       const sources = purchase.fundedFrom === 'pretax' ? pretax : afterTax
-      annuityPremium = withdrawProportionally(balances, sources, purchase.amount * priceLevel)
+      const bought = take(balances, basis, sources, purchase.amount * priceLevel)
+      annuityPremium = bought.taken
+      purchaseGains = bought.gains
       const payment = annuityPremium * payoutRate(purchase, plan.filingStatus)
       annuity = {
         payment,
@@ -190,14 +249,20 @@ export function simulatePath(
     let federalTax = 0
     let stateTax = 0
     let taxableIncome = 0
-    let draw = drawDown(balances, Math.max(gap, 0), rmdRequired, healthcare)
+    let capitalGains = 0
+    let earlyWithdrawalPenalty = 0
+    // Qualified dividends from brokerage accounts (taxed in retirement; reinvested, so they add to basis)
+    const dividends = balances.reduce((sum, b, i) => sum + (isTaxable[i] ? b * QUALIFIED_DIVIDEND_YIELD : 0), 0)
+    let draw = drawDown(balances, basis, Math.max(gap, 0), rmdRequired, healthcare, age)
     if (retired) {
       const annuityTaxable = annuityIncome * (annuity?.taxableShare ?? 0)
       const taxPriceLevel = priceLevel * taxIndexAtStart
       for (let pass = 0; pass < 25; pass++) {
         const ordinaryIncome = draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityTaxable
+        capitalGains = draw.realizedGains + dividends + purchaseGains
         const result = federalIncomeTax({
           ordinaryIncome,
+          capitalGains,
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
@@ -205,30 +270,38 @@ export function simulatePath(
           priceLevel: taxPriceLevel,
           seniors: household.livingAges.filter((a) => a >= 65).length,
         })
-        const penalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
+        earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
+        const hsaPenalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
           state: plan.state,
           status: household.taxStatus,
           // State age rules (retirement-income exemptions): the oldest person alive
           age: Math.max(...household.livingAges),
-          ordinaryIncome,
+          // States tax capital gains as ordinary income
+          ordinaryIncome: ordinaryIncome + capitalGains,
           retirementIncome: draw.pretaxWithdrawn + other.taxableRetirement + annuityTaxable,
-          taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome, ssIncome, household.taxStatus),
+          taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome + capitalGains, ssIncome, household.taxStatus),
           retirementExclusionPerPerson: plan.stateRetirementExclusion,
           priceLevel: taxPriceLevel,
         })
         taxableIncome = result.taxableIncome
-        federalTax = result.tax + penalty
+        federalTax = result.tax + hsaPenalty + earlyWithdrawalPenalty
         stateTax = state
         const settled = Math.abs(federalTax + stateTax - tax) < 0.5
         tax = federalTax + stateTax
         if (settled) break
-        draw = drawDown(balances, Math.max(gap + tax, 0), rmdRequired, healthcare)
+        draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age)
       }
     }
     balances.splice(0, balances.length, ...draw.balances)
+    basis.splice(0, basis.length, ...draw.basis)
     const surplus = Math.max(-(gap + tax), 0)
     balances[firstTaxable] += surplus
+    basis[firstTaxable] += surplus
+    // Reinvested dividends raise the basis of each brokerage account
+    balances.forEach((b, i) => {
+      if (isTaxable[i]) basis[i] += b * QUALIFIED_DIVIDEND_YIELD
+    })
     if (draw.shortfall > 0.005 && depletionAge === null) depletionAge = age
 
     // Growth, then year-end contributions while working (HSA contributions stop at Medicare age)
@@ -239,6 +312,7 @@ export function simulatePath(
       if (!retired && !hsaClosed) {
         const added = (acc.annualContribution + acc.employerMatch) * priceLevel
         balances[i] += added
+        if (isTaxable[i]) basis[i] += added
         contributions += added
       }
     })
@@ -271,6 +345,8 @@ export function simulatePath(
       healthcare,
       tax,
       federalTax,
+      capitalGains: retired ? capitalGains : 0,
+      earlyWithdrawalPenalty,
       stateTax,
       taxableIncome,
     })
@@ -279,16 +355,19 @@ export function simulatePath(
   return { years, balanceAtRetirement, balanceAtRetirementReal, depletionAge, rmdStartAge: rmdStartAge(birthYear) }
 }
 
-/** Deterministic projection: the average return and inflation every year. */
+/** Deterministic projection: the typical (median) return and average inflation every year. */
 export function projectPlan(
   plan: Plan,
   startYear = new Date().getFullYear(),
   adjust?: MarketAdjust,
 ): ProjectionResult {
-  const { returnPreRetirement, returnPostRetirement, inflation } = plan.assumptions
+  const a = plan.assumptions
+  // Typical (median) returns, so this path matches the middle of the Monte Carlo rather than beating it
+  const pre = medianReturn(a.returnPreRetirement, a.volatilityPreRetirement)
+  const post = medianReturn(a.returnPostRetirement, a.volatilityPostRetirement)
   return simulatePath(
     plan,
-    withAdjust((_, retired) => ({ return: retired ? returnPostRetirement : returnPreRetirement, inflation }), adjust),
+    withAdjust((_, retired) => ({ return: retired ? post : pre, inflation: a.inflation }), adjust),
     startYear,
   )
 }

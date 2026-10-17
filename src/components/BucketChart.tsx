@@ -40,7 +40,7 @@ function ChartTooltip({ active, label, payload, buckets }: TooltipProps) {
   )
 }
 
-/** Stacked balance by tax bucket (average returns). Colors are fixed per bucket. */
+/** Stacked balance by tax bucket (typical returns). Colors are fixed per bucket. */
 export function BucketChart({ years, retirementAge, rmdStartAge }: Props) {
   // Only show buckets that ever hold money; colors stay tied to the bucket, not its position.
   const buckets = BUCKETS.filter((b) => years.some((y) => y.startByBucketReal[b] > 0.5))

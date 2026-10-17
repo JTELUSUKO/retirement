@@ -5,7 +5,7 @@ import { basePlan } from './testFixtures'
 import type { Account, Plan } from './types'
 
 const account = (type: Account['type'], balance: number): Account => ({
-  id: type, name: type, type, balance, annualContribution: 0, employerMatch: 0,
+  id: type, name: type, type, balance, annualContribution: 0, employerMatch: 0, costBasis: null,
 })
 
 // Retired at 60, no growth or inflation (from basePlan)

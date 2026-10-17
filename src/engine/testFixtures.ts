@@ -9,7 +9,7 @@ export const basePlan: Plan = {
   retirementAge: 60,
   lifeExpectancy: 70,
   accounts: [
-    { id: 'a', name: '401k', type: '401k', balance: 100_000, annualContribution: 0, employerMatch: 0 },
+    { id: 'a', name: '401k', type: '401k', balance: 100_000, annualContribution: 0, employerMatch: 0, costBasis: null },
   ],
   annualSpending: 10_000,
   socialSecurityAtFRA: 0,

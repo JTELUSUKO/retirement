@@ -56,6 +56,15 @@ export const CONFIG_2026 = {
      * $6,000 is reduced by 6% of MAGI above the threshold (Schedule 1-A Part V). Not indexed.
      */
     seniorDeduction: { amount: 6_000, lastYear: 2028, phaseOutStart: { single: 75_000, married: 150_000 }, phaseOutRate: 0.06 },
+    /**
+     * Long-term capital gains and qualified dividends (Rev. Proc. 2025-32 §3.03): 0% up to the first amount of
+     * taxable income, 15% up to the second, 20% above. Indexed.
+     */
+    capitalGains: { zeroRateTop: { single: 49_450, married: 98_900 }, fifteenRateTop: { single: 545_500, married: 613_700 } },
+    /** Net investment income tax: 3.8% above these modified AGIs (not indexed by law). */
+    niit: { rate: 0.038, threshold: { single: 200_000, married: 250_000 } },
+    /** 10% additional tax on retirement-plan withdrawals before 59½ (Rule of 55 for 401(k)s left at 55+). */
+    earlyWithdrawal: { penalty: 0.1, ruleOf55Age: 55 },
     /** Social Security taxation thresholds on provisional income. Not indexed by law. */
     socialSecurityThresholds: { single: [25_000, 34_000], married: [32_000, 44_000] } as Record<'single' | 'married', [number, number]>,
   },

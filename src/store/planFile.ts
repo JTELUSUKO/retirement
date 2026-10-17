@@ -55,6 +55,7 @@ function shapeProblem(plan: unknown): string | null {
     for (const key of ['balance', 'annualContribution', 'employerMatch']) {
       if (!isNum(a[key])) return `account “${a.name}”: “${key}” must be a number`
     }
+    if (a.costBasis !== null && !isNum(a.costBasis)) return `account “${a.name}”: cost basis must be a number or empty`
   }
 
   const survivor = plan.survivor

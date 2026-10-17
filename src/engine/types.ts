@@ -19,6 +19,8 @@ export interface Account {
   annualContribution: number
   /** Employer match per year, in today's dollars. */
   employerMatch: number
+  /** Taxable accounts: what you paid for the investments (null = same as balance, i.e. no gains yet). */
+  costBasis: number | null
 }
 
 export interface Assumptions {
@@ -169,10 +171,14 @@ export interface YearResult {
   spending: number
   /** Healthcare costs for the year (included in spending). */
   healthcare: number
-  /** All income tax for the year (federal + HSA penalty + state), retired years only, paid from savings. */
+  /** All income tax for the year (federal + penalties + state), retired years only, paid from savings. */
   tax: number
-  /** Federal income tax plus any HSA penalty */
+  /** Federal income tax, capital gains tax, NIIT, plus any early-withdrawal / HSA penalties */
   federalTax: number
+  /** Capital gains realized plus qualified dividends this year (nominal) */
+  capitalGains: number
+  /** 10% early-withdrawal penalty (pre-tax withdrawals before 59½), included in federalTax */
+  earlyWithdrawalPenalty: number
   stateTax: number
   /** Taxable income after deductions. */
   taxableIncome: number

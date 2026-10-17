@@ -1,4 +1,4 @@
-import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
+import { AGE_LIMITS, CONFIG_2026, contributionWarnings, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { AnnuitySection } from './AnnuitySection'
@@ -23,6 +23,7 @@ export function PlanForm() {
   const issues = validatePlan(plan)
   // Blank (0) fields just show their placeholder; the results area lists what's still needed
   const married = plan.filingStatus === 'married'
+  const warnings = contributionWarnings(plan)
   const errorFor = (field: PlanIssue['field']) =>
     field !== 'accounts' && plan[field] === 0 ? undefined : issues.find((i) => i.field === field)?.message
   const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
@@ -96,6 +97,28 @@ export function PlanForm() {
               <NumberField label="You add / yr" prefix="$" min={0} step={500} value={acc.annualContribution} onChange={(v) => updateAccount(acc.id, { annualContribution: v })} />
               <NumberField label="Match / yr" prefix="$" min={0} step={500} value={acc.employerMatch} onChange={(v) => updateAccount(acc.id, { employerMatch: v })} />
             </div>
+            {acc.type === 'taxable' && (
+              <div>
+                <NumberField
+                  label="Cost basis (what you paid in)"
+                  prefix="$"
+                  min={0}
+                  step={1000}
+                  placeholder="Same as balance"
+                  value={acc.costBasis ?? 0}
+                  onChange={(v) => updateAccount(acc.id, { costBasis: v === 0 ? null : v })}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Gains above this are taxed when sold (0%, 15% or 20%). Find it on your brokerage statement; leave
+                  empty to assume no gains yet.
+                </p>
+              </div>
+            )}
+            {warnings.filter((w) => w.accountId === acc.id).map((w) => (
+              <p key={w.message} role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
+                ⚠ {w.message}
+              </p>
+            ))}
           </div>
         ))}
         <button type="button" onClick={addAccount} className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-400">
@@ -181,8 +204,8 @@ export function PlanForm() {
 
       <Section title="Assumptions">
         <div className="grid grid-cols-3 gap-3">
-          <PercentField label="Return before" min={-50} max={50} value={plan.assumptions.returnPreRetirement} onChange={(v) => updateAssumptions({ returnPreRetirement: v })} />
-          <PercentField label="Return after" min={-50} max={50} value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
+          <PercentField label="Avg return before" min={-50} max={50} value={plan.assumptions.returnPreRetirement} onChange={(v) => updateAssumptions({ returnPreRetirement: v })} />
+          <PercentField label="Avg return after" min={-50} max={50} value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
           <PercentField label="Inflation" min={-5} max={20} value={plan.assumptions.inflation} onChange={(v) => updateAssumptions({ inflation: v })} />
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -190,7 +213,9 @@ export function PlanForm() {
           <PercentField label="Volatility after" min={0} max={60} value={plan.assumptions.volatilityPostRetirement} onChange={(v) => updateAssumptions({ volatilityPostRetirement: v })} />
         </div>
         <p className="text-xs text-slate-500">
-          Volatility is how much returns swing year to year. Roughly 15% for a stock-heavy mix, 10% for a balanced one.
+          Average (not compounded) yearly returns, before fees. Volatility is how much returns swing year to year:
+          roughly 15% for a stock-heavy mix, 10% for a balanced one. Money grows at the typical (median) rate, which is
+          lower than the average when returns swing (about 1 point lower at 15%).
         </p>
       </Section>
 

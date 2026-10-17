@@ -277,7 +277,7 @@ export function Scenarios() {
               return emphasize(`${icon} ${pct}%`, successValues[i] === bestOf(successValues) && results.length > 1)
             })}
             {resultRow('Savings at retirement', (r) => formatUSDCompact(r.savingsAtRetirement))}
-            {resultRow('With average returns', (r) =>
+            {resultRow('With typical returns', (r) =>
               r.depletionAge === null ? `Lasts past ${endLabel(plan)}` : `Runs out at ${ageLabel(plan, r.depletionAge)}`,
             )}
             {resultRow(`Left at ${endLabel(plan)}, typical markets`, (r, i) =>

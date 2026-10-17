@@ -55,9 +55,9 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
           tone={successTone}
         />
         <StatCard
-          label="With average returns"
+          label="With typical returns"
           value={lasts ? `Lasts past ${planEndAge(plan)}` : `Runs out at ${result.depletionAge}`}
-          detail={`${spouseOffset(plan) !== 0 ? `Your age (spouse ${(lasts ? planEndAge(plan) : result.depletionAge!) + spouseOffset(plan)}) · ` : ''}Same return and inflation every year`}
+          detail={`${spouseOffset(plan) !== 0 ? `Your age (spouse ${(lasts ? planEndAge(plan) : result.depletionAge!) + spouseOffset(plan)}) · ` : ''}Median return every year`}
         />
         <StatCard
           label={plan.filingStatus === 'married' ? 'Social Security, both claimed' : `Social Security at ${plan.socialSecurityClaimAge}`}
@@ -67,11 +67,11 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       </div>
 
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        Income tax over retirement (average returns):{' '}
+        Income tax over retirement (typical returns):{' '}
         <strong className="tabular-nums">{formatUSDCompact(lifetimeTaxReal)}</strong> in today's dollars (
         {formatUSDCompact(lifetimeTaxReal - lifetimeStateTaxReal)} federal,{' '}
         {plan.state ? `${formatUSDCompact(lifetimeStateTaxReal)} state` : 'no state chosen'}), about{' '}
-        {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals. Capital gains and local taxes aren't included.
+        {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals, including capital gains on brokerage sales and any early-withdrawal penalty. Local taxes aren't included.
         <br />
         Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
         today's dollars, including medical costs rising faster than inflation.
@@ -92,7 +92,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Savings by account type</h2>
         <p className="text-sm text-slate-500">
-          With average returns, in today's dollars. Healthcare is paid from your HSA first; other spending and income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
+          With typical returns, in today's dollars. Healthcare is paid from your HSA first; other spending and income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
           {rmdAge}; any you don't spend are reinvested in taxable.
         </p>
         <BucketChart years={result.years} retirementAge={plan.retirementAge} rmdStartAge={rmdAge} />

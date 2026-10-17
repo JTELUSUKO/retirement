@@ -32,3 +32,6 @@ export {
   spouseOffset,
   survivorFromAge,
 } from './survivor'
+export { medianReturn } from './returns'
+export { contributionWarnings, k401Limit } from './contributions'
+export type { ContributionWarning } from './contributions'

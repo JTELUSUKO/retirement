@@ -21,7 +21,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
     name: 'get_plan_results',
     description:
       "Run the user's current plan and return its headline results: chance the money lasts (Monte Carlo), savings at " +
-      'retirement, the average-returns outcome, savings left at the end in typical and poor markets, lifetime federal and state income tax ' +
+      'retirement, the typical-returns outcome, savings left at the end in typical and poor markets, lifetime federal and state income tax ' +
       'and healthcare (today’s dollars), and milestone rows every 5 years. Call this before answering questions about ' +
       'how the plan is doing.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -99,7 +99,7 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     planEndsAt: endLabel(plan),
     retirementAge: plan.retirementAge,
     savingsAtRetirement: round(e.savingsAtRetirement),
-    averageReturnsOutcome: e.depletionAge === null ? `lasts past ${endLabel(plan)}` : `runs out at ${ageLabel(plan, e.depletionAge)}`,
+    typicalReturnsOutcome: e.depletionAge === null ? `lasts past ${endLabel(plan)}` : `runs out at ${ageLabel(plan, e.depletionAge)}`,
     savingsLeftAtEnd: { typicalMarkets: round(e.leftTypical), poorMarkets10thPercentile: round(e.leftPoor) },
     lifetimeFederalTax: round(e.lifetimeFederalTax),
     lifetimeStateTax: round(e.lifetimeStateTax),

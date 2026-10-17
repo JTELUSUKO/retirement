@@ -11,10 +11,10 @@ export const examplePlan: Plan = {
   retirementAge: 65,
   lifeExpectancy: 95,
   accounts: [
-    { id: '1', name: '401(k)', type: '401k', balance: 450_000, annualContribution: 24_500, employerMatch: 6_000 },
-    { id: '2', name: 'Roth IRA', type: 'roth', balance: 80_000, annualContribution: 7_500, employerMatch: 0 },
-    { id: '3', name: 'Brokerage', type: 'taxable', balance: 60_000, annualContribution: 6_000, employerMatch: 0 },
-    { id: '4', name: 'Emergency fund', type: 'cash', balance: 30_000, annualContribution: 0, employerMatch: 0 },
+    { id: '1', name: '401(k)', type: '401k', balance: 450_000, annualContribution: 24_500, employerMatch: 6_000, costBasis: null },
+    { id: '2', name: 'Roth IRA', type: 'roth', balance: 80_000, annualContribution: 7_500, employerMatch: 0, costBasis: null },
+    { id: '3', name: 'Brokerage', type: 'taxable', balance: 60_000, annualContribution: 6_000, employerMatch: 0, costBasis: 45_000 },
+    { id: '4', name: 'Emergency fund', type: 'cash', balance: 30_000, annualContribution: 0, employerMatch: 0, costBasis: null },
   ],
   annualSpending: 60_000,
   socialSecurityAtFRA: 2_800,
@@ -148,6 +148,10 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       survivor: { ...state.plan.survivor, whoDies: state.plan.survivor.whoDies ?? 'you' },
     }
   }
+  // v11 → v12: brokerage cost basis (unknown = same as balance, i.e. no gains yet)
+  if (version < 12) {
+    state.plan = { ...state.plan, accounts: state.plan.accounts.map((a) => ({ ...a, costBasis: a.costBasis ?? null })) }
+  }
   return state
 }
 
@@ -155,7 +159,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 11
+export const PLAN_VERSION = 12
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -202,7 +206,7 @@ export const usePlanStore = create<PlanState>()(
             ...p,
             accounts: [
               ...p.accounts,
-              { id: crypto.randomUUID(), name: 'New account', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0 },
+              { id: crypto.randomUUID(), name: 'New account', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: null },
             ],
           })),
         removeAccount: (id) => edit((p) => ({ ...p, accounts: p.accounts.filter((a) => a.id !== id) })),

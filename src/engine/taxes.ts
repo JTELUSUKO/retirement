@@ -20,6 +20,8 @@ export function taxableSocialSecurity(otherIncome: number, benefits: number, sta
 export interface TaxInput {
   /** Pre-tax withdrawals (incl. full RMD) + pension, nominal dollars. */
   ordinaryIncome: number
+  /** Long-term capital gains + qualified dividends, nominal (taxed at 0/15/20%) */
+  capitalGains?: number
   socialSecurity: number
   age: number
   year: number
@@ -31,20 +33,27 @@ export interface TaxInput {
 }
 
 export interface TaxResult {
+  /** Total federal tax: ordinary + capital gains + NIIT */
   tax: number
+  capitalGainsTax: number
+  niit: number
   taxableIncome: number
 }
 
 /**
  * Approximate federal income tax for a retiree: ordinary income + taxable Social Security,
- * minus the standard deduction (plus 65+ additions). Capital gains, state tax and credits
- * are not modeled.
+ * minus the standard deduction (plus 65+ additions), through the brackets; long-term capital gains
+ * and qualified dividends at 0/15/20% stacked on top; plus the 3.8% net investment income tax.
+ * Credits and AMT are not modeled.
  */
 export function federalIncomeTax(input: TaxInput): TaxResult {
   const { ordinaryIncome, socialSecurity, age, year, status, priceLevel } = input
+  const gains = Math.max(input.capitalGains ?? 0, 0)
   const filers = status === 'married' ? 2 : 1
   const seniors = Math.min(input.seniors ?? (age >= 65 ? filers : 0), filers)
-  const grossIncome = ordinaryIncome + taxableSocialSecurity(ordinaryIncome, socialSecurity, status)
+  // Provisional income for Social Security includes capital gains
+  const taxableSs = taxableSocialSecurity(ordinaryIncome + gains, socialSecurity, status)
+  const grossIncome = ordinaryIncome + gains + taxableSs
 
   let deduction = T.standardDeduction[status] * priceLevel
   if (seniors > 0) {
@@ -57,14 +66,33 @@ export function federalIncomeTax(input: TaxInput): TaxResult {
     }
   }
 
-  const taxableIncome = Math.max(grossIncome - deduction, 0)
-  let tax = 0
+  // Deductions offset ordinary income first; capital gains stack on top of it
+  const ordinaryPart = ordinaryIncome + taxableSs
+  const taxableOrdinary = Math.max(ordinaryPart - deduction, 0)
+  const taxableGains = Math.max(gains - Math.max(deduction - ordinaryPart, 0), 0)
+
+  let ordinaryTax = 0
   let lower = 0
   for (const [upper, rate] of T.brackets[status]) {
     const top = upper * priceLevel
-    if (taxableIncome <= lower) break
-    tax += (Math.min(taxableIncome, top) - lower) * rate
+    if (taxableOrdinary <= lower) break
+    ordinaryTax += (Math.min(taxableOrdinary, top) - lower) * rate
     lower = top
   }
-  return { tax, taxableIncome }
+
+  const zeroTop = T.capitalGains.zeroRateTop[status] * priceLevel
+  const fifteenTop = T.capitalGains.fifteenRateTop[status] * priceLevel
+  const atZero = Math.max(0, Math.min(taxableGains, zeroTop - taxableOrdinary))
+  const atFifteen = Math.max(0, Math.min(taxableGains - atZero, fifteenTop - Math.max(taxableOrdinary, zeroTop)))
+  const atTwenty = taxableGains - atZero - atFifteen
+  const capitalGainsTax = 0.15 * atFifteen + 0.2 * atTwenty
+
+  const niit = T.niit.rate * Math.min(gains, Math.max(grossIncome - T.niit.threshold[status], 0))
+
+  return {
+    tax: ordinaryTax + capitalGainsTax + niit,
+    capitalGainsTax,
+    niit,
+    taxableIncome: taxableOrdinary + taxableGains,
+  }
 }

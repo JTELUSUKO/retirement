@@ -125,7 +125,7 @@ export function Summary() {
             {[
               [`Chance money lasts to ${endLabel(plan)}`, `${success}%`, `${verdict} · ${mc.runs.toLocaleString()} simulations`],
               [`Savings at ${plan.retirementAge}`, formatUSDCompact(base.savingsAtRetirement), "Today's dollars"],
-              ['With average returns', base.depletionAge === null ? `Lasts past ${endLabel(plan)}` : `Runs out at ${ageLabel(plan, base.depletionAge)}`, 'Same return every year'],
+              ['With typical returns', base.depletionAge === null ? `Lasts past ${endLabel(plan)}` : `Runs out at ${ageLabel(plan, base.depletionAge)}`, 'Median return every year'],
               [`Social Security at ${plan.socialSecurityClaimAge}`, `${formatUSD(ssMonthly)}/mo`, "Today's dollars"],
             ].map(([label, value, note]) => (
               <div key={label} className="rounded-md border border-slate-200 p-3">
@@ -136,7 +136,7 @@ export function Summary() {
             ))}
           </div>
           <p className="text-sm text-slate-700">
-            Over retirement (average returns, today's dollars): income tax {formatUSDCompact(base.lifetimeTax)} (
+            Over retirement (typical returns, today's dollars): income tax {formatUSDCompact(base.lifetimeTax)} (
             {formatUSDCompact(base.lifetimeFederalTax)} federal, {formatUSDCompact(base.lifetimeStateTax)} state),
             healthcare {formatUSDCompact(base.lifetimeHealthcare)}. Savings left at {endLabel(plan)}:{' '}
             {formatUSDCompact(base.leftTypical)} in typical markets, {formatUSDCompact(base.leftPoor)} in poor markets.
@@ -279,7 +279,7 @@ export function Summary() {
           )}
         </Section>
 
-        <Section title="Milestones (average returns, today's dollars)">
+        <Section title="Milestones (typical returns, today's dollars)">
           <table className="w-full text-sm">
             <thead>
               <tr>
@@ -331,7 +331,13 @@ export function Summary() {
               exemptions use the amount you entered.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Brokerage sales are taxed on gains above cost basis, and dividends yearly, at capital-gains rates plus NIIT;
+              pre-tax withdrawals before 59½ owe a 10% penalty (Rule of 55 for 401(k)s). “Typical returns” use the median
+              compounded return.
+            </li>
+            <li>
+              Not modeled: local/city income tax, state income-based phase-outs, Medicare surcharges (IRMAA), Roth
+              conversions, ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>

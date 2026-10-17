@@ -104,6 +104,12 @@ describe('plan store: scenarios', () => {
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3, 1])
   })
 
+  it('upgrades a v11 plan: brokerage cost basis unknown', () => {
+    const v11 = { ...examplePlan, accounts: examplePlan.accounts.map(({ costBasis: _c, ...a }) => a) }
+    const { plan } = migratePlanState({ plan: v11 }, 11)
+    expect(plan.accounts.every((a) => a.costBasis === null)).toBe(true)
+  })
+
   it('upgrades a v10 couple: spouse gets your age and claiming age, and you are the one who dies', () => {
     const { spouseCurrentAge: _a, spouseClaimAge: _c, ...rest } = examplePlan
     const v10 = { ...rest, filingStatus: 'married', currentAge: 58, socialSecurityClaimAge: 68, survivor: { enabled: true, firstDeathAge: 80, spendingShare: 0.75 } }
