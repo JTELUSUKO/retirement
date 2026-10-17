@@ -14,6 +14,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Other income: annuities, pensions, part-time work and rental income
 - What buying an annuity with part of your savings would do to your odds and what you leave behind
 - A year-by-year table
+- Side-by-side what-if scenarios (retire earlier, spend less, claim Social Security later) and stress tests (market crash, high inflation)
 
 Your data never leaves your browser. Use **Export** to save a backup file and **Import** to restore it.
 

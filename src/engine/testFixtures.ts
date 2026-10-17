@@ -21,6 +21,7 @@ export const basePlan: Plan = {
     inflationAdjusted: false,
     fundedFrom: 'pretax',
   },
+  scenarios: [],
   healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
   assumptions: {
     returnPreRetirement: 0,

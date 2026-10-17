@@ -60,6 +60,20 @@ function shapeProblem(plan: unknown): string | null {
   if (annuity.payoutRate !== null && !isNum(annuity.payoutRate)) return 'the annuity payout rate must be a number or empty'
   if (annuity.fundedFrom !== 'pretax' && annuity.fundedFrom !== 'aftertax') return 'the annuity funding source is invalid'
 
+  if (!Array.isArray(plan.scenarios)) return '“scenarios” must be a list'
+  for (const [i, sc] of plan.scenarios.entries()) {
+    if (!isObj(sc) || typeof sc.id !== 'string' || typeof sc.name !== 'string' || !isObj(sc.overrides)) {
+      return `scenario ${i + 1} is incomplete`
+    }
+    if (!['none', 'crash', 'high-inflation'].includes(sc.stress as string)) return `scenario “${sc.name}” has an unknown stress test`
+    for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge']) {
+      if (sc.overrides[key] !== undefined && !isNum(sc.overrides[key])) return `scenario “${sc.name}”: “${key}” must be a number`
+    }
+    if (sc.overrides.annuityEnabled !== undefined && typeof sc.overrides.annuityEnabled !== 'boolean') {
+      return `scenario “${sc.name}”: “annuityEnabled” must be true or false`
+    }
+  }
+
   if (!Array.isArray(plan.incomeStreams)) return '“incomeStreams” must be a list'
   for (const [i, s] of plan.incomeStreams.entries()) {
     if (!isObj(s) || typeof s.id !== 'string' || typeof s.name !== 'string') return `income ${i + 1} is incomplete`

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Account, IncomeStream, Plan } from '../engine'
+import type { Account, IncomeStream, Plan, Scenario } from '../engine'
 
 export const defaultPlan: Plan = {
   filingStatus: 'single',
@@ -25,6 +25,7 @@ export const defaultPlan: Plan = {
     inflationAdjusted: false,
     fundedFrom: 'pretax',
   },
+  scenarios: [],
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -35,7 +36,7 @@ export const defaultPlan: Plan = {
   },
 }
 
-/** Keeps ages, filing status, healthcare estimates and assumptions; removes accounts and zeroes income and spending. */
+/** Keeps ages, filing status, healthcare estimates and assumptions; removes accounts and scenarios and zeroes income and spending. */
 export const clearedPlan = (plan: Plan): Plan => ({
   ...plan,
   accounts: [],
@@ -43,6 +44,7 @@ export const clearedPlan = (plan: Plan): Plan => ({
   socialSecurityAtFRA: 0,
   incomeStreams: [],
   annuityPurchase: { ...plan.annuityPurchase, enabled: false },
+  scenarios: [],
 })
 
 /** Upgrade a plan saved by an older version of the app. */
@@ -82,11 +84,18 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       annuityPurchase: state.plan.annuityPurchase ?? { ...defaultPlan.annuityPurchase, purchaseAge: state.plan.retirementAge },
     }
   }
+  // v6 → v7: scenarios for comparison
+  if (version < 7) {
+    state.plan = { ...state.plan, scenarios: state.plan.scenarios ?? [] }
+  }
   return state
 }
 
+/** Scenarios shown next to the base plan (each runs its own simulation). */
+export const MAX_SCENARIOS = 3
+
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 6
+export const PLAN_VERSION = 7
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -104,6 +113,9 @@ interface PlanState {
   addIncome: () => void
   updateIncome: (id: string, patch: Partial<IncomeStream>) => void
   removeIncome: (id: string) => void
+  addScenario: (scenario: Omit<Scenario, 'id'>) => void
+  updateScenario: (id: string, patch: Partial<Scenario>) => void
+  removeScenario: (id: string) => void
   clear: () => void
   loadExample: () => void
   importPlan: (plan: Plan) => void
@@ -154,6 +166,15 @@ export const usePlanStore = create<PlanState>()(
         updateIncome: (id, patch) =>
           edit((p) => ({ ...p, incomeStreams: p.incomeStreams.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
         removeIncome: (id) => edit((p) => ({ ...p, incomeStreams: p.incomeStreams.filter((i) => i.id !== id) })),
+        addScenario: (scenario) =>
+          edit((p) =>
+            p.scenarios.length >= MAX_SCENARIOS
+              ? p
+              : { ...p, scenarios: [...p.scenarios, { ...scenario, id: crypto.randomUUID() }] },
+          ),
+        updateScenario: (id, patch) =>
+          edit((p) => ({ ...p, scenarios: p.scenarios.map((sc) => (sc.id === id ? { ...sc, ...patch } : sc)) })),
+        removeScenario: (id) => edit((p) => ({ ...p, scenarios: p.scenarios.filter((sc) => sc.id !== id) })),
         clear: () => set((s) => ({ plan: clearedPlan(s.plan), undo: { plan: s.plan, action: 'cleared' } })),
         loadExample: () => set((s) => ({ plan: defaultPlan, undo: { plan: s.plan, action: 'example' } })),
         importPlan: (plan) => set((s) => ({ plan, undo: { plan: s.plan, action: 'imported' } })),

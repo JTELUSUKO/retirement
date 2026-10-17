@@ -29,6 +29,8 @@ retirement/
 │   │   ├── income.test.ts
 │   │   ├── annuity.ts           # Buying an annuity: payout-rate estimate, taxable share (exclusion ratio)
 │   │   ├── annuity.test.ts
+│   │   ├── scenarios.ts         # Scenario overrides + stress tests (crash, high inflation) as market adjustments
+│   │   ├── scenarios.test.ts
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -56,11 +58,13 @@ retirement/
 │   │   ├── StatCard.tsx         # Headline number tiles
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/
-│   │   └── Dashboard.tsx        # Form + results (stat cards, chart, yearly table)
+│   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
+│   │   └── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
+│   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell (header + page)
+│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare)
 │   ├── main.tsx                 # React entry point
 │   └── index.css                # Tailwind import + chart color tokens (light/dark, validated palette)
 ├── index.html                   # HTML entry used by Vite
@@ -134,6 +138,15 @@ One row per year; the age is your age at the **start** of that year.
 - Costs rise with inflation **plus** an extra medical inflation rate (default 2%).
 - "Yearly spending" excludes healthcare. Not modeled yet: IRMAA surcharges, ACA subsidies, long-term care.
 
+## Scenarios
+
+- A scenario stores only **overrides** of the base plan (retirement age, spending, Social Security claim age,
+  annuity on/off) plus an optional **stress test**; everything else follows the base plan, including later edits.
+  Setting a value back to the base plan's clears the override.
+- **Stress tests** adjust every simulated year: *crash* forces a −30% return in the first retirement year;
+  *high inflation* adds 3 points to inflation for the first 10 retirement years.
+- Each scenario runs its own Monte Carlo; up to 3 scenarios. Scenarios are saved with the plan and in backups.
+
 ## How the Monte Carlo works
 
 - Each run draws a random return for every year from a **lognormal** distribution, using the
@@ -162,7 +175,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | Phase | New files |
 |---|---|
 | 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income · ✅ annuity purchase with comparison |
-| 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
+| 3: Scenarios | ✅ export/import · ✅ scenario comparison + stress tests · next: printable summary |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 
 ## Scripts

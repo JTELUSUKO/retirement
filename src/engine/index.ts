@@ -11,3 +11,12 @@ export { incomeAtAge } from './income'
 export { annuityTaxableShare, estimatePayoutRate, payoutRate } from './annuity'
 export { benefitAtClaimAge } from './socialSecurity'
 export { CONFIG_2026 } from './config/2026'
+export {
+  applyScenario,
+  stressAdjust,
+  STRESS_LABEL,
+  CRASH_RETURN,
+  HIGH_INFLATION_EXTRA,
+  HIGH_INFLATION_YEARS,
+} from './scenarios'
+export type { Scenario, ScenarioOverrides, StressTest, MarketAdjust } from './scenarios'

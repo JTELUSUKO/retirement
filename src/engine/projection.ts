@@ -5,6 +5,7 @@ import { benefitAtClaimAge } from './socialSecurity'
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcareCost } from './healthcare'
 import { incomeAtAge } from './income'
+import { withAdjust, type MarketAdjust } from './scenarios'
 import { federalIncomeTax } from './taxes'
 import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
 
@@ -250,11 +251,15 @@ export function simulatePath(
 }
 
 /** Deterministic projection: the average return and inflation every year. */
-export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): ProjectionResult {
+export function projectPlan(
+  plan: Plan,
+  startYear = new Date().getFullYear(),
+  adjust?: MarketAdjust,
+): ProjectionResult {
   const { returnPreRetirement, returnPostRetirement, inflation } = plan.assumptions
   return simulatePath(
     plan,
-    (_, retired) => ({ return: retired ? returnPostRetirement : returnPreRetirement, inflation }),
+    withAdjust((_, retired) => ({ return: retired ? returnPostRetirement : returnPreRetirement, inflation }), adjust),
     startYear,
   )
 }

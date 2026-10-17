@@ -1,5 +1,6 @@
 import { simulatePath } from './projection'
 import { createRandom, normal } from './random'
+import { withAdjust, type MarketAdjust } from './scenarios'
 import type { MonteCarloResult, Plan } from './types'
 
 /**
@@ -17,6 +18,8 @@ export interface MonteCarloOptions {
   startYear?: number
   /** Set false to hold inflation at its average (isolates market risk). */
   randomInflation?: boolean
+  /** Adjust each year's drawn market conditions (stress tests). */
+  adjust?: MarketAdjust
 }
 
 /**
@@ -38,7 +41,7 @@ function percentile(sorted: number[], p: number): number {
 
 /** Run the plan through many random market and inflation histories. */
 export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): MonteCarloResult {
-  const { runs = 1000, seed = 42, startYear = new Date().getFullYear(), randomInflation = true } = options
+  const { runs = 1000, seed = 42, startYear = new Date().getFullYear(), randomInflation = true, adjust } = options
   const a = plan.assumptions
   const random = createRandom(seed)
   const yearCount = Math.max(plan.lifeExpectancy - plan.currentAge + 1, 0)
@@ -51,7 +54,7 @@ export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): Mont
     let inflation = a.inflation
     const result = simulatePath(
       plan,
-      (_, retired) => {
+      withAdjust((_, retired) => {
         const z = normal(random)
         const ret = retired
           ? lognormalReturn(a.returnPostRetirement, a.volatilityPostRetirement, z)
@@ -60,7 +63,7 @@ export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): Mont
           inflation = a.inflation + INFLATION_PERSISTENCE * (inflation - a.inflation) + INFLATION_SHOCK * normal(random)
         }
         return { return: ret, inflation }
-      },
+      }, adjust),
       startYear,
     )
     if (result.depletionAge === null) successes++

@@ -11,6 +11,8 @@ interface Props {
   max?: number
   /** Message from plan validation (e.g. "must be later than retirement age"). */
   error?: string
+  /** Keep the label for screen readers only (e.g. inside a table with row headers). */
+  hideLabel?: boolean
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  * once the text is a valid number within [min, max]. On blur it shows the
  * last valid value again, so a cleared field never feeds 0 into the plan.
  */
-export function NumberField({ label, value, onChange, prefix, suffix, step = 1, min, max, error }: Props) {
+export function NumberField({ label, value, onChange, prefix, suffix, step = 1, min, max, error, hideLabel }: Props) {
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(false)
 
@@ -34,9 +36,9 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
 
   return (
     <label className="block text-sm">
-      <span className="text-slate-600 dark:text-slate-400">{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'text-slate-600 dark:text-slate-400'}>{label}</span>
       <div
-        className={`mt-1 flex items-center rounded-md border bg-white focus-within:ring-2 dark:bg-slate-900 ${
+        className={`${hideLabel ? '' : 'mt-1 '}flex items-center rounded-md border bg-white focus-within:ring-2 dark:bg-slate-900 ${
           invalid
             ? 'border-red-500 focus-within:ring-red-500'
             : 'border-slate-300 focus-within:ring-teal-600 dark:border-slate-700'

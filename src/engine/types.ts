@@ -1,3 +1,5 @@
+import type { Scenario } from './scenarios'
+
 export type AccountType = '401k' | 'traditional-ira' | 'roth' | 'hsa' | 'taxable' | 'cash'
 
 /** How an account is taxed; decides withdrawal order and RMDs. */
@@ -46,6 +48,8 @@ export interface Plan {
   incomeStreams: IncomeStream[]
   /** Optional: turn part of your savings into lifetime income. */
   annuityPurchase: AnnuityPurchase
+  /** What-if variations compared against this plan (see scenarios.ts). */
+  scenarios: Scenario[]
   healthcare: HealthcareCosts
   assumptions: Assumptions
 }
