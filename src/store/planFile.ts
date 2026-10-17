@@ -76,7 +76,7 @@ function shapeProblem(plan: unknown): string | null {
     }
     if (!['none', 'crash', 'high-inflation'].includes(sc.stress as string)) return `scenario “${sc.name}” has an unknown stress test`
     if (![1, 2, 3].includes(sc.slot as number)) return `scenario “${sc.name}” has an invalid color slot`
-    for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge']) {
+    for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge']) {
       if (sc.overrides[key] !== undefined && !isNum(sc.overrides[key])) return `scenario “${sc.name}”: “${key}” must be a number`
     }
     if (sc.overrides.annuityEnabled !== undefined && typeof sc.overrides.annuityEnabled !== 'boolean') {

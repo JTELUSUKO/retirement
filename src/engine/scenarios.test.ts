@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { runMonteCarlo } from './monteCarlo'
 import { projectPlan } from './projection'
-import { applyScenario, CRASH_RETURN, stressAdjust, type Scenario } from './scenarios'
+import { applyScenario, CRASH_RETURN, stressAdjust, survivorDeathAgeOf, type Scenario } from './scenarios'
 import { basePlan } from './testFixtures'
 import type { Plan } from './types'
 
@@ -34,6 +34,27 @@ describe('applyScenario', () => {
   it('follows later changes to the base plan for fields it does not override', () => {
     const s = scenario({ overrides: { retirementAge: 62 } })
     expect(applyScenario({ ...plan, annualSpending: 99_000 }, s).annualSpending).toBe(99_000)
+  })
+})
+
+describe('survivor override', () => {
+  const married: Plan = { ...plan, filingStatus: 'married', survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.8 } }
+
+  it('turns on an early death at the given age, keeping the plan’s spending share', () => {
+    const p = applyScenario(married, scenario({ overrides: { survivorDeathAge: 75 } }))
+    expect(p.survivor).toEqual({ enabled: true, firstDeathAge: 75, spendingShare: 0.8 })
+    expect(survivorDeathAgeOf(p)).toBe(75)
+  })
+
+  it('0 means both live, even if the plan models a death', () => {
+    const withDeath: Plan = { ...married, survivor: { ...married.survivor, enabled: true, firstDeathAge: 80 } }
+    const p = applyScenario(withDeath, scenario({ overrides: { survivorDeathAge: 0 } }))
+    expect(survivorDeathAgeOf(p)).toBe(0)
+    expect(survivorDeathAgeOf(applyScenario(withDeath, scenario({})))).toBe(80)
+  })
+
+  it('has no effect for single filers', () => {
+    expect(survivorDeathAgeOf(applyScenario(plan, scenario({ overrides: { survivorDeathAge: 75 } })))).toBe(0)
   })
 })
 

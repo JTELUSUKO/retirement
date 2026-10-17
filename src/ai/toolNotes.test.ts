@@ -7,6 +7,9 @@ describe('describeToolCall', () => {
       'Ran a what-if: retire at 63, market crash at retirement',
     )
   })
+  it('describes survivor what-ifs', () => {
+    expect(describeToolCall('run_what_if', { survivorDeathAge: 75 }, false)).toBe('Ran a what-if: one spouse dies at 75')
+  })
   it('describes plan checks and failed calls', () => {
     expect(describeToolCall('get_plan_results', {}, false)).toBe('Checked your plan’s results')
     expect(describeToolCall('run_what_if', { x: 1 }, true)).toMatch(/invalid/)

@@ -7,6 +7,8 @@ export interface ScenarioOverrides {
   annualSpending?: number
   socialSecurityClaimAge?: number
   annuityEnabled?: boolean
+  /** Couples: age one spouse dies (0 = both live to the plan age) */
+  survivorDeathAge?: number
 }
 
 export type StressTest = 'none' | 'crash' | 'high-inflation'
@@ -39,8 +41,13 @@ export type MarketAdjust = (t: number, retired: boolean, market: YearMarket) => 
 export function applyScenario(plan: Plan, scenario: Scenario): Plan {
   const o = scenario.overrides
   const retirementAge = o.retirementAge ?? plan.retirementAge
+  const deathAge = o.survivorDeathAge
   return {
     ...plan,
+    survivor:
+      deathAge === undefined
+        ? plan.survivor
+        : { ...plan.survivor, enabled: deathAge > 0, firstDeathAge: deathAge > 0 ? deathAge : plan.survivor.firstDeathAge },
     retirementAge,
     annualSpending: o.annualSpending ?? plan.annualSpending,
     socialSecurityClaimAge: o.socialSecurityClaimAge ?? plan.socialSecurityClaimAge,
@@ -70,3 +77,7 @@ export function stressAdjust(plan: Plan, stress: StressTest): MarketAdjust | und
 /** Wrap a market function with an optional adjustment. */
 export const withAdjust = (market: MarketFn, adjust?: MarketAdjust): MarketFn =>
   adjust ? (t, retired) => adjust(t, retired, market(t, retired)) : market
+
+/** Couples: the death age the plan models (0 = both live). */
+export const survivorDeathAgeOf = (plan: Plan): number =>
+  plan.filingStatus === 'married' && plan.survivor.enabled ? plan.survivor.firstDeathAge : 0

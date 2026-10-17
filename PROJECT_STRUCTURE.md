@@ -176,7 +176,9 @@ One row per year; the age is your age at the **start** of that year.
   pays healthcare for one person, and receives each income stream at its `survivorShare` (e.g. a 50% survivor
   pension). From the following year they file as **single** (federal and state), which usually raises the tax
   rate. Annuity purchases for couples are joint-life, so they continue in full.
-- The dashboard compares the plan with and without the early death.
+- The dashboard compares the plan with and without the early death. Scenarios can set or remove it
+  (`overrides.survivorDeathAge`, 0 = both live; preset "One spouse dies early" = 10 years into retirement), and
+  Ask Claude's `run_what_if` accepts `survivorDeathAge` too.
 - Not modeled: different spouse ages or claiming ages, spousal benefits (enter each spouse's ssa.gov estimate),
   survivor benefit reductions for early claiming.
 

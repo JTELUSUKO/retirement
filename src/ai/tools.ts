@@ -39,6 +39,12 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
         annualSpending: { type: 'number', description: 'Yearly spending in retirement, today’s dollars, excluding healthcare.' },
         socialSecurityClaimAge: { type: 'integer', description: 'Age to claim Social Security, 62–70.' },
         annuityEnabled: { type: 'boolean', description: 'Turn the plan’s configured annuity purchase on or off.' },
+        survivorDeathAge: {
+          type: 'integer',
+          description:
+            'Married couples only: age at which one spouse dies (0 = both live to the plan age). The survivor keeps the ' +
+            'larger Social Security benefit, spends the plan’s survivor spending share, and files single from the next year.',
+        },
         stress: {
           type: 'string',
           enum: ['none', 'crash', 'high-inflation'],
@@ -58,16 +64,17 @@ export interface WhatIfInput {
   annualSpending?: number
   socialSecurityClaimAge?: number
   annuityEnabled?: boolean
+  survivorDeathAge?: number
   stress?: StressTest
 }
 
 /** Validate a run_what_if input; returns an error message or the typed input. */
 export function parseWhatIf(input: unknown): { ok: true; value: WhatIfInput } | { ok: false; error: string } {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return { ok: false, error: 'input must be an object' }
-  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'stress']
+  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'survivorDeathAge', 'stress']
   const obj = input as Record<string, unknown>
   for (const key of Object.keys(obj)) if (!allowed.includes(key)) return { ok: false, error: `unknown field "${key}"` }
-  for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge']) {
+  for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge']) {
     if (obj[key] !== undefined && (typeof obj[key] !== 'number' || !Number.isFinite(obj[key]))) {
       return { ok: false, error: `"${key}" must be a number` }
     }
@@ -120,6 +127,9 @@ export function executeTool(plan: Plan, name: string, input: unknown): { content
   if (name === 'run_what_if') {
     const parsed = parseWhatIf(input)
     if (!parsed.ok) return { content: JSON.stringify({ error: parsed.error }), isError: true }
+    if (parsed.value.survivorDeathAge !== undefined && plan.filingStatus !== 'married') {
+      return { content: JSON.stringify({ error: 'survivorDeathAge only applies to married couples (filing jointly).' }), isError: true }
+    }
     const { stress = 'none', ...overrides } = parsed.value
     const scenario: Scenario = { id: 'what-if', name: 'What-if', overrides, stress, slot: 1 }
     const changed = applyScenario(plan, scenario)

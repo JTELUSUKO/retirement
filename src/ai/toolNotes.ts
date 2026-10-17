@@ -11,6 +11,7 @@ export function describeToolCall(name: string, input: unknown, isError: boolean)
     if (typeof i.annualSpending === 'number') parts.push(`spend ${formatUSD(i.annualSpending)}/yr`)
     if (typeof i.socialSecurityClaimAge === 'number') parts.push(`Social Security at ${i.socialSecurityClaimAge}`)
     if (typeof i.annuityEnabled === 'boolean') parts.push(i.annuityEnabled ? 'with the annuity' : 'without the annuity')
+    if (typeof i.survivorDeathAge === 'number') parts.push(i.survivorDeathAge > 0 ? `one spouse dies at ${i.survivorDeathAge}` : 'both live')
     if (i.stress === 'crash') parts.push('market crash at retirement')
     if (i.stress === 'high-inflation') parts.push('high inflation')
     return `Ran a what-if: ${parts.join(', ') || 'no changes'}`

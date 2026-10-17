@@ -9,6 +9,7 @@ import {
   CONFIG_2026,
   evaluatePlan,
   missingEssentials,
+  survivorDeathAgeOf,
   type PlanEvaluation,
   type Scenario,
   type ScenarioOverrides,
@@ -87,7 +88,7 @@ export function Scenarios() {
           including later edits. Up to {MAX_SCENARIOS} scenarios.
         </p>
         <div className="flex flex-wrap gap-2">
-          {SCENARIO_PRESETS.map((p) => (
+          {SCENARIO_PRESETS.filter((p) => !p.when || p.when(plan)).map((p) => (
             <button
               key={p.key}
               type="button"
@@ -220,6 +221,29 @@ export function Scenarios() {
                 </td>
               ))}
             </tr>
+            {plan.filingStatus === 'married' && (
+              <tr className="border-t border-slate-100 dark:border-slate-800">
+                <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>
+                  One of you dies at <span className="text-xs">(empty = both live)</span>
+                </th>
+                <td className={`${cell} text-right tabular-nums`}>{survivorDeathAgeOf(plan) || 'Both live'}</td>
+                {plan.scenarios.map((s, i) => (
+                  <td key={s.id} className={cell}>
+                    <div className={mark(changed(s, 'survivorDeathAge'))}>
+                      <NumberField
+                        hideLabel
+                        label={`${s.name}: one of you dies at`}
+                        placeholder="Both live"
+                        min={0}
+                        max={AGE_LIMITS.max}
+                        value={survivorDeathAgeOf(scenarioPlans[i])}
+                        onChange={(v) => setOverride(s, 'survivorDeathAge', v, survivorDeathAgeOf(plan))}
+                      />
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            )}
             <tr className="border-t border-slate-100 dark:border-slate-800">
               <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>Stress test</th>
               <td className={`${cell} text-right text-slate-500`}>None</td>
@@ -298,6 +322,8 @@ export function Scenarios() {
       <p className="text-xs text-slate-500">
         Money amounts are in today’s dollars. Best value in each row is in bold. Stress tests apply to every one of the
         1,000 simulated markets.
+        {[plan, ...scenarioPlans].some((p) => survivorDeathAgeOf(p) > 0) &&
+          ' When one spouse dies, savings can last longer because household spending falls, even though income drops and taxes rise. Check that the survivor’s spending share fits your situation.'}
       </p>
     </div>
   )

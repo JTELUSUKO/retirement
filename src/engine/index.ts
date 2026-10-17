@@ -13,6 +13,7 @@ export { benefitAtClaimAge } from './socialSecurity'
 export { CONFIG_2026 } from './config/2026'
 export {
   applyScenario,
+  survivorDeathAgeOf,
   stressAdjust,
   STRESS_LABEL,
   CRASH_RETURN,

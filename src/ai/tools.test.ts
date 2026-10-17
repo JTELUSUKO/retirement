@@ -27,6 +27,14 @@ describe('assistant tools', () => {
     expect(data.withChanges.problems.length).toBeGreaterThan(0)
   })
 
+  it('runs a survivor what-if for couples and refuses it for single filers', () => {
+    const couple = { ...examplePlan, filingStatus: 'married' as const, spouseSocialSecurityAtFRA: 1_500 }
+    const r = executeTool(couple, 'run_what_if', { survivorDeathAge: 75 })
+    expect(r.isError).toBe(false)
+    expect(JSON.parse(r.content).withChanges.survivorModeled).toBe('one spouse dies at 75')
+    expect(executeTool(examplePlan, 'run_what_if', { survivorDeathAge: 75 }).isError).toBe(true)
+  })
+
   it('rejects unknown fields and wrong types', () => {
     expect(parseWhatIf({ retireAge: 60 }).ok).toBe(false)
     expect(parseWhatIf({ annualSpending: '50k' }).ok).toBe(false)

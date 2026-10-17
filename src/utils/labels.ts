@@ -28,6 +28,7 @@ export function describeScenario(plan: Plan, scenario: Scenario): string {
   if (o.annualSpending !== undefined) parts.push(`Spend ${formatUSD(p.annualSpending)}/yr`)
   if (o.socialSecurityClaimAge !== undefined) parts.push(`Social Security at ${p.socialSecurityClaimAge}`)
   if (o.annuityEnabled !== undefined) parts.push(o.annuityEnabled ? 'With the annuity' : 'Without the annuity')
+  if (o.survivorDeathAge !== undefined) parts.push(o.survivorDeathAge > 0 ? `One spouse dies at ${o.survivorDeathAge}` : 'Both live')
   if (scenario.stress !== 'none') parts.push(STRESS_LABEL[scenario.stress])
   return parts.join('; ') || 'No changes'
 }

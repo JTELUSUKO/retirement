@@ -57,6 +57,11 @@ describe('plan backup files', () => {
     expectError(fileWith({ plan: { ...examplePlan, state: 'ZZ' } }), /state/)
   })
 
+  it('rejects a non-numeric survivor override in a scenario', () => {
+    const sc = { id: 'a', name: 'X', overrides: { survivorDeathAge: 'soon' }, stress: 'none', slot: 1 }
+    expectError(fileWith({ plan: { ...examplePlan, scenarios: [sc] } }), /survivorDeathAge/)
+  })
+
   it('rejects a file with no plan at all', () => {
     expectError(fileWith({ plan: undefined }), /damaged or incomplete/)
   })

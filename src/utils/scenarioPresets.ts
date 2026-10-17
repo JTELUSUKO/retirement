@@ -1,7 +1,13 @@
 import { STRESS_LABEL, type Plan, type Scenario } from '../engine'
 import { formatUSDCompact } from './format'
 
-type Preset = { key: string; label: string; make: (plan: Plan) => Omit<Scenario, 'id' | 'slot'> }
+type Preset = {
+  key: string
+  label: string
+  make: (plan: Plan) => Omit<Scenario, 'id' | 'slot'>
+  /** Only offered when this returns true */
+  when?: (plan: Plan) => boolean
+}
 
 /** One-click what-ifs, built from the current plan. */
 export const SCENARIO_PRESETS: Preset[] = [
@@ -39,6 +45,16 @@ export const SCENARIO_PRESETS: Preset[] = [
             overrides: { annuityEnabled: true },
             stress: 'none',
           },
+  },
+  {
+    key: 'early-death',
+    label: 'One spouse dies early',
+    when: (p) => p.filingStatus === 'married',
+    make: (p) => {
+      // Ten years into retirement, but at least a year before the plan ends
+      const age = Math.min(Math.max(p.retirementAge + 10, p.currentAge + 1), p.lifeExpectancy - 1)
+      return { name: `Spouse dies at ${age}`, overrides: { survivorDeathAge: age }, stress: 'none' }
+    },
   },
   { key: 'crash', label: 'Market crash at retirement', make: () => ({ name: 'Crash at retirement', overrides: {}, stress: 'crash' }) },
   {
