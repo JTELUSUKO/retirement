@@ -1,9 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import {
   applyScenario,
   benefitAtClaimAge,
   evaluatePlan,
+  missingEssentials,
   payoutRate,
   STRESS_LABEL,
   type Plan,
@@ -72,7 +74,15 @@ export function Summary() {
     </div>
   )
 
-  if (base.issues.length > 0 || plan.annualSpending === 0) {
+  if (missingEssentials(plan).length > 0) {
+    return (
+      <div>
+        {toolbar}
+        <GettingStarted plan={plan} onPlanTab={false} />
+      </div>
+    )
+  }
+  if (base.issues.length > 0) {
     return (
       <div>
         {toolbar}

@@ -19,7 +19,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function PlanForm() {
   const { plan, update, updateAssumptions, updateHealthcare, updateAccount, addAccount, removeAccount } = usePlanStore()
   const issues = validatePlan(plan)
-  const errorFor = (field: PlanIssue['field']) => issues.find((i) => i.field === field)?.message
+  // Blank (0) fields just show their placeholder; the results area lists what's still needed
+  const errorFor = (field: PlanIssue['field']) =>
+    field !== 'accounts' && plan[field] === 0 ? undefined : issues.find((i) => i.field === field)?.message
   const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
 
   return (
@@ -39,9 +41,9 @@ export function PlanForm() {
           </select>
         </label>
         <div className="grid grid-cols-3 gap-3">
-          <NumberField label="Age" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
-          <NumberField label="Retire at" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />
-          <NumberField label="Plan to age" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('lifeExpectancy')} />
+          <NumberField label="Age" placeholder="e.g. 55" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
+          <NumberField label="Retire at" placeholder="e.g. 65" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />
+          <NumberField label="Plan to age" placeholder="e.g. 95" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('lifeExpectancy')} />
         </div>
       </Section>
 
@@ -98,7 +100,7 @@ export function PlanForm() {
         <p className="text-xs text-slate-500">
           Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
-        {plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
+        {plan.retirementAge > 0 && plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
           <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
             ⚠ Your ssa.gov estimate assumes you keep earning until {CONFIG_2026.socialSecurity.fullRetirementAge}. Stopping
             work at {plan.retirementAge} means fewer earning years, which can lower your benefit, especially if you have

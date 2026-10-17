@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { backupFileName, parsePlanFile, serializePlan } from './planFile'
-import { defaultPlan, PLAN_VERSION } from './planStore'
+import { examplePlan, PLAN_VERSION } from './planStore'
 
 const fileWith = (fields: Record<string, unknown>) =>
-  JSON.stringify({ app: 'retirement-planner', version: PLAN_VERSION, exportedAt: '2026-10-17T00:00:00Z', plan: defaultPlan, ...fields })
+  JSON.stringify({ app: 'retirement-planner', version: PLAN_VERSION, exportedAt: '2026-10-17T00:00:00Z', plan: examplePlan, ...fields })
 
 const expectError = (text: string, match: RegExp) => {
   const result = parsePlanFile(text)
@@ -13,8 +13,8 @@ const expectError = (text: string, match: RegExp) => {
 
 describe('plan backup files', () => {
   it('round-trips a plan through export and import', () => {
-    const result = parsePlanFile(serializePlan(defaultPlan))
-    expect(result).toEqual({ ok: true, plan: defaultPlan })
+    const result = parsePlanFile(serializePlan(examplePlan))
+    expect(result).toEqual({ ok: true, plan: examplePlan })
   })
 
   it('names the file with the date', () => {
@@ -22,7 +22,7 @@ describe('plan backup files', () => {
   })
 
   it('upgrades a file from an older version', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = defaultPlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = examplePlan
     const result = parsePlanFile(fileWith({ version: 2, plan: { ...rest, annualPension: 18_000 } }))
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -44,13 +44,13 @@ describe('plan backup files', () => {
   })
 
   it('rejects missing or mistyped fields with a specific message', () => {
-    expectError(fileWith({ plan: { ...defaultPlan, currentAge: '55' } }), /currentAge/)
-    expectError(fileWith({ plan: { ...defaultPlan, accounts: [{ ...defaultPlan.accounts[0], type: 'crypto' }] } }), /unknown type/)
-    expectError(fileWith({ plan: { ...defaultPlan, healthcare: undefined } }), /healthcare/)
+    expectError(fileWith({ plan: { ...examplePlan, currentAge: '55' } }), /currentAge/)
+    expectError(fileWith({ plan: { ...examplePlan, accounts: [{ ...examplePlan.accounts[0], type: 'crypto' }] } }), /unknown type/)
+    expectError(fileWith({ plan: { ...examplePlan, healthcare: undefined } }), /healthcare/)
   })
 
   it('rejects a scenario with an unknown stress test', () => {
-    expectError(fileWith({ plan: { ...defaultPlan, scenarios: [{ id: 'a', name: 'X', overrides: {}, stress: 'meteor', slot: 1 }] } }), /stress test/)
+    expectError(fileWith({ plan: { ...examplePlan, scenarios: [{ id: 'a', name: 'X', overrides: {}, stress: 'meteor', slot: 1 }] } }), /stress test/)
   })
 
   it('rejects a file with no plan at all', () => {

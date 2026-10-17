@@ -13,6 +13,8 @@ interface Props {
   error?: string
   /** Keep the label for screen readers only (e.g. inside a table with row headers). */
   hideLabel?: boolean
+  /** Shown when the field is empty. Zero is displayed as an empty field. */
+  placeholder?: string
 }
 
 /**
@@ -20,13 +22,16 @@ interface Props {
  * once the text is a valid number within [min, max]. On blur it shows the
  * last valid value again, so a cleared field never feeds 0 into the plan.
  */
-export function NumberField({ label, value, onChange, prefix, suffix, step = 1, min, max, error, hideLabel }: Props) {
+export function NumberField({ label, value, onChange, prefix, suffix, step = 1, min, max, error, hideLabel, placeholder = '0' }: Props) {
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(false)
 
+  const zeroAllowed = min === undefined || min <= 0
   const parse = (raw: string) => {
+    // An emptied field means 0 where 0 is allowed (e.g. dollar amounts)
+    if (raw.trim() === '') return zeroAllowed ? 0 : null
     const n = Number(raw)
-    const valid = raw.trim() !== '' && Number.isFinite(n) && (min === undefined || n >= min) && (max === undefined || n <= max)
+    const valid = Number.isFinite(n) && (min === undefined || n >= min) && (max === undefined || n <= max)
     return valid ? n : null
   }
   const typingInvalid = editing && parse(text) === null
@@ -49,13 +54,14 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
           type="number"
           inputMode="decimal"
           className="w-full bg-transparent px-3 py-2 outline-none"
-          value={editing ? text : String(value)}
+          value={editing ? text : value === 0 ? '' : String(value)}
+          placeholder={placeholder}
           step={step}
           min={min}
           max={max}
           aria-invalid={invalid}
           onFocus={() => {
-            setText(String(value))
+            setText(value === 0 ? '' : String(value))
             setEditing(true)
           }}
           onBlur={() => setEditing(false)}
@@ -77,12 +83,13 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
 }
 
 /** Same as NumberField but shows a fraction (0.07) as a percent (7). */
-export function PercentField({ label, value, onChange, min, max }: Omit<Props, 'prefix' | 'suffix' | 'step'>) {
+export function PercentField({ label, value, onChange, min, max }: Omit<Props, 'prefix' | 'suffix' | 'step' | 'placeholder'>) {
   return (
     <NumberField
       label={label}
       value={Math.round(value * 1000) / 10}
       onChange={(v) => onChange(v / 100)}
+      placeholder="0"
       suffix="%"
       step={0.1}
       min={min}

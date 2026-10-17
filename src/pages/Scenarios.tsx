@@ -1,4 +1,5 @@
 import { useDeferredValue, useMemo, type ReactNode } from 'react'
+import { GettingStarted } from '../components/GettingStarted'
 import { NumberField } from '../components/NumberField'
 import { ScenarioChart, type ScenarioSeries } from '../components/ScenarioChart'
 import { scenarioColor } from '../utils/buckets'
@@ -7,6 +8,7 @@ import {
   applyScenario,
   CONFIG_2026,
   evaluatePlan,
+  missingEssentials,
   type PlanEvaluation,
   type Scenario,
   type ScenarioOverrides,
@@ -46,13 +48,7 @@ export function Scenarios() {
     ...deferredPlan.scenarios.map((sc) => applyScenario(deferredPlan, sc).retirementAge),
   ]
 
-  if (plan.annualSpending === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
-        Fill in your plan on the “My plan” tab first, then come back to compare what-ifs.
-      </p>
-    )
-  }
+  if (missingEssentials(plan).length > 0) return <GettingStarted plan={plan} onPlanTab={false} />
 
   const full = plan.scenarios.length >= MAX_SCENARIOS
   const scenarioPlans = plan.scenarios.map((s) => applyScenario(plan, s))

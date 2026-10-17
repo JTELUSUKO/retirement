@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Account, IncomeStream, Plan, Scenario } from '../engine'
 
-export const defaultPlan: Plan = {
+/** Sample plan behind “Load example”. */
+export const examplePlan: Plan = {
   filingStatus: 'single',
   currentAge: 55,
   retirementAge: 65,
@@ -36,15 +37,28 @@ export const defaultPlan: Plan = {
   },
 }
 
-/** Keeps ages, filing status, healthcare estimates and assumptions; removes accounts and scenarios and zeroes income and spending. */
-export const clearedPlan = (plan: Plan): Plan => ({
-  ...plan,
+/**
+ * What a new visitor starts with: personal fields blank (0 shows as an empty box), no accounts or
+ * income. Model assumptions, healthcare estimates and claiming at 67 stay filled in.
+ */
+export const blankPlan: Plan = {
+  ...examplePlan,
+  currentAge: 0,
+  retirementAge: 0,
+  lifeExpectancy: 0,
   accounts: [],
   annualSpending: 0,
   socialSecurityAtFRA: 0,
   incomeStreams: [],
-  annuityPurchase: { ...plan.annuityPurchase, enabled: false },
+  annuityPurchase: { ...examplePlan.annuityPurchase, enabled: false, purchaseAge: 0 },
   scenarios: [],
+}
+
+/** Back to a blank plan, keeping the visitor's own assumptions and healthcare estimates. */
+export const clearedPlan = (plan: Plan): Plan => ({
+  ...blankPlan,
+  assumptions: plan.assumptions,
+  healthcare: plan.healthcare,
 })
 
 /** Upgrade a plan saved by an older version of the app. */
@@ -52,7 +66,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   const state = persisted as { plan: Plan }
   // v1 → v2: volatility assumptions added
   if (version < 2) {
-    state.plan.assumptions = { ...defaultPlan.assumptions, ...state.plan.assumptions }
+    state.plan.assumptions = { ...examplePlan.assumptions, ...state.plan.assumptions }
   }
   // v2 → v3: filing status added
   if (version < 3) {
@@ -60,7 +74,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   }
   // v3 → v4: healthcare costs added (spending now excludes healthcare)
   if (version < 4) {
-    state.plan = { ...state.plan, healthcare: state.plan.healthcare ?? defaultPlan.healthcare }
+    state.plan = { ...state.plan, healthcare: state.plan.healthcare ?? examplePlan.healthcare }
   }
   // v4 → v5: single pension field replaced by a list of income streams
   if (version < 5) {
@@ -81,7 +95,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 6) {
     state.plan = {
       ...state.plan,
-      annuityPurchase: state.plan.annuityPurchase ?? { ...defaultPlan.annuityPurchase, purchaseAge: state.plan.retirementAge },
+      annuityPurchase: state.plan.annuityPurchase ?? { ...examplePlan.annuityPurchase, purchaseAge: state.plan.retirementAge },
     }
   }
   // v6 → v7: scenarios for comparison
@@ -136,7 +150,7 @@ export const usePlanStore = create<PlanState>()(
       // Any edit drops the undo point: undo only reverses the last Clear / Load example.
       const edit = (fn: (plan: Plan) => Plan) => set((s) => ({ plan: fn(s.plan), undo: null }))
       return {
-        plan: defaultPlan,
+        plan: blankPlan,
         undo: null,
         update: (patch) => edit((p) => ({ ...p, ...patch })),
         updateAssumptions: (patch) => edit((p) => ({ ...p, assumptions: { ...p.assumptions, ...patch } })),
@@ -184,7 +198,7 @@ export const usePlanStore = create<PlanState>()(
           edit((p) => ({ ...p, scenarios: p.scenarios.map((sc) => (sc.id === id ? { ...sc, ...patch } : sc)) })),
         removeScenario: (id) => edit((p) => ({ ...p, scenarios: p.scenarios.filter((sc) => sc.id !== id) })),
         clear: () => set((s) => ({ plan: clearedPlan(s.plan), undo: { plan: s.plan, action: 'cleared' } })),
-        loadExample: () => set((s) => ({ plan: defaultPlan, undo: { plan: s.plan, action: 'example' } })),
+        loadExample: () => set((s) => ({ plan: examplePlan, undo: { plan: s.plan, action: 'example' } })),
         importPlan: (plan) => set((s) => ({ plan, undo: { plan: s.plan, action: 'imported' } })),
         undoLast: () => set((s) => (s.undo ? { plan: s.undo.plan, undo: null } : s)),
       }

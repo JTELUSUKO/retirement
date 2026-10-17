@@ -50,6 +50,7 @@ retirement/
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
+│   │   ├── GettingStarted.tsx   # Checklist shown until the essentials are filled in
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── ScenarioChart.tsx    # Median savings by age per scenario, de-collided end labels (wide screens)
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
@@ -87,10 +88,14 @@ retirement/
    never hard-coded in components.
 3. **Today's dollars in the UI.** Users enter amounts in today's dollars; the engine inflates them internally
    and reports both nominal and inflation-adjusted values.
-4. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
+4. **New visitors start blank.** Personal fields (ages, spending, Social Security, accounts, income) start empty;
+   0 is shown as an empty field. Model assumptions, healthcare estimates and claiming at 67 stay filled in.
+   Pages show a getting-started checklist (`missingEssentials`) until age, retirement age, plan-to age and
+   spending are entered. **Load example** fills a sample plan; **Clear all** returns to blank.
+5. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
-5. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
+6. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
    Both saved browser data and backup files go through the same migration.
 
 ## Timing rules

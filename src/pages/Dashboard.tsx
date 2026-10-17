@@ -1,11 +1,12 @@
 import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { BucketChart } from '../components/BucketChart'
+import { GettingStarted } from '../components/GettingStarted'
 import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
-import { benefitAtClaimAge, projectPlan, runMonteCarlo, validatePlan, type Plan } from '../engine'
+import { benefitAtClaimAge, projectPlan, runMonteCarlo, validatePlan, missingEssentials, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 
@@ -106,7 +107,9 @@ export function Dashboard() {
         <PlanForm />
       </aside>
 
-      {issues.length > 0 ? (
+      {missingEssentials(plan).length > 0 ? (
+        <GettingStarted plan={plan} />
+      ) : issues.length > 0 ? (
         <section
           role="alert"
           className="h-fit rounded-lg border border-l-4 border-slate-200 border-l-red-600 bg-white p-4 dark:border-slate-800 dark:border-l-red-500 dark:bg-slate-900"
@@ -117,15 +120,6 @@ export function Dashboard() {
               <li key={i.message}>{i.message}</li>
             ))}
           </ul>
-        </section>
-      ) : plan.annualSpending === 0 ? (
-        <section className="h-fit rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
-          <h2 className="font-medium text-slate-900 dark:text-slate-100">Add your numbers to see results</h2>
-          <ol className="mt-2 list-decimal space-y-1 pl-5">
-            <li>Add each account with its balance and what you contribute each year.</li>
-            <li>Enter how much you expect to spend per year in retirement, in today's dollars.</li>
-            <li>Add your Social Security estimate from ssa.gov and any pension.</li>
-          </ol>
         </section>
       ) : (
         <Results plan={deferredPlan} />

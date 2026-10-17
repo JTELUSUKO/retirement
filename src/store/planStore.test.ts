@@ -1,19 +1,25 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { defaultPlan, migratePlanState, usePlanStore } from './planStore'
+import { blankPlan, examplePlan, migratePlanState, usePlanStore } from './planStore'
 
 const state = () => usePlanStore.getState()
 
 describe('plan store: clear, load example, undo', () => {
-  beforeEach(() => usePlanStore.setState({ plan: defaultPlan, undo: null }))
+  beforeEach(() => usePlanStore.setState({ plan: examplePlan, undo: null }))
 
-  it('clear removes accounts and amounts but keeps ages and assumptions', () => {
+  it('clear resets to a blank plan but keeps the visitor’s assumptions and healthcare estimates', () => {
+    state().updateAssumptions({ inflation: 0.03 })
     state().clear()
     const { plan } = state()
     expect(plan.accounts).toEqual([])
-    expect([plan.annualSpending, plan.socialSecurityAtFRA]).toEqual([0, 0])
-    expect(plan.incomeStreams).toEqual([])
-    expect(plan.currentAge).toBe(defaultPlan.currentAge)
-    expect(plan.assumptions).toEqual(defaultPlan.assumptions)
+    expect([plan.currentAge, plan.retirementAge, plan.lifeExpectancy, plan.annualSpending, plan.socialSecurityAtFRA]).toEqual([0, 0, 0, 0, 0])
+    expect(plan.assumptions.inflation).toBe(0.03)
+    expect(plan.healthcare).toEqual(examplePlan.healthcare)
+  })
+
+  it('new visitors start with a blank plan', () => {
+    expect(blankPlan.accounts).toEqual([])
+    expect(blankPlan.currentAge).toBe(0)
+    expect(blankPlan.annualSpending).toBe(0)
   })
 
   it('undo restores the plan from before clear', () => {
@@ -30,7 +36,7 @@ describe('plan store: clear, load example, undo', () => {
     state().update({ annualSpending: 50_000 })
     const mine = state().plan
     state().loadExample()
-    expect(state().plan).toEqual(defaultPlan)
+    expect(state().plan).toEqual(examplePlan)
     state().undoLast()
     expect(state().plan).toEqual(mine)
   })
@@ -44,18 +50,18 @@ describe('plan store: clear, load example, undo', () => {
 
 describe('plan store: migrations', () => {
   it('upgrades a v2 plan (no filing status, no healthcare)', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = defaultPlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = examplePlan
     const v2plan = { ...rest, annualPension: 0 }
     const migrated = migratePlanState({ plan: v2plan }, 2)
     expect(migrated.plan.filingStatus).toBe('single')
-    expect(migrated.plan.healthcare).toEqual(defaultPlan.healthcare)
-    expect(migrated.plan.annualSpending).toBe(defaultPlan.annualSpending)
-    expect(migrated.plan.annuityPurchase).toMatchObject({ enabled: false, purchaseAge: defaultPlan.retirementAge })
+    expect(migrated.plan.healthcare).toEqual(examplePlan.healthcare)
+    expect(migrated.plan.annualSpending).toBe(examplePlan.annualSpending)
+    expect(migrated.plan.annuityPurchase).toMatchObject({ enabled: false, purchaseAge: examplePlan.retirementAge })
   })
 })
 
 describe('plan store: v4 → v5 pension migration', () => {
-  const { incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = defaultPlan
+  const { incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = examplePlan
 
   it('turns a pension into an inflation-adjusted, fully taxable income stream for life', () => {
     const { plan } = migratePlanState({ plan: { ...rest, annualPension: 24_000 } }, 4)
@@ -71,7 +77,7 @@ describe('plan store: v4 → v5 pension migration', () => {
 })
 
 describe('plan store: scenarios', () => {
-  beforeEach(() => usePlanStore.setState({ plan: defaultPlan, undo: null }))
+  beforeEach(() => usePlanStore.setState({ plan: examplePlan, undo: null }))
   const add = () => state().addScenario({ name: 'Retire at 63', overrides: { retirementAge: 63 }, stress: 'none' })
 
   it('adds up to three scenarios', () => {
@@ -99,12 +105,12 @@ describe('plan store: scenarios', () => {
   })
 
   it('gives v7 scenarios slots by position', () => {
-    const v7 = { ...defaultPlan, scenarios: [{ id: 'a', name: 'A', overrides: {}, stress: 'none' }] }
+    const v7 = { ...examplePlan, scenarios: [{ id: 'a', name: 'A', overrides: {}, stress: 'none' }] }
     expect(migratePlanState({ plan: v7 }, 7).plan.scenarios[0].slot).toBe(1)
   })
 
   it('upgrades a v6 plan with no scenarios', () => {
-    const { scenarios: _s, ...v6 } = defaultPlan
+    const { scenarios: _s, ...v6 } = examplePlan
     expect(migratePlanState({ plan: v6 }, 6).plan.scenarios).toEqual([])
   })
 })

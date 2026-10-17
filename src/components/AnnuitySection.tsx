@@ -15,7 +15,19 @@ export function AnnuitySection() {
   return (
     <div className="space-y-3">
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" className={checkbox} checked={a.enabled} onChange={(e) => updateAnnuity({ enabled: e.target.checked })} />
+        <input
+          type="checkbox"
+          className={checkbox}
+          checked={a.enabled}
+          onChange={(e) =>
+            // Default the purchase to the retirement age the first time it's turned on
+            updateAnnuity(
+              a.purchaseAge < plan.retirementAge
+                ? { enabled: e.target.checked, purchaseAge: plan.retirementAge }
+                : { enabled: e.target.checked },
+            )
+          }
+        />
         Buy an annuity with part of my savings
       </label>
 
@@ -54,7 +66,10 @@ export function AnnuitySection() {
             </div>
             <p className="pb-2 text-xs text-slate-500">
               {a.payoutRate === null ? (
-                <>Estimated for age {a.purchaseAge}{plan.filingStatus === 'married' ? ', joint life' : ''}. Type a real quote to override.</>
+                <>
+                  {a.purchaseAge > 0 ? `Estimated for age ${a.purchaseAge}` : 'Enter an age for an estimate'}
+                  {plan.filingStatus === 'married' ? ', joint life' : ''}. Type a real quote to override.
+                </>
               ) : (
                 <>
                   Your quote (estimate: {(estimate * 100).toFixed(1)}%).{' '}
@@ -66,11 +81,13 @@ export function AnnuitySection() {
             </p>
           </div>
 
+          {a.purchaseAge > 0 && a.amount > 0 && (
           <p className="rounded-md bg-slate-100 px-3 py-2 text-sm dark:bg-slate-800">
-            ≈ <strong className="tabular-nums">{formatUSD(yearly)}/yr</strong> ({formatUSD(yearly / 12)}/mo) for life from age{' '}
-            {a.purchaseAge}, in today's dollars
-            {a.inflationAdjusted ? ', keeping its buying power.' : '. The payment is fixed, so its buying power shrinks with inflation.'}
-          </p>
+              ≈ <strong className="tabular-nums">{formatUSD(yearly)}/yr</strong> ({formatUSD(yearly / 12)}/mo) for life from age{' '}
+              {a.purchaseAge}, in today's dollars
+              {a.inflationAdjusted ? ', keeping its buying power.' : '. The payment is fixed, so its buying power shrinks with inflation.'}
+            </p>
+          )}
           <p className="text-xs text-slate-500">
             The money leaves your savings for good: payments stop at death and nothing is left to heirs (no
             cash-refund or period-certain options modeled). Payouts vary by insurer, sex, health and interest rates; get

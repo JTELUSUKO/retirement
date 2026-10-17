@@ -5,10 +5,32 @@ const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
 
 export const AGE_LIMITS = { min: 18, max: 110 }
 
+/**
+ * Essentials not filled in yet (0 = left blank). Pages show a getting-started checklist,
+ * not errors, until this is empty.
+ */
+export function missingEssentials(plan: Plan): string[] {
+  const missing: string[] = []
+  if (plan.currentAge === 0) missing.push('your age')
+  if (plan.retirementAge === 0) missing.push('the age you plan to retire')
+  if (plan.lifeExpectancy === 0) missing.push('the age to plan to (many people use 90–95)')
+  if (plan.annualSpending === 0) missing.push('your yearly spending in retirement')
+  return missing
+}
+
 /** Problems that would make the projection meaningless. Empty array = OK to run. */
 export function validatePlan(plan: Plan): PlanIssue[] {
   const issues: PlanIssue[] = []
   const { currentAge, retirementAge, lifeExpectancy } = plan
+
+  // Blank ages: ask for them, and skip comparisons that would only produce confusing messages
+  const blanks: [keyof Plan, string][] = [
+    ['currentAge', 'Enter your age.'],
+    ['retirementAge', 'Enter the age you plan to retire.'],
+    ['lifeExpectancy', 'Enter the age to plan to.'],
+  ]
+  for (const [field, message] of blanks) if (plan[field] === 0) issues.push({ field, message })
+  if (issues.length > 0) return issues
 
   if (currentAge < AGE_LIMITS.min || currentAge > AGE_LIMITS.max) {
     issues.push({ field: 'currentAge', message: `Age must be between ${AGE_LIMITS.min} and ${AGE_LIMITS.max}.` })
@@ -49,6 +71,9 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     }
   }
   for (const stream of plan.incomeStreams) {
+    if (stream.startAge < AGE_LIMITS.min) {
+      issues.push({ field: 'incomeStreams', message: `Enter when “${stream.name}” starts.` })
+    }
     if (stream.endAge !== null && stream.endAge < stream.startAge) {
       issues.push({ field: 'incomeStreams', message: `“${stream.name}” ends before it starts.` })
     }
