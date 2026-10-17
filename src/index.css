@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+}
+
+:root {
+  --chart-series: #0f766e;
+  --chart-grid: #e2e8f0;
+  --chart-ink: #64748b;
+  --chart-text: #0f172a;
+  --chart-tooltip-bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-series: #2dd4bf;
+    --chart-grid: #1e293b;
+    --chart-ink: #94a3b8;
+    --chart-text: #f1f5f9;
+    --chart-tooltip-bg: #0f172a;
+  }
+}
