@@ -11,6 +11,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - How each account type (pre-tax, Roth, taxable, cash, HSA) is drawn down, including RMDs
 - Approximate federal income tax on retirement withdrawals and Social Security
 - Healthcare costs before and after Medicare, paid from your HSA first
+- Other income: annuities, pensions, part-time work and rental income
 - A year-by-year table
 
 Your data never leaves your browser.

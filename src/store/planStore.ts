@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Account, Plan } from '../engine'
+import type { Account, IncomeStream, Plan } from '../engine'
 
 export const defaultPlan: Plan = {
   filingStatus: 'single',
@@ -16,7 +16,7 @@ export const defaultPlan: Plan = {
   annualSpending: 60_000,
   socialSecurityAtFRA: 2_800,
   socialSecurityClaimAge: 67,
-  annualPension: 0,
+  incomeStreams: [],
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -33,7 +33,7 @@ export const clearedPlan = (plan: Plan): Plan => ({
   accounts: [],
   annualSpending: 0,
   socialSecurityAtFRA: 0,
-  annualPension: 0,
+  incomeStreams: [],
 })
 
 /** Upgrade a plan saved by an older version of the app. */
@@ -51,6 +51,21 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 4) {
     state.plan = { ...state.plan, healthcare: state.plan.healthcare ?? defaultPlan.healthcare }
   }
+  // v4 → v5: single pension field replaced by a list of income streams
+  if (version < 5) {
+    const { annualPension = 0, ...rest } = state.plan as Plan & { annualPension?: number }
+    const pension: IncomeStream = {
+      id: 'pension',
+      name: 'Pension',
+      kind: 'pension',
+      annualAmount: annualPension,
+      startAge: rest.retirementAge,
+      endAge: null,
+      inflationAdjusted: true,
+      taxableShare: 1,
+    }
+    state.plan = { ...rest, incomeStreams: annualPension > 0 ? [pension] : [] }
+  }
   return state
 }
 
@@ -66,6 +81,9 @@ interface PlanState {
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
+  addIncome: () => void
+  updateIncome: (id: string, patch: Partial<IncomeStream>) => void
+  removeIncome: (id: string) => void
   clear: () => void
   loadExample: () => void
   undoLast: () => void
@@ -94,6 +112,26 @@ export const usePlanStore = create<PlanState>()(
             ],
           })),
         removeAccount: (id) => edit((p) => ({ ...p, accounts: p.accounts.filter((a) => a.id !== id) })),
+        addIncome: () =>
+          edit((p) => ({
+            ...p,
+            incomeStreams: [
+              ...p.incomeStreams,
+              {
+                id: crypto.randomUUID(),
+                name: 'Annuity',
+                kind: 'annuity',
+                annualAmount: 0,
+                startAge: p.retirementAge,
+                endAge: null,
+                inflationAdjusted: false,
+                taxableShare: 1,
+              },
+            ],
+          })),
+        updateIncome: (id, patch) =>
+          edit((p) => ({ ...p, incomeStreams: p.incomeStreams.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
+        removeIncome: (id) => edit((p) => ({ ...p, incomeStreams: p.incomeStreams.filter((i) => i.id !== id) })),
         clear: () => set((s) => ({ plan: clearedPlan(s.plan), undo: { plan: s.plan, action: 'cleared' } })),
         loadExample: () => set((s) => ({ plan: defaultPlan, undo: { plan: s.plan, action: 'example' } })),
         undoLast: () => set((s) => (s.undo ? { plan: s.undo.plan, undo: null } : s)),
@@ -101,7 +139,7 @@ export const usePlanStore = create<PlanState>()(
     },
     {
       name: 'retirement-plan',
-      version: 4,
+      version: 5,
       partialize: (s) => ({ plan: s.plan }),
       migrate: (persisted, version) => migratePlanState(persisted, version) as PlanState,
     },

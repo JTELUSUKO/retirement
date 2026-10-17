@@ -3,6 +3,7 @@ import { CONFIG_2026 } from './config/2026'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { benefitAtClaimAge } from './socialSecurity'
 import { healthcareCost } from './healthcare'
+import { incomeAtAge } from './income'
 import { federalIncomeTax } from './taxes'
 import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
 
@@ -34,7 +35,7 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   within each tax bucket). RMD money not needed for spending is reinvested in a
  *   taxable account.
  * - Federal income tax (retired years) is paid from savings too: pre-tax withdrawals
- *   (including the whole RMD), pension, taxable Social Security and non-medical HSA
+ *   (including the whole RMD), the taxable share of other income, taxable Social Security and non-medical HSA
  *   withdrawals are taxed (plus a 20% penalty on non-medical HSA money before 65).
  *   Roth, cash and taxable-account withdrawals are untaxed (capital gains are not
  *   modeled). Taxes during working years are not modeled.
@@ -43,8 +44,9 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   market return), and working years add contributions at year end.
  * - "Savings at retirement" is the total balance at the start of the retirement-age year.
  *
- * Spending, contributions, pension and Social Security are entered in today's
- * dollars and rise with realized inflation.
+ * Spending, contributions and Social Security are entered in today's dollars and rise
+ * with realized inflation. Other income rises with inflation only if marked so; fixed
+ * amounts (most annuities) stay flat. Other income counts in retired years only.
  */
 export function simulatePath(
   plan: Plan,
@@ -132,14 +134,14 @@ export function simulatePath(
     let spending = 0
     let healthcare = 0
     let ssIncome = 0
-    let pensionIncome = 0
+    let other = { amount: 0, taxable: 0 }
     if (retired) {
       healthcare = healthcareCost(plan, age) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
       spending = plan.annualSpending * priceLevel + healthcare
-      pensionIncome = plan.annualPension * priceLevel
+      other = incomeAtAge(plan.incomeStreams, age, priceLevel)
       if (age >= plan.socialSecurityClaimAge) ssIncome = ssYearly * priceLevel
     }
-    const income = pensionIncome + ssIncome
+    const income = other.amount + ssIncome
     const gap = Math.max(spending - income, 0)
     const rmdRequired = requiredMinimumDistribution(
       age,
@@ -156,7 +158,7 @@ export function simulatePath(
     if (retired) {
       for (let pass = 0; pass < 25; pass++) {
         const result = federalIncomeTax({
-          ordinaryIncome: draw.pretaxWithdrawn + draw.hsaNonMedical + pensionIncome,
+          ordinaryIncome: draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable,
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
@@ -204,6 +206,7 @@ export function simulatePath(
       withdrawalsByBucket: draw.withdrawalsByBucket,
       startByBucketReal,
       income,
+      otherIncome: other.amount,
       spending,
       healthcare,
       tax,

@@ -25,6 +25,8 @@ retirement/
 │   │   ├── taxes.test.ts
 │   │   ├── healthcare.ts        # Healthcare cost by age (pre-Medicare vs Medicare, per person)
 │   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
+│   │   ├── income.ts            # Other income streams (annuity, pension, work, rental) by age
+│   │   ├── income.test.ts
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -40,6 +42,7 @@ retirement/
 │   │   └── planStore.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
+│   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
@@ -86,11 +89,14 @@ One row per year; the age is your age at the **start** of that year.
 5. **Working years:** contributions are added at year end. HSA contributions stop at 65 (Medicare).
 - **"Savings at retirement"** and the chart both use the balance at the start of each age.
 - Amounts are entered in today's dollars and rise with inflation (the realized inflation path in simulations).
+- **Other income** (annuities, pensions, part-time work, rental) counts in retired years between its start and end
+  ages. "Rises with inflation" amounts are in today's dollars; fixed amounts are the actual dollars paid and lose
+  buying power over time. Only the taxable share is taxed.
 - Birth year is estimated as current year − age (used for the RMD start age).
 
 ## How taxes work
 
-- **Taxed as income:** pre-tax withdrawals (including the whole RMD, even the part reinvested), pension,
+- **Taxed as income:** pre-tax withdrawals (including the whole RMD, even the part reinvested), the taxable share of other income,
   and the taxable part of Social Security (IRS provisional-income test, up to 85%).
 - **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
   plus a 20% penalty before 65.
@@ -137,7 +143,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 | Phase | New files |
 |---|---|
-| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · next: other income (annuities, part-time work, rental) replacing the single pension field |
+| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income (annuities, pensions, work, rental) · next: buy an annuity from savings and compare |
 | 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 

@@ -1,5 +1,6 @@
 import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 
 const accountTypes: { value: AccountType; label: string }[] = [
@@ -119,7 +120,7 @@ export function PlanForm() {
         </button>
       </Section>
 
-      <Section title="Retirement income & spending">
+      <Section title="Spending & Social Security">
         <NumberField label="Yearly spending, excluding healthcare (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
         <div className="grid grid-cols-2 gap-3">
           <NumberField label={plan.filingStatus === 'married' ? 'Social Security at 67 / mo (both)' : 'Social Security at 67 / mo'} prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
@@ -128,7 +129,10 @@ export function PlanForm() {
         <p className="text-xs text-slate-500">
           Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
-        <NumberField label="Pension / yr (today's $)" prefix="$" min={0} step={1000} value={plan.annualPension} onChange={(v) => update({ annualPension: v })} />
+      </Section>
+
+      <Section title="Other income in retirement">
+        <IncomeList />
       </Section>
 
       <Section title="Healthcare in retirement">

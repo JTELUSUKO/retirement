@@ -31,11 +31,19 @@ export function validatePlan(plan: Plan): PlanIssue[] {
   const amounts = [
     plan.annualSpending,
     plan.socialSecurityAtFRA,
-    plan.annualPension,
+    ...plan.incomeStreams.map((i) => i.annualAmount),
     plan.healthcare.preMedicareAnnual,
     plan.healthcare.medicareAnnual,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
+  for (const stream of plan.incomeStreams) {
+    if (stream.endAge !== null && stream.endAge < stream.startAge) {
+      issues.push({ field: 'incomeStreams', message: `“${stream.name}” ends before it starts.` })
+    }
+    if (stream.taxableShare < 0 || stream.taxableShare > 1) {
+      issues.push({ field: 'incomeStreams', message: `“${stream.name}” taxable share must be 0–100%.` })
+    }
+  }
   if (amounts.some((n) => !Number.isFinite(n) || n < 0)) {
     issues.push({ field: 'accounts', message: 'Dollar amounts can’t be negative.' })
   }

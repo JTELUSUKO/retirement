@@ -42,10 +42,30 @@ export interface Plan {
   /** Monthly benefit at full retirement age (67), from your ssa.gov statement (combined for couples). */
   socialSecurityAtFRA: number
   socialSecurityClaimAge: number
-  /** Yearly pension, in today's dollars. Starts at retirement. */
-  annualPension: number
+  /** Pensions, annuities, part-time work, rental income, ... */
+  incomeStreams: IncomeStream[]
   healthcare: HealthcareCosts
   assumptions: Assumptions
+}
+
+export type IncomeKind = 'pension' | 'annuity' | 'work' | 'rental' | 'other'
+
+/** A source of retirement income other than Social Security. Counted in retired years only. */
+export interface IncomeStream {
+  id: string
+  name: string
+  kind: IncomeKind
+  /**
+   * Yearly amount. If `inflationAdjusted`, in today's dollars and rising with inflation;
+   * otherwise the fixed dollar amount actually paid each year (like most annuities).
+   */
+  annualAmount: number
+  startAge: number
+  /** Last age it is paid; null = for life. */
+  endAge: number | null
+  inflationAdjusted: boolean
+  /** Share taxed as ordinary income, 0–1 (e.g. 1 for a pension or an annuity bought in an IRA). */
+  taxableShare: number
 }
 
 /** Healthcare costs in retirement, per person per year in today's dollars. */
@@ -81,7 +101,10 @@ export interface YearResult {
   withdrawalsByBucket: BucketAmounts
   /** Start-of-year balances by tax bucket, in today's dollars. */
   startByBucketReal: BucketAmounts
+  /** Social Security + other income received this year. */
   income: number
+  /** Other income (pensions, annuities, work, rental) received this year. */
+  otherIncome: number
   /** Total spending need for the year, including healthcare. */
   spending: number
   /** Healthcare costs for the year (included in spending). */

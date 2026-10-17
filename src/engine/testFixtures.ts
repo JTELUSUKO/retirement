@@ -12,7 +12,7 @@ export const basePlan: Plan = {
   annualSpending: 10_000,
   socialSecurityAtFRA: 0,
   socialSecurityClaimAge: 67,
-  annualPension: 0,
+  incomeStreams: [],
   healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
   assumptions: {
     returnPreRetirement: 0,

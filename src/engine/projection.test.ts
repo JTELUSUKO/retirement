@@ -25,7 +25,12 @@ describe('projectPlan', () => {
   })
 
   it('lasts when income covers spending', () => {
-    const result = projectPlan({ ...basePlan, annualPension: 10_000 })
+    const result = projectPlan({
+      ...basePlan,
+      incomeStreams: [
+        { id: 'p', name: 'Pension', kind: 'pension', annualAmount: 10_000, startAge: 60, endAge: null, inflationAdjusted: true, taxableShare: 1 },
+      ],
+    })
     expect(result.depletionAge).toBeNull()
     expect(result.years.at(-1)!.balance).toBe(100_000)
   })
