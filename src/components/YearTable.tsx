@@ -51,6 +51,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
                   <th className={th}>Contributions</th>
                   <th className={th}>Withdrawal</th>
                   <th className={th}>RMD</th>
+                  <th className={th}>Federal tax</th>
                   <th className={th}>Income</th>
                   <th className={th}>End balance</th>
                 </tr>
@@ -63,6 +64,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
                     <td className={td}>{formatUSD(y.contributions)}</td>
                     <td className={td}>{formatUSD(y.withdrawal)}</td>
                     <td className={td}>{formatUSD(y.rmd)}</td>
+                    <td className={td}>{formatUSD(y.tax)}</td>
                     <td className={td}>{formatUSD(y.income)}</td>
                     <td className={td}>{formatUSD(y.balance)}</td>
                   </tr>

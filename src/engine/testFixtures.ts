@@ -2,6 +2,7 @@ import type { Plan } from './types'
 
 /** Simple plan for tests: age 60, retired, $100k, $10k/yr spending, no growth. */
 export const basePlan: Plan = {
+  filingStatus: 'single',
   currentAge: 60,
   retirementAge: 60,
   lifeExpectancy: 70,

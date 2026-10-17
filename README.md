@@ -9,12 +9,13 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - The range of outcomes, from poor markets to good ones
 - Your Social Security benefit for any claiming age from 62 to 70
 - How each account type (pre-tax, Roth, taxable, cash, HSA) is drawn down, including RMDs
+- Approximate federal income tax on retirement withdrawals and Social Security
 - A year-by-year table
 
 Your data never leaves your browser.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
-> Projections use simplified assumptions (a fixed withdrawal order, no taxes yet).
+> Projections use simplified assumptions (a fixed withdrawal order, federal tax only, no capital gains).
 
 ## Run locally
 

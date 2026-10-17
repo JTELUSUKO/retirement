@@ -5,6 +5,9 @@ export type TaxBucket = 'pretax' | 'roth' | 'taxable' | 'cash' | 'hsa'
 
 export type BucketAmounts = Record<TaxBucket, number>
 
+/** "married" = married filing jointly; the spouse is assumed to be the same age. */
+export type FilingStatus = 'single' | 'married'
+
 export interface Account {
   id: string
   name: string
@@ -29,13 +32,14 @@ export interface Assumptions {
 }
 
 export interface Plan {
+  filingStatus: FilingStatus
   currentAge: number
   retirementAge: number
   lifeExpectancy: number
   accounts: Account[]
   /** Yearly spending in retirement, in today's dollars. */
   annualSpending: number
-  /** Monthly benefit at full retirement age (67), from your ssa.gov statement. */
+  /** Monthly benefit at full retirement age (67), from your ssa.gov statement (combined for couples). */
   socialSecurityAtFRA: number
   socialSecurityClaimAge: number
   /** Yearly pension, in today's dollars. Starts at retirement. */
@@ -46,6 +50,8 @@ export interface Plan {
 export interface YearResult {
   age: number
   year: number
+  /** Price level at the start of the year (1 = today). Divide by it for today's dollars. */
+  priceLevel: number
   /** Balance at the start of the year, nominal dollars. */
   startBalance: number
   /** Balance at the start of the year, in today's dollars. */
@@ -66,6 +72,10 @@ export interface YearResult {
   startByBucketReal: BucketAmounts
   income: number
   spending: number
+  /** Federal income tax for the year (retired years only), paid from savings. */
+  tax: number
+  /** Taxable income after deductions. */
+  taxableIncome: number
 }
 
 export interface ProjectionResult {

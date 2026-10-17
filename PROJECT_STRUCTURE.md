@@ -14,13 +14,15 @@ retirement/
 ├── src/
 │   ├── engine/                  # Pure calculation code. No React, no browser APIs.
 │   │   ├── config/
-│   │   │   └── 2026.ts          # Yearly US limits/rules (401k, IRA, HSA, SS, RMD table). Update each January.
+│   │   │   └── 2026.ts          # Yearly US rules: limits, SS, RMD table, federal tax brackets/deductions. Update each January.
 │   │   ├── types.ts             # Plan, Account, YearResult, ProjectionResult
 │   │   ├── projection.ts        # Year-by-year simulation per account (simulatePath) + average-return projection
 │   │   ├── accounts.ts          # Account type → tax bucket, withdrawal order, proportional withdrawals
 │   │   ├── accounts.test.ts
 │   │   ├── rmd.ts               # RMD start age (73/75) + Uniform Lifetime Table
 │   │   ├── rmd.test.ts
+│   │   ├── taxes.ts             # Federal income tax + taxable Social Security
+│   │   ├── taxes.test.ts
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -32,7 +34,8 @@ retirement/
 │   │   ├── socialSecurity.test.ts
 │   │   └── index.ts             # Public exports of the engine
 │   ├── store/
-│   │   └── planStore.ts         # Zustand store: the user's plan + localStorage persistence
+│   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/undo
+│   │   └── planStore.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
@@ -74,12 +77,25 @@ One row per year; the age is your age at the **start** of that year.
 2. **Retired years:** spending not covered by income is withdrawn at the start of the year: the RMD first,
    then **cash → taxable → pre-tax → Roth → HSA**, split proportionally across accounts of the same type.
    RMD money you don't need is reinvested in a taxable account (a hidden one is created if you have none).
-3. **Growth:** every account grows for the year. Cash earns inflation; everything else earns the market return.
-4. **Working years:** contributions are added at year end.
+3. **Federal income tax** (retired years) is added to what must be withdrawn, and solved iteratively because
+   pre-tax withdrawals are themselves taxable. See "How taxes work" below.
+4. **Growth:** every account grows for the year. Cash earns inflation; everything else earns the market return.
+5. **Working years:** contributions are added at year end. HSA contributions stop at 65 (Medicare).
 - **"Savings at retirement"** and the chart both use the balance at the start of each age.
 - Amounts are entered in today's dollars and rise with inflation (the realized inflation path in simulations).
 - Birth year is estimated as current year − age (used for the RMD start age).
-- **Taxes are not modeled yet**: withdrawals are treated as spendable in full.
+
+## How taxes work
+
+- **Taxed as income:** pre-tax withdrawals (including the whole RMD, even the part reinvested), pension,
+  and the taxable part of Social Security (IRS provisional-income test, up to 85%).
+- **Not taxed:** Roth, cash, HSA (assumed spent on medical costs), and taxable-account withdrawals
+  (capital gains aren't modeled; many retirees fall in the 0% capital-gains bracket).
+- **Deductions:** standard deduction, the extra 65+ deduction, and the temporary $6,000 senior deduction
+  (2025–2028, phased out above $75k/$150k).
+- **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
+- Brackets and deductions rise with inflation; the Social Security thresholds don't (as in the law).
+- **Not modeled:** state tax, capital gains, IRMAA, credits, and taxes during working years.
 
 ## How the Monte Carlo works
 
@@ -108,7 +124,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 | Phase | New files |
 |---|---|
-| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · next: `engine/taxes.ts` (federal tax on withdrawals), `engine/healthcare.ts` |
+| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · next: `engine/healthcare.ts` (pre-Medicare premiums, Medicare, HSA pays medical costs first) |
 | 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 

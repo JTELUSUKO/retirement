@@ -1,4 +1,4 @@
-import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type PlanIssue } from '../engine'
+import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { NumberField, PercentField } from './NumberField'
 
@@ -21,14 +21,53 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function PlanForm() {
-  const { plan, update, updateAssumptions, updateAccount, addAccount, removeAccount, reset } = usePlanStore()
+  const { plan, undo, update, updateAssumptions, updateAccount, addAccount, removeAccount, clear, loadExample, undoLast } =
+    usePlanStore()
   const issues = validatePlan(plan)
   const errorFor = (field: PlanIssue['field']) => issues.find((i) => i.field === field)?.message
   const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
 
   return (
     <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={clear}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Clear all
+          </button>
+          <button
+            type="button"
+            onClick={loadExample}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Load example
+          </button>
+        </div>
+        {undo && (
+          <div role="status" className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900">
+            <span>{undo.action === 'cleared' ? 'Plan cleared.' : 'Example plan loaded.'}</span>
+            <button type="button" onClick={undoLast} className="font-medium underline underline-offset-2">
+              Undo
+            </button>
+          </div>
+        )}
+      </div>
+
       <Section title="You">
+        <label className="block text-sm">
+          <span className="text-slate-600 dark:text-slate-400">Tax filing status</span>
+          <select
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+            value={plan.filingStatus}
+            onChange={(e) => update({ filingStatus: e.target.value as Plan['filingStatus'] })}
+          >
+            <option value="single">Single</option>
+            <option value="married">Married filing jointly (spouse assumed same age)</option>
+          </select>
+        </label>
         <div className="grid grid-cols-3 gap-3">
           <NumberField label="Age" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
           <NumberField label="Retire at" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />
@@ -37,6 +76,9 @@ export function PlanForm() {
       </Section>
 
       <Section title="Accounts">
+        {plan.accounts.length === 0 && (
+          <p className="text-sm text-slate-500">No accounts yet. Add your 401(k), IRA, Roth, HSA, brokerage or savings.</p>
+        )}
         {plan.accounts.map((acc) => (
           <div key={acc.id} className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
             <div className="flex gap-2">
@@ -80,7 +122,7 @@ export function PlanForm() {
       <Section title="Retirement income & spending">
         <NumberField label="Yearly spending (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
         <div className="grid grid-cols-2 gap-3">
-          <NumberField label="Social Security at 67 / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
+          <NumberField label={plan.filingStatus === 'married' ? 'Social Security at 67 / mo (both)' : 'Social Security at 67 / mo'} prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
           <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
         </div>
         <p className="text-xs text-slate-500">
@@ -104,9 +146,6 @@ export function PlanForm() {
         </p>
       </Section>
 
-      <button type="button" onClick={reset} className="text-sm text-slate-500 hover:underline">
-        Reset to example plan
-      </button>
     </form>
   )
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useDeferredValue, useMemo } from 'react'
 import { BucketChart } from '../components/BucketChart'
 import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
@@ -8,7 +8,7 @@ import { benefitAtClaimAge, projectPlan, runMonteCarlo, validatePlan, type Plan 
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 
-function Results({ plan }: { plan: Plan }) {
+const Results = memo(function Results({ plan }: { plan: Plan }) {
   const result = useMemo(() => projectPlan(plan), [plan])
   const mc = useMemo(() => runMonteCarlo(plan), [plan])
   const lasts = result.depletionAge === null
@@ -17,6 +17,11 @@ function Results({ plan }: { plan: Plan }) {
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
   const ssMonthly = benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge)
   const rmdAge = result.rmdStartAge
+  const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
+  const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
+  const avgTaxRate =
+    retiredYears.reduce((sum, y) => sum + y.tax, 0) /
+    Math.max(retiredYears.reduce((sum, y) => sum + y.withdrawal + y.income, 0), 1)
 
   return (
     <section className="min-w-0 space-y-6">
@@ -44,6 +49,12 @@ function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
+      <p className="text-sm text-slate-600 dark:text-slate-400">
+        Federal income tax over retirement (average returns):{' '}
+        <strong className="tabular-nums">{formatUSDCompact(lifetimeTaxReal)}</strong> in today's dollars, about{' '}
+        {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals. State tax and capital gains aren't included.
+      </p>
+
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Range of outcomes by age</h2>
         <p className="text-sm text-slate-500">
@@ -56,9 +67,9 @@ function Results({ plan }: { plan: Plan }) {
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Savings by account type</h2>
         <p className="text-sm text-slate-500">
-          With average returns, in today's dollars. Spending comes from cash → taxable → pre-tax → Roth → HSA.
-          Required minimum distributions (RMDs) start at {rmdAge}; any you don't spend are reinvested in taxable. Taxes
-          aren't included yet.
+          With average returns, in today's dollars. Spending and federal income tax come from cash → taxable → pre-tax →
+          Roth → HSA. Required minimum distributions (RMDs) start at {rmdAge}; any you don't spend are reinvested in
+          taxable.
         </p>
         <BucketChart years={result.years} retirementAge={plan.retirementAge} rmdStartAge={rmdAge} />
       </div>
@@ -69,10 +80,12 @@ function Results({ plan }: { plan: Plan }) {
       </details>
     </section>
   )
-}
+})
 
 export function Dashboard() {
   const plan = usePlanStore((s) => s.plan)
+  // Inputs update immediately; the (slower) simulation catches up right after.
+  const deferredPlan = useDeferredValue(plan)
   const issues = validatePlan(plan)
 
   return (
@@ -93,8 +106,17 @@ export function Dashboard() {
             ))}
           </ul>
         </section>
+      ) : plan.annualSpending === 0 ? (
+        <section className="h-fit rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
+          <h2 className="font-medium text-slate-900 dark:text-slate-100">Add your numbers to see results</h2>
+          <ol className="mt-2 list-decimal space-y-1 pl-5">
+            <li>Add each account with its balance and what you contribute each year.</li>
+            <li>Enter how much you expect to spend per year in retirement, in today's dollars.</li>
+            <li>Add your Social Security estimate from ssa.gov and any pension.</li>
+          </ol>
+        </section>
       ) : (
-        <Results plan={plan} />
+        <Results plan={deferredPlan} />
       )}
     </div>
   )

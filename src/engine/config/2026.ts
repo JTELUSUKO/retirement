@@ -1,5 +1,6 @@
 // US limits and rules for tax year 2026.
-// Update this file each year. Sources: irs.gov (contribution limits), ssa.gov.
+// Update this file each year. Sources: irs.gov (contribution limits, Rev. Proc. 2025-32 for
+// 2026 brackets and deductions), ssa.gov.
 
 export const CONFIG_2026 = {
   year: 2026,
@@ -36,6 +37,24 @@ export const CONFIG_2026 = {
     } as Record<number, number>,
   },
   medicare: {
+    /** HSA contributions also stop here (no contributions once on Medicare). */
     eligibilityAge: 65,
+  },
+  federalTax: {
+    /** Ordinary income brackets: [upper bound of bracket, rate]. Indexed to inflation each year. */
+    brackets: {
+      single: [[12_400, 0.1], [50_400, 0.12], [105_700, 0.22], [201_775, 0.24], [256_225, 0.32], [640_600, 0.35], [Infinity, 0.37]],
+      married: [[24_800, 0.1], [100_800, 0.12], [211_400, 0.22], [403_550, 0.24], [512_450, 0.32], [768_700, 0.35], [Infinity, 0.37]],
+    } as Record<'single' | 'married', [number, number][]>,
+    standardDeduction: { single: 16_100, married: 32_200 },
+    /** Extra standard deduction per person aged 65+. Indexed. */
+    additionalDeduction65: { single: 2_050, married: 1_650 },
+    /**
+     * Temporary senior deduction (OBBBA): $6,000 per person 65+, tax years 2025–2028,
+     * reduced by 6% of income above the threshold. Not indexed.
+     */
+    seniorDeduction: { amount: 6_000, lastYear: 2028, phaseOutStart: { single: 75_000, married: 150_000 }, phaseOutRate: 0.06 },
+    /** Social Security taxation thresholds on provisional income. Not indexed by law. */
+    socialSecurityThresholds: { single: [25_000, 34_000], married: [32_000, 44_000] } as Record<'single' | 'married', [number, number]>,
   },
 } as const
