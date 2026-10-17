@@ -1,5 +1,6 @@
 import { simulatePath } from './projection'
 import { createRandom, normal } from './random'
+import { planEndAge } from './survivor'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import type { MonteCarloResult, Plan } from './types'
 
@@ -44,7 +45,7 @@ export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): Mont
   const { runs = 1000, seed = 42, startYear = new Date().getFullYear(), randomInflation = true, adjust } = options
   const a = plan.assumptions
   const random = createRandom(seed)
-  const yearCount = Math.max(plan.lifeExpectancy - plan.currentAge + 1, 0)
+  const yearCount = Math.max(planEndAge(plan) - plan.currentAge + 1, 0)
 
   // balancesByYear[t] collects every run's start-of-year real balance for year t
   const balancesByYear: number[][] = Array.from({ length: yearCount }, () => [])

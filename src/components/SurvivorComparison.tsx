@@ -1,4 +1,5 @@
-import type { MonteCarloResult, Plan } from '../engine'
+import { type MonteCarloResult, type Plan } from '../engine'
+import { endLabel } from '../utils/labels'
 import { OutcomeComparison } from './OutcomeComparison'
 
 /** Couples: both living to the plan age vs. one dying at the chosen age. */
@@ -9,13 +10,14 @@ export function SurvivorComparison({ plan, withDeath, bothLive }: { plan: Plan; 
       title="If one of you dies first"
       description={
         <>
-          One of you dies at {s.firstDeathAge}: the survivor keeps the larger Social Security benefit, spends{' '}
-          {Math.round(s.spendingShare * 100)}% of what you spend together, and files as single from the next year.
+          {s.whoDies === 'you' ? 'You die' : 'Your spouse dies'} at {s.firstDeathAge}: the survivor gets the larger of their
+          own and a survivor Social Security benefit, spends {Math.round(s.spendingShare * 100)}% of what you spend
+          together, and files as single from the next year.
         </>
       }
-      planToAge={plan.lifeExpectancy}
+      endAge={endLabel(plan)}
       baseLabel="Both live"
-      changedLabel={`One dies at ${s.firstDeathAge}`}
+      changedLabel={`${s.whoDies === 'you' ? 'You die' : 'Spouse dies'} at ${s.firstDeathAge}`}
       base={bothLive}
       changed={withDeath}
     />

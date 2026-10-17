@@ -1,9 +1,9 @@
 import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets, withdrawProportionally } from './accounts'
 import { CONFIG_2026 } from './config/2026'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
-import { householdAt, socialSecurityYearly } from './survivor'
+import { householdAt, planEndAge, socialSecurityAt } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
-import { healthcareCost } from './healthcare'
+import { healthcarePerPerson } from './healthcare'
 import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
@@ -122,6 +122,7 @@ export function simulatePath(
   const purchase = plan.annuityPurchase
   const afterTax = [...indexesIn('cash'), ...indexesIn('taxable')]
 
+  const endAge = planEndAge(plan)
   const years: YearResult[] = []
   let depletionAge: number | null = null
   let balanceAtRetirement = total()
@@ -129,7 +130,7 @@ export function simulatePath(
   // Price level relative to today: 1 now, 1.025 after one year of 2.5% inflation, ...
   let priceLevel = 1
 
-  for (let age = plan.currentAge; age <= plan.lifeExpectancy; age++) {
+  for (let age = plan.currentAge; age <= endAge; age++) {
     const t = age - plan.currentAge
     const retired = age >= plan.retirementAge
     const market = marketFor(t, retired)
@@ -166,11 +167,12 @@ export function simulatePath(
     let ssIncome = 0
     let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
-      healthcare = healthcareCost(plan, age, household.people) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
+      const healthcareToday = household.livingAges.reduce((sum, a) => sum + healthcarePerPerson(plan, a), 0)
+      healthcare = healthcareToday * priceLevel * (1 + plan.healthcare.excessInflation) ** t
       const baseSpending = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1)
       spending = baseSpending * priceLevel + healthcare
       other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
-      if (age >= plan.socialSecurityClaimAge) ssIncome = socialSecurityYearly(plan, household.widowed) * priceLevel
+      ssIncome = socialSecurityAt(plan, age) * priceLevel
     }
     const income = other.amount + ssIncome + annuityIncome
     // Negative when income exceeds spending; the surplus (after tax) is reinvested below
@@ -201,12 +203,14 @@ export function simulatePath(
           year: startYear + t,
           status: household.taxStatus,
           priceLevel: taxPriceLevel,
+          seniors: household.livingAges.filter((a) => a >= 65).length,
         })
         const penalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
           state: plan.state,
           status: household.taxStatus,
-          age,
+          // State age rules (retirement-income exemptions): the oldest person alive
+          age: Math.max(...household.livingAges),
           ordinaryIncome,
           retirementIncome: draw.pretaxWithdrawn + other.taxableRetirement + annuityTaxable,
           taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome, ssIncome, household.taxStatus),
@@ -259,6 +263,7 @@ export function simulatePath(
       income,
       otherIncome: other.amount,
       widowed: household.widowed,
+      spouseAge: household.spouseAge,
       annuityIncome,
       annuityPremium,
       surplusReinvested: surplus,

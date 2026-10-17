@@ -9,3 +9,9 @@ export function healthcareCost(plan: Plan, age: number, people = plan.filingStat
   const { preMedicareAnnual, medicareAnnual } = plan.healthcare
   return people * (age < CONFIG_2026.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual)
 }
+
+/** Healthcare for one person at `age`, today's dollars (before the extra medical inflation). */
+export function healthcarePerPerson(plan: Plan, age: number): number {
+  const { preMedicareAnnual, medicareAnnual } = plan.healthcare
+  return age < CONFIG_2026.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual
+}

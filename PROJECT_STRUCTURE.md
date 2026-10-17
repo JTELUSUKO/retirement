@@ -169,18 +169,24 @@ One row per year; the age is your age at the **start** of that year.
 
 ## Couples and survivors
 
-- Married filing jointly: both spouses are assumed the same age and to claim Social Security at the same age;
-  each spouse's benefit is entered separately.
-- Optional **survivor modeling**: one spouse dies at `survivor.firstDeathAge`. From that age the survivor keeps
-  the **larger** of the two Social Security benefits, spends `survivor.spendingShare` of the couple's spending,
-  pays healthcare for one person, and receives each income stream at its `survivorShare` (e.g. a 50% survivor
-  pension). From the following year they file as **single** (federal and state), which usually raises the tax
-  rate. Annuity purchases for couples are joint-life, so they continue in full.
-- The dashboard compares the plan with and without the early death. Scenarios can set or remove it
-  (`overrides.survivorDeathAge`, 0 = both live; preset "One spouse dies early" = 10 years into retirement), and
-  Ask Claude's `run_what_if` accepts `survivorDeathAge` too.
-- Not modeled: different spouse ages or claiming ages, spousal benefits (enter each spouse's ssa.gov estimate),
-  survivor benefit reductions for early claiming.
+- Married filing jointly: each spouse has their own **age** (`spouseCurrentAge`), Social Security amount and
+  **claiming age** (`spouseClaimAge`). The timeline runs on your age; tables show "you / spouse". You retire
+  together at your retirement age, and the plan runs until the **younger** spouse reaches the plan-to age
+  (`planEndAge`).
+- Each benefit starts when that spouse reaches their claiming age. Healthcare (pre-Medicare vs. Medicare) and the
+  65+ federal deductions follow each living person's own age.
+- Optional **survivor modeling**: `survivor.whoDies` dies at `survivor.firstDeathAge` (their own age). The
+  survivor gets the larger of their own benefit and an SSA-style **survivor benefit** (`survivor.ts`):
+  - the deceased's benefit, at least 82.5% of their full benefit if they claimed early; if they died before
+    claiming, their full benefit plus delayed credits earned after 67;
+  - reduced if the survivor starts it before 67 (71.5% at 60);
+  - started at the later of 60, the death, and the survivor's own claiming age.
+  The survivor spends `survivor.spendingShare`, pays healthcare for one, receives each income stream at its
+  `survivorShare`, and files **single** (federal and state) from the next year.
+- The dashboard compares both living vs. the early death; scenarios (`overrides.survivorDeathAge`, 0 = both live)
+  and Ask Claude (`run_what_if.survivorDeathAge`) can test other ages.
+- Simplified: one household retirement date; income-stream, annuity and RMD ages use your age; full retirement age
+  is 67 for both; spousal benefits aren't computed (enter each spouse's ssa.gov estimate).
 
 ## Healthcare
 

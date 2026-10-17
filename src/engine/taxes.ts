@@ -26,6 +26,8 @@ export interface TaxInput {
   status: FilingStatus
   /** Price level vs. 2026; brackets and indexed deductions are scaled by it. */
   priceLevel: number
+  /** Filers aged 65+ (defaults to everyone on the return if `age` ≥ 65) */
+  seniors?: number
 }
 
 export interface TaxResult {
@@ -40,17 +42,18 @@ export interface TaxResult {
  */
 export function federalIncomeTax(input: TaxInput): TaxResult {
   const { ordinaryIncome, socialSecurity, age, year, status, priceLevel } = input
-  const people = status === 'married' ? 2 : 1
+  const filers = status === 'married' ? 2 : 1
+  const seniors = Math.min(input.seniors ?? (age >= 65 ? filers : 0), filers)
   const grossIncome = ordinaryIncome + taxableSocialSecurity(ordinaryIncome, socialSecurity, status)
 
   let deduction = T.standardDeduction[status] * priceLevel
-  if (age >= 65) {
-    deduction += T.additionalDeduction65[status] * people * priceLevel
+  if (seniors > 0) {
+    deduction += T.additionalDeduction65[status] * seniors * priceLevel
     if (year <= T.seniorDeduction.lastYear) {
       const { amount, phaseOutStart, phaseOutRate } = T.seniorDeduction
       // Schedule 1-A Part V: each person's $6,000 is reduced by 6% of income over the threshold
       const reduction = Math.max(grossIncome - phaseOutStart[status], 0) * phaseOutRate
-      deduction += Math.max(amount - reduction, 0) * people
+      deduction += Math.max(amount - reduction, 0) * seniors
     }
   }
 

@@ -1,7 +1,8 @@
 import type Anthropic from '@anthropic-ai/sdk'
+import { ageLabel, endLabel } from '../utils/labels'
 import {
   applyScenario,
-  socialSecurityYearly,
+  householdSocialSecurityMonthly,
   survivorFromAge,
   evaluatePlan,
   STRESS_LABEL,
@@ -42,8 +43,9 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
         survivorDeathAge: {
           type: 'integer',
           description:
-            'Married couples only: age at which one spouse dies (0 = both live to the plan age). The survivor keeps the ' +
-            'larger Social Security benefit, spends the plan’s survivor spending share, and files single from the next year.',
+            'Married couples only: age at which the spouse in the plan’s survivor.whoDies dies (their own age; 0 = both ' +
+            'live). The survivor gets the larger of their own and a survivor Social Security benefit, spends the plan’s ' +
+            'survivor spending share, and files single from the next year.',
         },
         stress: {
           type: 'string',
@@ -94,20 +96,23 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
   const det = e.projection!
   return {
     chanceMoneyLastsToPlanAge: `${Math.round(e.successRate * 100)}%`,
-    planToAge: plan.lifeExpectancy,
+    planEndsAt: endLabel(plan),
     retirementAge: plan.retirementAge,
     savingsAtRetirement: round(e.savingsAtRetirement),
-    averageReturnsOutcome: e.depletionAge === null ? `lasts past ${plan.lifeExpectancy}` : `runs out at ${e.depletionAge}`,
+    averageReturnsOutcome: e.depletionAge === null ? `lasts past ${endLabel(plan)}` : `runs out at ${ageLabel(plan, e.depletionAge)}`,
     savingsLeftAtEnd: { typicalMarkets: round(e.leftTypical), poorMarkets10thPercentile: round(e.leftPoor) },
     lifetimeFederalTax: round(e.lifetimeFederalTax),
     lifetimeStateTax: round(e.lifetimeStateTax),
     lifetimeHealthcare: round(e.lifetimeHealthcare),
-    socialSecurityMonthlyAtClaimAge: round(socialSecurityYearly(plan, false) / 12),
-    ...(survivorFromAge(plan) !== Infinity ? { survivorModeled: `one spouse dies at ${plan.survivor.firstDeathAge}` } : {}),
+    socialSecurityMonthlyAtClaimAge: round(householdSocialSecurityMonthly(plan)),
+    ...(survivorFromAge(plan) !== Infinity
+      ? { survivorModeled: `${plan.survivor.whoDies === 'you' ? 'you die' : 'your spouse dies'} at ${plan.survivor.firstDeathAge}` }
+      : {}),
     milestones: det.years
       .filter((y, i) => i % 5 === 0 || y.age === plan.retirementAge)
       .map((y) => ({
         age: y.age,
+        ...(y.spouseAge !== null ? { spouseAge: y.spouseAge } : {}),
         savings: round(y.startBalanceReal),
         spendingInclHealthcare: round(y.spending / y.priceLevel),
         income: round(y.income / y.priceLevel),

@@ -1,5 +1,6 @@
 import { payoutRate, type MonteCarloResult, type Plan } from '../engine'
 import { formatUSD, formatUSDCompact } from '../utils/format'
+import { endLabel } from '../utils/labels'
 import { OutcomeComparison } from './OutcomeComparison'
 
 /** The plan with vs. without its annuity purchase. */
@@ -14,7 +15,7 @@ export function AnnuityComparison({ plan, withAnnuity, withoutAnnuity }: { plan:
           for life (today's dollars). Savings left are in today's dollars; the annuity itself is worth nothing to heirs.
         </>
       }
-      planToAge={plan.lifeExpectancy}
+      endAge={endLabel(plan)}
       baseLabel="Without"
       changedLabel="With annuity"
       base={withoutAnnuity}

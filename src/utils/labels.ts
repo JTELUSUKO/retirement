@@ -1,5 +1,5 @@
 import type { AccountType, IncomeKind, Plan, Scenario } from '../engine'
-import { applyScenario, STRESS_LABEL } from '../engine'
+import { applyScenario, planEndAge, spouseOffset, STRESS_LABEL } from '../engine'
 import { formatUSD } from './format'
 
 export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
@@ -28,7 +28,20 @@ export function describeScenario(plan: Plan, scenario: Scenario): string {
   if (o.annualSpending !== undefined) parts.push(`Spend ${formatUSD(p.annualSpending)}/yr`)
   if (o.socialSecurityClaimAge !== undefined) parts.push(`Social Security at ${p.socialSecurityClaimAge}`)
   if (o.annuityEnabled !== undefined) parts.push(o.annuityEnabled ? 'With the annuity' : 'Without the annuity')
-  if (o.survivorDeathAge !== undefined) parts.push(o.survivorDeathAge > 0 ? `One spouse dies at ${o.survivorDeathAge}` : 'Both live')
+  if (o.survivorDeathAge !== undefined) {
+    parts.push(o.survivorDeathAge > 0 ? `${plan.survivor.whoDies === 'you' ? 'You die' : 'Spouse dies'} at ${o.survivorDeathAge}` : 'Both live')
+  }
   if (scenario.stress !== 'none') parts.push(STRESS_LABEL[scenario.stress])
   return parts.join('; ') || 'No changes'
 }
+
+/** An age on the plan's timeline (yours), with the spouse's age alongside when it differs: "98 (spouse 95)". */
+export const ageLabel = (plan: Plan, yourAge: number): string =>
+  spouseOffset(plan) === 0 ? `${yourAge}` : `${yourAge} (spouse ${yourAge + spouseOffset(plan)})`
+
+/** Short form for table cells: "98 / 95". */
+export const ageCell = (plan: Plan, yourAge: number): string =>
+  spouseOffset(plan) === 0 ? `${yourAge}` : `${yourAge} / ${yourAge + spouseOffset(plan)}`
+
+/** The final age of the plan, labeled. */
+export const endLabel = (plan: Plan): string => ageLabel(plan, planEndAge(plan))

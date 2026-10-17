@@ -5,7 +5,8 @@ import { formatUSDCompact } from '../utils/format'
 interface Props {
   title: string
   description: ReactNode
-  planToAge: number
+  /** Final age label, e.g. "95" or "100 (spouse 95)" */
+  endAge: string
   /** Column labels, e.g. "Without" / "With annuity" */
   baseLabel: string
   changedLabel: string
@@ -20,23 +21,23 @@ function compare(changed: number, base: number): 'changed' | 'base' | null {
 }
 
 /** Two simulations side by side: chance the money lasts and savings left, with the better value in bold. */
-export function OutcomeComparison({ title, description, planToAge, baseLabel, changedLabel, base, changed }: Props) {
+export function OutcomeComparison({ title, description, endAge, baseLabel, changedLabel, base, changed }: Props) {
   const last = (mc: MonteCarloResult) => mc.years.at(-1)!
   const rows = [
     {
-      label: `Chance money lasts to ${planToAge}`,
+      label: `Chance money lasts to ${endAge}`,
       base: `${Math.round(base.successRate * 100)}%`,
       changed: `${Math.round(changed.successRate * 100)}%`,
       better: compare(changed.successRate, base.successRate),
     },
     {
-      label: `Savings left at ${planToAge}, typical markets`,
+      label: `Savings left at ${endAge}, typical markets`,
       base: formatUSDCompact(last(base).p50),
       changed: formatUSDCompact(last(changed).p50),
       better: compare(last(changed).p50, last(base).p50),
     },
     {
-      label: `Savings left at ${planToAge}, poor markets (10th)`,
+      label: `Savings left at ${endAge}, poor markets (10th)`,
       base: formatUSDCompact(last(base).p10),
       changed: formatUSDCompact(last(changed).p10),
       better: compare(last(changed).p10, last(base).p10),

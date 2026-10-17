@@ -1,4 +1,5 @@
 import { CONFIG_2026 } from './config/2026'
+import { planEndAge, spouseOffset } from './survivor'
 import type { Plan, PlanIssue } from './types'
 
 const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
@@ -14,6 +15,7 @@ export function missingEssentials(plan: Plan): string[] {
   if (plan.currentAge === 0) missing.push('your age')
   if (plan.retirementAge === 0) missing.push('the age you plan to retire')
   if (plan.lifeExpectancy === 0) missing.push('the age to plan to (many people use 90–95)')
+  if (plan.filingStatus === 'married' && plan.spouseCurrentAge === 0) missing.push('your spouse’s age')
   if (plan.annualSpending === 0) missing.push('your yearly spending in retirement')
   return missing
 }
@@ -30,6 +32,9 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     ['lifeExpectancy', 'Enter the age to plan to.'],
   ]
   for (const [field, message] of blanks) if (plan[field] === 0) issues.push({ field, message })
+  if (plan.filingStatus === 'married' && plan.spouseCurrentAge === 0) {
+    issues.push({ field: 'spouseCurrentAge', message: 'Enter your spouse’s age.' })
+  }
   if (issues.length > 0) return issues
 
   if (currentAge < AGE_LIMITS.min || currentAge > AGE_LIMITS.max) {
@@ -60,10 +65,26 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     plan.stateRetirementExclusion,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
+  if (plan.filingStatus === 'married') {
+    if (plan.spouseCurrentAge < AGE_LIMITS.min || plan.spouseCurrentAge > AGE_LIMITS.max) {
+      issues.push({ field: 'spouseCurrentAge', message: `Spouse’s age must be between ${AGE_LIMITS.min} and ${AGE_LIMITS.max}.` })
+    }
+    if (plan.spouseClaimAge < earliestClaimAge || plan.spouseClaimAge > latestClaimAge) {
+      issues.push({ field: 'spouseClaimAge', message: `Social Security can be claimed between ${earliestClaimAge} and ${latestClaimAge}.` })
+    }
+    if (planEndAge(plan) > AGE_LIMITS.max) {
+      issues.push({ field: 'lifeExpectancy', message: `With your age difference, the plan would run past ${AGE_LIMITS.max}. Lower “plan to” age.` })
+    }
+  }
   if (plan.filingStatus === 'married' && plan.survivor.enabled) {
-    const { firstDeathAge, spendingShare } = plan.survivor
-    if (firstDeathAge <= currentAge || firstDeathAge >= lifeExpectancy) {
-      issues.push({ field: 'survivor', message: 'The age one of you dies must be after today and before your “plan to” age.' })
+    const { firstDeathAge, spendingShare, whoDies } = plan.survivor
+    const theirAgeNow = whoDies === 'you' ? currentAge : plan.spouseCurrentAge
+    const theirAgeAtEnd = planEndAge(plan) + (whoDies === 'you' ? 0 : spouseOffset(plan))
+    if (firstDeathAge <= theirAgeNow || firstDeathAge >= theirAgeAtEnd) {
+      issues.push({
+        field: 'survivor',
+        message: `The age ${whoDies === 'you' ? 'you die' : 'your spouse dies'} must be after their age today and before the plan ends (${theirAgeAtEnd}).`,
+      })
     }
     if (spendingShare < 0.3 || spendingShare > 1) {
       issues.push({ field: 'survivor', message: 'Survivor spending should be between 30% and 100% of the couple’s.' })

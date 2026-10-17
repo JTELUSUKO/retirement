@@ -38,11 +38,11 @@ describe('applyScenario', () => {
 })
 
 describe('survivor override', () => {
-  const married: Plan = { ...plan, filingStatus: 'married', survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.8 } }
+  const married: Plan = { ...plan, filingStatus: 'married', survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.8 } }
 
   it('turns on an early death at the given age, keeping the plan’s spending share', () => {
     const p = applyScenario(married, scenario({ overrides: { survivorDeathAge: 75 } }))
-    expect(p.survivor).toEqual({ enabled: true, firstDeathAge: 75, spendingShare: 0.8 })
+    expect(p.survivor).toEqual({ enabled: true, whoDies: 'you', firstDeathAge: 75, spendingShare: 0.8 })
     expect(survivorDeathAgeOf(p)).toBe(75)
   })
 

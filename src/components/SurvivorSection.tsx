@@ -24,20 +24,33 @@ export function SurvivorSection() {
       </label>
       {s.enabled && (
         <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField label="At age" placeholder="e.g. 80" min={AGE_LIMITS.min} max={AGE_LIMITS.max} value={s.firstDeathAge} onChange={(v) => set({ firstDeathAge: v })} />
-            <PercentField label="Survivor’s spending" min={30} max={100} value={s.spendingShare} onChange={(v) => set({ spendingShare: v })} />
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block text-sm">
+              <span className="text-slate-600 dark:text-slate-400">Who</span>
+              <select
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+                value={s.whoDies}
+                onChange={(e) => set({ whoDies: e.target.value as typeof s.whoDies })}
+              >
+                <option value="you">You</option>
+                <option value="spouse">Your spouse</option>
+              </select>
+            </label>
+            <NumberField label="At their age" placeholder="e.g. 80" min={AGE_LIMITS.min} max={AGE_LIMITS.max} value={s.firstDeathAge} onChange={(v) => set({ firstDeathAge: v })} />
+            <PercentField label="Survivor spends" min={30} max={100} value={s.spendingShare} onChange={(v) => set({ spendingShare: v })} />
           </div>
           <p className="text-xs text-slate-500">
-            From that age the survivor keeps the larger of your two Social Security benefits, spends this share of what
-            you spend together (healthcare is counted for one person), and receives each pension or other income at its
-            “after a death” share. From the next year they file taxes as single, which usually means a higher tax rate.
-            Survivor spending is often 70–80% of a couple’s.
+            The survivor gets the larger of their own Social Security and a survivor benefit: the deceased’s benefit (at
+            least 82.5% of their full benefit if they claimed early; their full benefit plus any delay credits if they
+            hadn’t claimed yet), reduced if the survivor starts it before 67. It starts at the later of 60, the death,
+            and the survivor’s own claiming age. The survivor spends this share of what you spend together (healthcare
+            counted for one), gets each pension or other income at its “after a death” share, and files single from the
+            next year. Survivor spending is often 70–80% of a couple’s.
           </p>
           {plan.spouseSocialSecurityAtFRA === 0 && plan.socialSecurityAtFRA > 0 && (
             <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
-              ⚠ Your spouse’s Social Security is empty. If “Your SS” holds a combined amount for both of you, split it
-              into the two fields, or the survivor would keep the whole combined benefit.
+              ⚠ Your spouse’s Social Security is empty. If “Yours” holds a combined amount for both of you, split it into
+              the two fields, or the survivor would keep the whole combined benefit.
             </p>
           )}
         </div>

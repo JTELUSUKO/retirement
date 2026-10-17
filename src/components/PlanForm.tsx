@@ -22,6 +22,7 @@ export function PlanForm() {
   const { plan, update, updateAssumptions, updateHealthcare, updateAccount, addAccount, removeAccount } = usePlanStore()
   const issues = validatePlan(plan)
   // Blank (0) fields just show their placeholder; the results area lists what's still needed
+  const married = plan.filingStatus === 'married'
   const errorFor = (field: PlanIssue['field']) =>
     field !== 'accounts' && plan[field] === 0 ? undefined : issues.find((i) => i.field === field)?.message
   const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
@@ -39,15 +40,23 @@ export function PlanForm() {
             onChange={(e) => update({ filingStatus: e.target.value as Plan['filingStatus'] })}
           >
             <option value="single">Single</option>
-            <option value="married">Married filing jointly (spouse assumed same age)</option>
+            <option value="married">Married filing jointly</option>
           </select>
         </label>
         <StateField />
         <div className="grid grid-cols-3 gap-3">
           <NumberField label="Age" placeholder="e.g. 55" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
           <NumberField label="Retire at" placeholder="e.g. 65" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />
-          <NumberField label="Plan to age" placeholder="e.g. 95" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('lifeExpectancy')} />
+          <NumberField label={married ? 'Plan to (younger)' : 'Plan to age'} placeholder="e.g. 95" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('lifeExpectancy')} />
         </div>
+        {married && (
+          <div className="grid grid-cols-3 items-end gap-3">
+            <NumberField label="Spouse’s age" placeholder="e.g. 55" value={plan.spouseCurrentAge} onChange={(v) => update({ spouseCurrentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('spouseCurrentAge')} />
+            <p className="col-span-2 pb-2 text-xs text-slate-500">
+              You retire together at your “Retire at” age. The plan runs until the younger of you reaches “Plan to”.
+            </p>
+          </div>
+        )}
       </Section>
 
       <Section title="Accounts">
@@ -97,10 +106,11 @@ export function PlanForm() {
       <Section title="Spending & Social Security">
         <NumberField label="Yearly spending, excluding healthcare (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
         {plan.filingStatus === 'married' ? (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <NumberField label="Yours / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
             <NumberField label="Spouse’s / mo" prefix="$" min={0} step={50} value={plan.spouseSocialSecurityAtFRA} onChange={(v) => update({ spouseSocialSecurityAtFRA: v })} />
-            <NumberField label="Both claim at" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
+            <NumberField label="You claim at" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
+            <NumberField label="Spouse claims at (their age)" min={earliestClaimAge} max={latestClaimAge} value={plan.spouseClaimAge} onChange={(v) => update({ spouseClaimAge: v })} error={errorFor('spouseClaimAge')} />
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

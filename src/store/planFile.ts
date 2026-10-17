@@ -30,7 +30,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 /** Returns the first problem with the plan's shape, or null if it looks complete. */
 function shapeProblem(plan: unknown): string | null {
   if (!isObj(plan)) return 'the plan is missing'
-  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'spouseSocialSecurityAtFRA', 'socialSecurityClaimAge']) {
+  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'spouseSocialSecurityAtFRA', 'spouseCurrentAge', 'spouseClaimAge', 'socialSecurityClaimAge']) {
     if (!isNum(plan[key])) return `“${key}” must be a number`
   }
   if (plan.filingStatus !== 'single' && plan.filingStatus !== 'married') return '“filingStatus” must be single or married'
@@ -58,7 +58,13 @@ function shapeProblem(plan: unknown): string | null {
   }
 
   const survivor = plan.survivor
-  if (!isObj(survivor) || typeof survivor.enabled !== 'boolean' || !isNum(survivor.firstDeathAge) || !isNum(survivor.spendingShare)) {
+  if (
+    !isObj(survivor) ||
+    typeof survivor.enabled !== 'boolean' ||
+    (survivor.whoDies !== 'you' && survivor.whoDies !== 'spouse') ||
+    !isNum(survivor.firstDeathAge) ||
+    !isNum(survivor.spendingShare)
+  ) {
     return 'the survivor settings are incomplete'
   }
 

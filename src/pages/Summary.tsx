@@ -3,7 +3,8 @@ import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import {
   applyScenario,
-  socialSecurityYearly,
+  householdSocialSecurityMonthly,
+  spouseOffset,
   survivorFromAge,
   evaluatePlan,
   missingEssentials,
@@ -16,7 +17,7 @@ import {
 } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
-import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL } from '../utils/labels'
+import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
 
 const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits)}%`
@@ -101,7 +102,7 @@ export function Summary() {
   const mc = base.monteCarlo!
   const success = Math.round(base.successRate * 100)
   const verdict = success >= 85 ? '✓ Strong' : success >= 70 ? '⚠ Borderline' : '✕ At risk'
-  const ssMonthly = socialSecurityYearly(plan, false) / 12
+  const ssMonthly = householdSocialSecurityMonthly(plan)
   const a = plan.annuityPurchase
   const people = plan.filingStatus === 'married' ? 2 : 1
 
@@ -122,9 +123,9 @@ export function Summary() {
         <Section title="Key results">
           <div className="grid grid-cols-4 gap-3 text-sm">
             {[
-              [`Chance money lasts to ${plan.lifeExpectancy}`, `${success}%`, `${verdict} · ${mc.runs.toLocaleString()} simulations`],
+              [`Chance money lasts to ${endLabel(plan)}`, `${success}%`, `${verdict} · ${mc.runs.toLocaleString()} simulations`],
               [`Savings at ${plan.retirementAge}`, formatUSDCompact(base.savingsAtRetirement), "Today's dollars"],
-              ['With average returns', base.depletionAge === null ? `Lasts past ${plan.lifeExpectancy}` : `Runs out at ${base.depletionAge}`, 'Same return every year'],
+              ['With average returns', base.depletionAge === null ? `Lasts past ${endLabel(plan)}` : `Runs out at ${ageLabel(plan, base.depletionAge)}`, 'Same return every year'],
               [`Social Security at ${plan.socialSecurityClaimAge}`, `${formatUSD(ssMonthly)}/mo`, "Today's dollars"],
             ].map(([label, value, note]) => (
               <div key={label} className="rounded-md border border-slate-200 p-3">
@@ -137,7 +138,7 @@ export function Summary() {
           <p className="text-sm text-slate-700">
             Over retirement (average returns, today's dollars): income tax {formatUSDCompact(base.lifetimeTax)} (
             {formatUSDCompact(base.lifetimeFederalTax)} federal, {formatUSDCompact(base.lifetimeStateTax)} state),
-            healthcare {formatUSDCompact(base.lifetimeHealthcare)}. Savings left at {plan.lifeExpectancy}:{' '}
+            healthcare {formatUSDCompact(base.lifetimeHealthcare)}. Savings left at {endLabel(plan)}:{' '}
             {formatUSDCompact(base.leftTypical)} in typical markets, {formatUSDCompact(base.leftPoor)} in poor markets.
           </p>
         </Section>
@@ -190,21 +191,26 @@ export function Summary() {
         <Section title="Your plan">
           <Facts
             rows={[
-              ['Filing status', plan.filingStatus === 'married' ? 'Married filing jointly (spouse assumed same age)' : 'Single'],
+              ['Filing status', plan.filingStatus === 'married' ? 'Married filing jointly' : 'Single'],
               ['State', plan.state ? `${stateName(plan.state)}${plan.stateRetirementExclusion > 0 ? `, ${formatUSD(plan.stateRetirementExclusion)}/yr per person of retirement income exempt` : ''}` : 'Not chosen (no state tax)'],
-              ['Ages', `Now ${plan.currentAge} · retire at ${plan.retirementAge} · plan to ${plan.lifeExpectancy}`],
+              [
+                'Ages',
+                people === 2
+                  ? `You ${plan.currentAge}, spouse ${plan.spouseCurrentAge} · retire when you are ${plan.retirementAge} · plan until the younger is ${plan.lifeExpectancy}`
+                  : `Now ${plan.currentAge} · retire at ${plan.retirementAge} · plan to ${plan.lifeExpectancy}`,
+              ],
               ['Yearly spending', `${formatUSD(plan.annualSpending)} in today's dollars, excluding healthcare`],
               [
                 'Social Security',
                 people === 2
-                  ? `${formatUSD(plan.socialSecurityAtFRA)}/mo (you) + ${formatUSD(plan.spouseSocialSecurityAtFRA)}/mo (spouse) at 67, both claiming at ${plan.socialSecurityClaimAge}`
+                  ? `${formatUSD(plan.socialSecurityAtFRA)}/mo (you, claiming at ${plan.socialSecurityClaimAge}) + ${formatUSD(plan.spouseSocialSecurityAtFRA)}/mo (spouse, claiming at ${plan.spouseClaimAge}), at 67 amounts`
                   : `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67, claiming at ${plan.socialSecurityClaimAge}`,
               ],
               ...(survivorFromAge(plan) !== Infinity
                 ? ([
                     [
                       'If one dies first',
-                      `Modeled at ${plan.survivor.firstDeathAge}: survivor keeps the larger Social Security benefit, spends ${Math.round(plan.survivor.spendingShare * 100)}%, files single from the next year`,
+                      `${plan.survivor.whoDies === 'you' ? 'You die' : 'Your spouse dies'} at ${plan.survivor.firstDeathAge}: the survivor gets the larger of their own and a survivor Social Security benefit, spends ${Math.round(plan.survivor.spendingShare * 100)}%, files single from the next year`,
                     ],
                   ] as [string, string][])
                 : []),
@@ -277,7 +283,7 @@ export function Summary() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className={th}>Age</th>
+                <th className={th}>{people === 2 && spouseOffset(plan) !== 0 ? 'Age (you / spouse)' : 'Age'}</th>
                 <th className={`${th} ${num}`}>Savings</th>
                 <th className={`${th} ${num}`}>Spending incl. healthcare</th>
                 <th className={`${th} ${num}`}>Income</th>
@@ -289,7 +295,7 @@ export function Summary() {
               {milestoneYears(plan, det.years).map((y) => (
                 <tr key={y.age}>
                   <td className={td}>
-                    {y.age}
+                    {ageCell(plan, y.age)}
                     {y.age === plan.retirementAge && <span className="text-slate-500"> · retire</span>}
                   </td>
                   <td className={`${td} ${num}`}>{formatUSD(y.startBalanceReal)}</td>
@@ -313,7 +319,7 @@ export function Summary() {
           <ul className="list-disc space-y-0.5 pl-5 text-xs text-slate-700">
             <li>
               {mc.runs.toLocaleString()} simulated markets with random yearly returns (lognormal) and random inflation; “chance
-              money lasts” is the share where savings cover spending every year to {plan.lifeExpectancy}.
+              money lasts” is the share where savings cover spending every year to {endLabel(plan)}.
             </li>
             <li>
               Withdrawals: required minimum distributions first, the HSA for healthcare, then cash → taxable → pre-tax → Roth → HSA.

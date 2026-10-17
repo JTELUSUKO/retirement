@@ -19,7 +19,9 @@ export const examplePlan: Plan = {
   annualSpending: 60_000,
   socialSecurityAtFRA: 2_800,
   spouseSocialSecurityAtFRA: 0,
-  survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
+  spouseCurrentAge: 55,
+  spouseClaimAge: 67,
+  survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
   socialSecurityClaimAge: 67,
   incomeStreams: [],
   annuityPurchase: {
@@ -56,7 +58,9 @@ export const blankPlan: Plan = {
   annualSpending: 0,
   socialSecurityAtFRA: 0,
   spouseSocialSecurityAtFRA: 0,
-  survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
+  spouseCurrentAge: 0,
+  spouseClaimAge: 67,
+  survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
   incomeStreams: [],
   annuityPurchase: { ...examplePlan.annuityPurchase, enabled: false, purchaseAge: 0 },
   scenarios: [],
@@ -131,8 +135,17 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
     state.plan = {
       ...state.plan,
       spouseSocialSecurityAtFRA: state.plan.spouseSocialSecurityAtFRA ?? 0,
-      survivor: state.plan.survivor ?? { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
+      survivor: state.plan.survivor ?? { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
       incomeStreams: state.plan.incomeStreams.map((s) => ({ ...s, survivorShare: s.survivorShare ?? 1 })),
+    }
+  }
+  // v10 → v11: separate spouse age and claiming age; who dies first
+  if (version < 11) {
+    state.plan = {
+      ...state.plan,
+      spouseCurrentAge: state.plan.spouseCurrentAge ?? state.plan.currentAge,
+      spouseClaimAge: state.plan.spouseClaimAge ?? state.plan.socialSecurityClaimAge,
+      survivor: { ...state.plan.survivor, whoDies: state.plan.survivor.whoDies ?? 'you' },
     }
   }
   return state
@@ -142,7 +155,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 10
+export const PLAN_VERSION = 11
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 

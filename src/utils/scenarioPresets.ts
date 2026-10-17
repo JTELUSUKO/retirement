@@ -1,4 +1,4 @@
-import { STRESS_LABEL, type Plan, type Scenario } from '../engine'
+import { planEndAge, spouseOffset, STRESS_LABEL, type Plan, type Scenario } from '../engine'
 import { formatUSDCompact } from './format'
 
 type Preset = {
@@ -51,8 +51,11 @@ export const SCENARIO_PRESETS: Preset[] = [
     label: 'One spouse dies early',
     when: (p) => p.filingStatus === 'married',
     make: (p) => {
-      // Ten years into retirement, but at least a year before the plan ends
-      const age = Math.min(Math.max(p.retirementAge + 10, p.currentAge + 1), p.lifeExpectancy - 1)
+      // Ten years into retirement (in the age of whoever the plan says dies first), inside the plan
+      const offset = p.survivor.whoDies === 'spouse' ? spouseOffset(p) : 0
+      const now = p.currentAge + offset
+      const end = planEndAge(p) + offset
+      const age = Math.min(Math.max(p.retirementAge + 10 + offset, now + 1), end - 1)
       return { name: `Spouse dies at ${age}`, overrides: { survivorDeathAge: age }, stress: 'none' }
     },
   },

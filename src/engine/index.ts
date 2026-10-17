@@ -24,4 +24,11 @@ export type { Scenario, ScenarioOverrides, StressTest, MarketAdjust } from './sc
 export { evaluatePlan } from './evaluate'
 export type { PlanEvaluation } from './evaluate'
 export { stateIncomeTax, describeStateRule, stateRule, NO_INCOME_TAX_STATES, STATE_TAX_2026 } from './stateTax'
-export { householdAt, socialSecurityYearly, survivorFromAge } from './survivor'
+export {
+  householdAt,
+  householdSocialSecurityMonthly,
+  planEndAge,
+  socialSecurityAt,
+  spouseOffset,
+  survivorFromAge,
+} from './survivor'

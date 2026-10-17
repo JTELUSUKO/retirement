@@ -16,6 +16,7 @@ import {
   type StressTest,
 } from '../engine'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
+import { ageLabel, endLabel } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
 
@@ -270,19 +271,19 @@ export function Scenarios() {
                 Results
               </th>
             </tr>
-            {resultRow(`Chance money lasts to ${plan.lifeExpectancy}`, (r, i) => {
+            {resultRow(`Chance money lasts to ${endLabel(plan)}`, (r, i) => {
               const pct = Math.round(r.successRate * 100)
               const icon = pct >= 85 ? '✓' : pct >= 70 ? '⚠' : '✕'
               return emphasize(`${icon} ${pct}%`, successValues[i] === bestOf(successValues) && results.length > 1)
             })}
             {resultRow('Savings at retirement', (r) => formatUSDCompact(r.savingsAtRetirement))}
             {resultRow('With average returns', (r) =>
-              r.depletionAge === null ? `Lasts past ${plan.lifeExpectancy}` : `Runs out at ${r.depletionAge}`,
+              r.depletionAge === null ? `Lasts past ${endLabel(plan)}` : `Runs out at ${ageLabel(plan, r.depletionAge)}`,
             )}
-            {resultRow(`Left at ${plan.lifeExpectancy}, typical markets`, (r, i) =>
+            {resultRow(`Left at ${endLabel(plan)}, typical markets`, (r, i) =>
               emphasize(formatUSDCompact(r.leftTypical), typicalValues[i] === bestOf(typicalValues) && results.length > 1),
             )}
-            {resultRow(`Left at ${plan.lifeExpectancy}, poor markets (10th)`, (r, i) =>
+            {resultRow(`Left at ${endLabel(plan)}, poor markets (10th)`, (r, i) =>
               emphasize(formatUSDCompact(r.leftPoor), poorValues[i] === bestOf(poorValues) && poorValues[i] > 0 && results.length > 1),
             )}
             {resultRow('Income tax over retirement', (r) => formatUSDCompact(r.lifetimeTax))}

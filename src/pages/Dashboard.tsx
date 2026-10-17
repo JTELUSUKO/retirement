@@ -7,9 +7,10 @@ import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
-import { projectPlan, runMonteCarlo, socialSecurityYearly, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
+import { projectPlan, runMonteCarlo, householdSocialSecurityMonthly, planEndAge, spouseOffset, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
+import { endLabel } from '../utils/labels'
 
 const Results = memo(function Results({ plan }: { plan: Plan }) {
   const result = useMemo(() => projectPlan(plan), [plan])
@@ -24,7 +25,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
   // Household benefit while both are alive
-  const ssMonthly = socialSecurityYearly(plan, false) / 12
+  const ssMonthly = householdSocialSecurityMonthly(plan)
   // Couples who model an early death: also run the plan with both living
   const bothLive = useMemo(() => {
     if (survivorFromAge(plan) === Infinity) return null
@@ -48,18 +49,18 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
           detail={`${formatUSDCompact(result.balanceAtRetirement)} in future dollars`}
         />
         <StatCard
-          label={`Chance money lasts to ${plan.lifeExpectancy}`}
+          label={`Chance money lasts to ${endLabel(plan)}`}
           value={`${success}%`}
           detail={`${successNote} · ${mc.runs.toLocaleString()} simulated markets`}
           tone={successTone}
         />
         <StatCard
           label="With average returns"
-          value={lasts ? `Lasts past ${plan.lifeExpectancy}` : `Runs out at ${result.depletionAge}`}
-          detail="Same return and inflation every year"
+          value={lasts ? `Lasts past ${planEndAge(plan)}` : `Runs out at ${result.depletionAge}`}
+          detail={`${spouseOffset(plan) !== 0 ? `Your age (spouse ${(lasts ? planEndAge(plan) : result.depletionAge!) + spouseOffset(plan)}) · ` : ''}Same return and inflation every year`}
         />
         <StatCard
-          label={`Social Security at ${plan.socialSecurityClaimAge}`}
+          label={plan.filingStatus === 'married' ? 'Social Security, both claimed' : `Social Security at ${plan.socialSecurityClaimAge}`}
           value={`${formatUSD(ssMonthly)}/mo`}
           detail={plan.filingStatus === 'married' ? "Both of you, today's dollars" : "Today's dollars"}
         />
@@ -99,7 +100,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
       <details className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <summary className="cursor-pointer font-medium">Year-by-year table</summary>
-        <YearTable averageYears={result.years} simulatedYears={mc.years} />
+        <YearTable averageYears={result.years} simulatedYears={mc.years} plan={plan} />
       </details>
     </section>
   )

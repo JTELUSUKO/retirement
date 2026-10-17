@@ -41,14 +41,19 @@ export interface Plan {
   stateRetirementExclusion: number
   currentAge: number
   retirementAge: number
+  /** Plan to this age (couples: the age the younger spouse reaches). */
   lifeExpectancy: number
   accounts: Account[]
   /** Yearly spending in retirement excluding healthcare, in today's dollars. */
   annualSpending: number
   /** Your monthly benefit at full retirement age (67), from your ssa.gov statement. */
   socialSecurityAtFRA: number
-  /** Spouse's monthly benefit at 67 (married filing jointly only). Both are assumed to claim at the same age. */
+  /** Spouse's monthly benefit at 67 (married filing jointly only). */
   spouseSocialSecurityAtFRA: number
+  /** Spouse's age today (married only; 0 = not entered). The timeline runs on your age. */
+  spouseCurrentAge: number
+  /** Age the spouse claims Social Security (their own age). */
+  spouseClaimAge: number
   /** Married couples: what happens if one spouse dies first. */
   survivor: SurvivorSettings
   socialSecurityClaimAge: number
@@ -99,12 +104,15 @@ export interface AnnuityPurchase {
 }
 
 /**
- * One spouse dies at `firstDeathAge` (both are assumed the same age). From that age the survivor keeps the larger
- * Social Security benefit, spends `spendingShare` of the couple's spending, pays healthcare for one, and receives
- * each income stream at its `survivorShare`. From the next year they file as single.
+ * One spouse (`whoDies`) dies at `firstDeathAge` (their own age). From then on the survivor receives the larger of
+ * their own benefit and an SSA-style survivor benefit, spends `spendingShare` of the couple's spending, pays
+ * healthcare for one, and receives each income stream at its `survivorShare`. From the next year they file single.
  */
 export interface SurvivorSettings {
   enabled: boolean
+  /** Which spouse dies first */
+  whoDies: 'you' | 'spouse'
+  /** Age of that spouse when they die */
   firstDeathAge: number
   /** Survivor's spending as a share of the couple's (excluding healthcare), e.g. 0.75 */
   spendingShare: number
@@ -149,6 +157,8 @@ export interface YearResult {
   otherIncome: number
   /** One spouse has died (survivor modeling) */
   widowed: boolean
+  /** Spouse's age this year (couples), else null */
+  spouseAge: number | null
   /** Payments from a purchased annuity this year (included in income). */
   annuityIncome: number
   /** Savings used to buy the annuity this year (not spending; leaves the portfolio). */

@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { BUCKETS, type PercentileYear, type YearResult } from '../engine'
+import { BUCKETS, spouseOffset, type PercentileYear, type Plan, type YearResult } from '../engine'
 import { BUCKET_COLOR, BUCKET_LABEL } from '../utils/buckets'
 import { formatUSD } from '../utils/format'
+import { ageCell } from '../utils/labels'
 
 interface Props {
   averageYears: YearResult[]
   simulatedYears: PercentileYear[]
+  plan: Plan
 }
 
 type View = 'average' | 'accounts' | 'simulated'
@@ -13,7 +15,8 @@ type View = 'average' | 'accounts' | 'simulated'
 const th = 'px-2 py-1 font-normal'
 const td = 'px-2 py-1'
 
-export function YearTable({ averageYears, simulatedYears }: Props) {
+export function YearTable({ averageYears, simulatedYears, plan }: Props) {
+  const ageHead = spouseOffset(plan) !== 0 ? 'Age (you / spouse)' : 'Age'
   const [view, setView] = useState<View>('average')
   const buckets = BUCKETS.filter((b) => averageYears.some((y) => y.startByBucketReal[b] > 0.5))
 
@@ -46,7 +49,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
             <>
               <thead className="sticky top-0 bg-white text-slate-500 dark:bg-slate-900">
                 <tr>
-                  <th className={`${th} text-left`}>Age</th>
+                  <th className={`${th} text-left`}>{ageHead}</th>
                   <th className={th}>Start balance (today's $)</th>
                   <th className={th}>Contributions</th>
                   <th className={th}>Withdrawal</th>
@@ -61,7 +64,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
               <tbody>
                 {averageYears.map((y) => (
                   <tr key={y.age} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className={`${td} text-left`}>{y.age}</td>
+                    <td className={`${td} text-left`}>{ageCell(plan, y.age)}</td>
                     <td className={td}>{formatUSD(y.startBalanceReal)}</td>
                     <td className={td}>{formatUSD(y.contributions)}</td>
                     <td className={td}>{formatUSD(y.withdrawal)}</td>
@@ -79,7 +82,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
             <>
               <thead className="sticky top-0 bg-white text-slate-500 dark:bg-slate-900">
                 <tr>
-                  <th className={`${th} text-left`}>Age</th>
+                  <th className={`${th} text-left`}>{ageHead}</th>
                   {buckets.map((b) => (
                     <th key={b} className={th}>
                       <span className="inline-flex items-center gap-1.5">
@@ -94,7 +97,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
               <tbody>
                 {averageYears.map((y) => (
                   <tr key={y.age} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className={`${td} text-left`}>{y.age}</td>
+                    <td className={`${td} text-left`}>{ageCell(plan, y.age)}</td>
                     {buckets.map((b) => (
                       <td key={b} className={td}>{formatUSD(y.startByBucketReal[b])}</td>
                     ))}
@@ -111,7 +114,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
             <>
               <thead className="sticky top-0 bg-white text-slate-500 dark:bg-slate-900">
                 <tr>
-                  <th className={`${th} text-left`}>Age</th>
+                  <th className={`${th} text-left`}>{ageHead}</th>
                   <th className={th}>Poor (10th)</th>
                   <th className={th}>25th</th>
                   <th className={th}>Median</th>
@@ -122,7 +125,7 @@ export function YearTable({ averageYears, simulatedYears }: Props) {
               <tbody>
                 {simulatedYears.map((y) => (
                   <tr key={y.age} className="border-t border-slate-100 dark:border-slate-800">
-                    <td className={`${td} text-left`}>{y.age}</td>
+                    <td className={`${td} text-left`}>{ageCell(plan, y.age)}</td>
                     <td className={td}>{formatUSD(y.p10)}</td>
                     <td className={td}>{formatUSD(y.p25)}</td>
                     <td className={td}>{formatUSD(y.p50)}</td>
