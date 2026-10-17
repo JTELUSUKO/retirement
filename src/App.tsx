@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
 import { Scenarios } from './pages/Scenarios'
+import { Summary } from './pages/Summary'
 
-type Page = 'plan' | 'compare'
+type Page = 'plan' | 'compare' | 'summary'
 
-const pageFromHash = (): Page => (window.location.hash === '#compare' ? 'compare' : 'plan')
+const pageFromHash = (): Page =>
+  window.location.hash === '#compare' ? 'compare' : window.location.hash === '#summary' ? 'summary' : 'plan'
 
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash)
@@ -30,8 +32,8 @@ export default function App() {
   )
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-7xl px-4 py-8 print:p-0">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold">Retirement Planner</h1>
           <p className="text-sm text-slate-500">A planning aid, not financial advice. Your data stays in this browser.</p>
@@ -39,9 +41,10 @@ export default function App() {
         <nav className="flex gap-1">
           {tab('plan', 'My plan', '#plan')}
           {tab('compare', 'Compare scenarios', '#compare')}
+          {tab('summary', 'Print summary', '#summary')}
         </nav>
       </header>
-      {page === 'plan' ? <Dashboard /> : <Scenarios />}
+      {page === 'plan' ? <Dashboard /> : page === 'compare' ? <Scenarios /> : <Summary />}
     </div>
   )
 }

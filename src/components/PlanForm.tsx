@@ -1,18 +1,11 @@
 import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
 
-const accountTypes: { value: AccountType; label: string }[] = [
-  { value: '401k', label: '401(k) / 403(b)' },
-  { value: 'traditional-ira', label: 'Traditional IRA' },
-  { value: 'roth', label: 'Roth IRA / Roth 401(k)' },
-  { value: 'hsa', label: 'HSA' },
-  { value: 'taxable', label: 'Taxable brokerage' },
-  { value: 'cash', label: 'Cash / savings' },
-]
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -71,8 +64,8 @@ export function PlanForm() {
                 aria-label="Account type"
                 onChange={(e) => updateAccount(acc.id, { type: e.target.value as AccountType })}
               >
-                {accountTypes.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                {Object.entries(ACCOUNT_TYPE_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
               <button

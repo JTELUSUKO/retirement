@@ -31,6 +31,8 @@ retirement/
 │   │   ├── annuity.test.ts
 │   │   ├── scenarios.ts         # Scenario overrides + stress tests (crash, high inflation) as market adjustments
 │   │   ├── scenarios.test.ts
+│   │   ├── evaluate.ts          # evaluatePlan: validate + projection + Monte Carlo → headline results
+│   │   ├── evaluate.test.ts
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -59,14 +61,16 @@ retirement/
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
-│   │   └── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
+│   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
+│   │   └── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
+│   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare)
+│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare / #summary)
 │   ├── main.tsx                 # React entry point
-│   └── index.css                # Tailwind import + chart color tokens (light/dark, validated palette)
+│   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages.
 ├── package.json                 # Scripts: dev, build, test, lint, preview
@@ -147,6 +151,13 @@ One row per year; the age is your age at the **start** of that year.
   *high inflation* adds 3 points to inflation for the first 10 retirement years.
 - Each scenario runs its own Monte Carlo; up to 3 scenarios. Scenarios are saved with the plan and in backups.
 
+## Printable summary
+
+- `#summary` renders a report on a "paper" that is always light (Tailwind's `dark:` variant is disabled inside
+  `.paper`, and chart tokens are reset to light values), so it prints the same in any OS theme.
+- **Print / Save as PDF** uses the browser's print dialog; the app header and buttons are hidden in print,
+  sections avoid page breaks, and `print-color-adjust: exact` keeps chart fills and legend swatches.
+
 ## How the Monte Carlo works
 
 - Each run draws a random return for every year from a **lognormal** distribution, using the
@@ -175,7 +186,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | Phase | New files |
 |---|---|
 | 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income · ✅ annuity purchase with comparison |
-| 3: Scenarios | ✅ export/import · ✅ scenario comparison + stress tests · next: printable summary |
+| 3: Scenarios | ✅ export/import · ✅ scenario comparison + stress tests · ✅ printable summary |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 
 ## Scripts

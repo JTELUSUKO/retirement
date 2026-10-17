@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Dark mode follows the OS, except inside .paper (the printable summary), which is always light. */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:not(:where(.paper, .paper *)) {
+      @slot;
+    }
+  }
+}
+
 body {
   @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
 }
@@ -31,5 +40,30 @@ body {
     --series-taxable: #199e70;
     --series-cash: #c98500;
     --series-hsa: #d55181;
+  }
+}
+
+/* Printable summary: always light, including chart colors */
+.paper {
+  color-scheme: light;
+  /* Keep legend swatches and fills when printing (browsers drop backgrounds by default) */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  --chart-series: #0f766e;
+  --chart-grid: #e2e8f0;
+  --chart-ink: #64748b;
+  --chart-text: #0f172a;
+  --chart-tooltip-bg: #ffffff;
+}
+
+@media print {
+  @page {
+    margin: 0.5in;
+  }
+  body {
+    background: #ffffff;
+  }
+  .paper section {
+    break-inside: avoid;
   }
 }

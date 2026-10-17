@@ -1,19 +1,19 @@
 import { AGE_LIMITS, type IncomeKind, type IncomeStream } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { INCOME_KIND_LABEL } from '../utils/labels'
 import { NumberField, PercentField } from './NumberField'
 
-const kinds: { value: IncomeKind; label: string; hint: string }[] = [
+const kinds: { value: IncomeKind; hint: string }[] = [
   {
     value: 'annuity',
-    label: 'Annuity',
     hint: 'Taxable: 100% if bought inside an IRA/401(k); only the earnings part if bought with after-tax money (check your contract).',
   },
-  { value: 'pension', label: 'Pension', hint: 'Usually 100% taxable. Many private pensions have no cost-of-living raise; government pensions often do.' },
-  { value: 'work', label: 'Part-time work', hint: 'Enter gross pay; payroll taxes aren’t modeled. Usually 100% taxable.' },
-  { value: 'rental', label: 'Rental income', hint: 'Enter net rent after expenses. Taxable share depends on depreciation; often less than 100%.' },
-  { value: 'other', label: 'Other', hint: 'Any other regular income in retirement.' },
+  { value: 'pension', hint: 'Usually 100% taxable. Many private pensions have no cost-of-living raise; government pensions often do.' },
+  { value: 'work', hint: 'Enter gross pay; payroll taxes aren’t modeled. Usually 100% taxable.' },
+  { value: 'rental', hint: 'Enter net rent after expenses. Taxable share depends on depreciation; often less than 100%.' },
+  { value: 'other', hint: 'Any other regular income in retirement.' },
 ]
-const labelOf = (kind: IncomeKind) => kinds.find((k) => k.value === kind)!.label
+const labelOf = (kind: IncomeKind) => INCOME_KIND_LABEL[kind]
 
 const checkbox = 'h-4 w-4 accent-teal-700 dark:accent-teal-400'
 
@@ -42,7 +42,7 @@ function IncomeCard({ stream }: { stream: IncomeStream }) {
           }}
         >
           {kinds.map((k) => (
-            <option key={k.value} value={k.value}>{k.label}</option>
+            <option key={k.value} value={k.value}>{labelOf(k.value)}</option>
           ))}
         </select>
         <button

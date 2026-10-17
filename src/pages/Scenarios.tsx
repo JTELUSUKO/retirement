@@ -4,11 +4,8 @@ import {
   AGE_LIMITS,
   applyScenario,
   CONFIG_2026,
-  projectPlan,
-  runMonteCarlo,
-  stressAdjust,
-  validatePlan,
-  type Plan,
+  evaluatePlan,
+  type PlanEvaluation,
   type Scenario,
   type ScenarioOverrides,
   type StressTest,
@@ -16,36 +13,6 @@ import {
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
-
-interface ColumnResult {
-  issues: string[]
-  successRate: number
-  savingsAtRetirement: number
-  depletionAge: number | null
-  leftTypical: number
-  leftPoor: number
-  lifetimeTax: number
-}
-
-function evaluate(plan: Plan, stress: StressTest): ColumnResult {
-  const issues = validatePlan(plan).map((i) => i.message)
-  if (issues.length > 0) {
-    return { issues, successRate: 0, savingsAtRetirement: 0, depletionAge: null, leftTypical: 0, leftPoor: 0, lifetimeTax: 0 }
-  }
-  const adjust = stressAdjust(plan, stress)
-  const det = projectPlan(plan, undefined, adjust)
-  const mc = runMonteCarlo(plan, { adjust })
-  const last = mc.years.at(-1)!
-  return {
-    issues,
-    successRate: mc.successRate,
-    savingsAtRetirement: det.balanceAtRetirementReal,
-    depletionAge: det.depletionAge,
-    leftTypical: last.p50,
-    leftPoor: last.p10,
-    lifetimeTax: det.years.reduce((sum, y) => sum + y.tax / y.priceLevel, 0),
-  }
-}
 
 const cell = 'px-3 py-2 align-middle'
 const select =
@@ -57,8 +24,8 @@ export function Scenarios() {
 
   const results = useMemo(
     () => [
-      evaluate(deferredPlan, 'none'),
-      ...deferredPlan.scenarios.map((s) => evaluate(applyScenario(deferredPlan, s), s.stress)),
+      evaluatePlan(deferredPlan),
+      ...deferredPlan.scenarios.map((s) => evaluatePlan(applyScenario(deferredPlan, s), s.stress)),
     ],
     [deferredPlan],
   )
@@ -86,7 +53,7 @@ export function Scenarios() {
   const typicalValues = results.map((r) => (r.issues.length ? -Infinity : r.leftTypical))
   const poorValues = results.map((r) => (r.issues.length ? -Infinity : r.leftPoor))
 
-  const resultRow = (label: string, render: (r: ColumnResult, i: number) => ReactNode) => (
+  const resultRow = (label: string, render: (r: PlanEvaluation, i: number) => ReactNode) => (
     <tr className="border-t border-slate-100 dark:border-slate-800">
       <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>{label}</th>
       {results.map((r, i) => (

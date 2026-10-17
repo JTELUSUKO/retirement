@@ -20,3 +20,5 @@ export {
   HIGH_INFLATION_YEARS,
 } from './scenarios'
 export type { Scenario, ScenarioOverrides, StressTest, MarketAdjust } from './scenarios'
+export { evaluatePlan } from './evaluate'
+export type { PlanEvaluation } from './evaluate'
