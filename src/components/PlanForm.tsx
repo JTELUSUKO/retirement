@@ -6,6 +6,7 @@ import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
 import { StateField } from './StateField'
+import { SurvivorSection } from './SurvivorSection'
 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -95,12 +96,21 @@ export function PlanForm() {
 
       <Section title="Spending & Social Security">
         <NumberField label="Yearly spending, excluding healthcare (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
-        <div className="grid grid-cols-2 gap-3">
-          <NumberField label={plan.filingStatus === 'married' ? 'Social Security at 67 / mo (both)' : 'Social Security at 67 / mo'} prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
-          <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
-        </div>
+        {plan.filingStatus === 'married' ? (
+          <div className="grid grid-cols-3 gap-3">
+            <NumberField label="Yours / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
+            <NumberField label="Spouse’s / mo" prefix="$" min={0} step={50} value={plan.spouseSocialSecurityAtFRA} onChange={(v) => update({ spouseSocialSecurityAtFRA: v })} />
+            <NumberField label="Both claim at" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <NumberField label="Social Security at 67 / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
+            <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
+          </div>
+        )}
         <p className="text-xs text-slate-500">
-          Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
+          {plan.filingStatus === 'married' ? 'Each spouse’s monthly benefit at 67. ' : ''}Find your estimate at{' '}
+          <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
         {plan.retirementAge > 0 && plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
           <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
@@ -111,6 +121,12 @@ export function PlanForm() {
           </p>
         )}
       </Section>
+
+      {plan.filingStatus === 'married' && (
+        <Section title="If one of you dies first">
+          <SurvivorSection />
+        </Section>
+      )}
 
       <Section title="Other income in retirement">
         <IncomeList />

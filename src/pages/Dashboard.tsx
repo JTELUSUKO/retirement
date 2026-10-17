@@ -1,12 +1,13 @@
 import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
+import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
 import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
-import { benefitAtClaimAge, projectPlan, runMonteCarlo, validatePlan, missingEssentials, type Plan } from '../engine'
+import { projectPlan, runMonteCarlo, socialSecurityYearly, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 
@@ -22,7 +23,13 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const success = Math.round(mc.successRate * 100)
   const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
-  const ssMonthly = benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge)
+  // Household benefit while both are alive
+  const ssMonthly = socialSecurityYearly(plan, false) / 12
+  // Couples who model an early death: also run the plan with both living
+  const bothLive = useMemo(() => {
+    if (survivorFromAge(plan) === Infinity) return null
+    return runMonteCarlo({ ...plan, survivor: { ...plan.survivor, enabled: false } })
+  }, [plan])
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
@@ -54,7 +61,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         <StatCard
           label={`Social Security at ${plan.socialSecurityClaimAge}`}
           value={`${formatUSD(ssMonthly)}/mo`}
-          detail="Today's dollars"
+          detail={plan.filingStatus === 'married' ? "Both of you, today's dollars" : "Today's dollars"}
         />
       </div>
 
@@ -70,6 +77,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       </p>
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
+      {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Range of outcomes by age</h2>
@@ -83,8 +91,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Savings by account type</h2>
         <p className="text-sm text-slate-500">
-          With average returns, in today's dollars. Healthcare is paid from your HSA first; other spending and income
-          income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
+          With average returns, in today's dollars. Healthcare is paid from your HSA first; other spending and income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
           {rmdAge}; any you don't spend are reinvested in taxable.
         </p>
         <BucketChart years={result.years} retirementAge={plan.retirementAge} rmdStartAge={rmdAge} />

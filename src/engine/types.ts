@@ -45,8 +45,12 @@ export interface Plan {
   accounts: Account[]
   /** Yearly spending in retirement excluding healthcare, in today's dollars. */
   annualSpending: number
-  /** Monthly benefit at full retirement age (67), from your ssa.gov statement (combined for couples). */
+  /** Your monthly benefit at full retirement age (67), from your ssa.gov statement. */
   socialSecurityAtFRA: number
+  /** Spouse's monthly benefit at 67 (married filing jointly only). Both are assumed to claim at the same age. */
+  spouseSocialSecurityAtFRA: number
+  /** Married couples: what happens if one spouse dies first. */
+  survivor: SurvivorSettings
   socialSecurityClaimAge: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
@@ -76,6 +80,8 @@ export interface IncomeStream {
   inflationAdjusted: boolean
   /** Share taxed as ordinary income, 0–1 (e.g. 1 for a pension or an annuity bought in an IRA). */
   taxableShare: number
+  /** Married: share that continues after the first death, 0–1 (e.g. 0.5 for a 50% survivor pension). */
+  survivorShare: number
 }
 
 /** Buying an immediate annuity with savings: payments start in the purchase year, for life. */
@@ -90,6 +96,18 @@ export interface AnnuityPurchase {
   inflationAdjusted: boolean
   /** "pretax" = IRA rollover (payments fully taxable); "aftertax" = taxable or cash money. */
   fundedFrom: 'pretax' | 'aftertax'
+}
+
+/**
+ * One spouse dies at `firstDeathAge` (both are assumed the same age). From that age the survivor keeps the larger
+ * Social Security benefit, spends `spendingShare` of the couple's spending, pays healthcare for one, and receives
+ * each income stream at its `survivorShare`. From the next year they file as single.
+ */
+export interface SurvivorSettings {
+  enabled: boolean
+  firstDeathAge: number
+  /** Survivor's spending as a share of the couple's (excluding healthcare), e.g. 0.75 */
+  spendingShare: number
 }
 
 /** Healthcare costs in retirement, per person per year in today's dollars. */
@@ -129,6 +147,8 @@ export interface YearResult {
   income: number
   /** Other income (pensions, annuities, work, rental) received this year. */
   otherIncome: number
+  /** One spouse has died (survivor modeling) */
+  widowed: boolean
   /** Payments from a purchased annuity this year (included in income). */
   annuityIncome: number
   /** Savings used to buy the annuity this year (not spending; leaves the portfolio). */

@@ -18,6 +18,8 @@ export const examplePlan: Plan = {
   ],
   annualSpending: 60_000,
   socialSecurityAtFRA: 2_800,
+  spouseSocialSecurityAtFRA: 0,
+  survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
   socialSecurityClaimAge: 67,
   incomeStreams: [],
   annuityPurchase: {
@@ -53,6 +55,8 @@ export const blankPlan: Plan = {
   accounts: [],
   annualSpending: 0,
   socialSecurityAtFRA: 0,
+  spouseSocialSecurityAtFRA: 0,
+  survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
   incomeStreams: [],
   annuityPurchase: { ...examplePlan.annuityPurchase, enabled: false, purchaseAge: 0 },
   scenarios: [],
@@ -92,6 +96,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       endAge: null,
       inflationAdjusted: true,
       taxableShare: 1,
+      survivorShare: 1,
     }
     state.plan = { ...rest, incomeStreams: annualPension > 0 ? [pension] : [] }
   }
@@ -121,6 +126,15 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       stateRetirementExclusion: state.plan.stateRetirementExclusion ?? 0,
     }
   }
+  // v9 → v10: survivor modeling for couples; separate spouse Social Security; survivor share per income
+  if (version < 10) {
+    state.plan = {
+      ...state.plan,
+      spouseSocialSecurityAtFRA: state.plan.spouseSocialSecurityAtFRA ?? 0,
+      survivor: state.plan.survivor ?? { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
+      incomeStreams: state.plan.incomeStreams.map((s) => ({ ...s, survivorShare: s.survivorShare ?? 1 })),
+    }
+  }
   return state
 }
 
@@ -128,7 +142,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 9
+export const PLAN_VERSION = 10
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -193,6 +207,7 @@ export const usePlanStore = create<PlanState>()(
                 endAge: null,
                 inflationAdjusted: false,
                 taxableShare: 1,
+                survivorShare: 1,
               },
             ],
           })),

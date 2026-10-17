@@ -28,7 +28,7 @@ describe('projectPlan', () => {
     const result = projectPlan({
       ...basePlan,
       incomeStreams: [
-        { id: 'p', name: 'Pension', kind: 'pension', annualAmount: 10_000, startAge: 60, endAge: null, inflationAdjusted: true, taxableShare: 1 },
+        { id: 'p', name: 'Pension', kind: 'pension', annualAmount: 10_000, startAge: 60, endAge: null, inflationAdjusted: true, taxableShare: 1, survivorShare: 1 },
       ],
     })
     expect(result.depletionAge).toBeNull()

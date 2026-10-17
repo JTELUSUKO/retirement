@@ -1,7 +1,8 @@
 import type Anthropic from '@anthropic-ai/sdk'
 import {
   applyScenario,
-  benefitAtClaimAge,
+  socialSecurityYearly,
+  survivorFromAge,
   evaluatePlan,
   STRESS_LABEL,
   type Plan,
@@ -94,7 +95,8 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     lifetimeFederalTax: round(e.lifetimeFederalTax),
     lifetimeStateTax: round(e.lifetimeStateTax),
     lifetimeHealthcare: round(e.lifetimeHealthcare),
-    socialSecurityMonthlyAtClaimAge: round(benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge)),
+    socialSecurityMonthlyAtClaimAge: round(socialSecurityYearly(plan, false) / 12),
+    ...(survivorFromAge(plan) !== Infinity ? { survivorModeled: `one spouse dies at ${plan.survivor.firstDeathAge}` } : {}),
     milestones: det.years
       .filter((y, i) => i % 5 === 0 || y.age === plan.retirementAge)
       .map((y) => ({

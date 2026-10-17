@@ -7,7 +7,7 @@ import { validatePlan } from './validation'
 
 const stream = (extra: Partial<IncomeStream>): IncomeStream => ({
   id: 's', name: 'Annuity', kind: 'annuity', annualAmount: 12_000, startAge: 65, endAge: null,
-  inflationAdjusted: false, taxableShare: 1, ...extra,
+  inflationAdjusted: false, taxableShare: 1, survivorShare: 1, ...extra,
 })
 
 describe('incomeAtAge', () => {

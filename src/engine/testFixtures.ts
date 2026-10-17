@@ -13,6 +13,8 @@ export const basePlan: Plan = {
   ],
   annualSpending: 10_000,
   socialSecurityAtFRA: 0,
+  spouseSocialSecurityAtFRA: 0,
+  survivor: { enabled: false, firstDeathAge: 0, spendingShare: 0.75 },
   socialSecurityClaimAge: 67,
   incomeStreams: [],
   annuityPurchase: {

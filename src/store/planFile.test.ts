@@ -22,7 +22,7 @@ describe('plan backup files', () => {
   })
 
   it('upgrades a file from an older version', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, ...rest } = examplePlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, spouseSocialSecurityAtFRA: _ss, survivor: _sv, ...rest } = examplePlan
     const result = parsePlanFile(fileWith({ version: 2, plan: { ...rest, annualPension: 18_000 } }))
     expect(result.ok).toBe(true)
     if (result.ok) {

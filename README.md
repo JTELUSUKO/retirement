@@ -12,6 +12,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Approximate federal and state income tax on retirement withdrawals and Social Security (all 50 states + DC)
 - Healthcare costs before and after Medicare, paid from your HSA first
 - Other income: annuities, pensions, part-time work and rental income
+- For couples: what happens if one spouse dies first (survivor Social Security, lower spending, single filing)
 - What buying an annuity with part of your savings would do to your odds and what you leave behind
 - A year-by-year table
 - A printable one-document summary (save as PDF)

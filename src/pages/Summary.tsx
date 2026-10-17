@@ -3,7 +3,8 @@ import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import {
   applyScenario,
-  benefitAtClaimAge,
+  socialSecurityYearly,
+  survivorFromAge,
   evaluatePlan,
   missingEssentials,
   NO_INCOME_TAX_STATES,
@@ -100,7 +101,7 @@ export function Summary() {
   const mc = base.monteCarlo!
   const success = Math.round(base.successRate * 100)
   const verdict = success >= 85 ? '✓ Strong' : success >= 70 ? '⚠ Borderline' : '✕ At risk'
-  const ssMonthly = benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge)
+  const ssMonthly = socialSecurityYearly(plan, false) / 12
   const a = plan.annuityPurchase
   const people = plan.filingStatus === 'married' ? 2 : 1
 
@@ -193,7 +194,20 @@ export function Summary() {
               ['State', plan.state ? `${stateName(plan.state)}${plan.stateRetirementExclusion > 0 ? `, ${formatUSD(plan.stateRetirementExclusion)}/yr per person of retirement income exempt` : ''}` : 'Not chosen (no state tax)'],
               ['Ages', `Now ${plan.currentAge} · retire at ${plan.retirementAge} · plan to ${plan.lifeExpectancy}`],
               ['Yearly spending', `${formatUSD(plan.annualSpending)} in today's dollars, excluding healthcare`],
-              ['Social Security', `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67${people === 2 ? ' (combined)' : ''}, claiming at ${plan.socialSecurityClaimAge}`],
+              [
+                'Social Security',
+                people === 2
+                  ? `${formatUSD(plan.socialSecurityAtFRA)}/mo (you) + ${formatUSD(plan.spouseSocialSecurityAtFRA)}/mo (spouse) at 67, both claiming at ${plan.socialSecurityClaimAge}`
+                  : `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67, claiming at ${plan.socialSecurityClaimAge}`,
+              ],
+              ...(survivorFromAge(plan) !== Infinity
+                ? ([
+                    [
+                      'If one dies first',
+                      `Modeled at ${plan.survivor.firstDeathAge}: survivor keeps the larger Social Security benefit, spends ${Math.round(plan.survivor.spendingShare * 100)}%, files single from the next year`,
+                    ],
+                  ] as [string, string][])
+                : []),
               ['Healthcare', `${formatUSD(plan.healthcare.preMedicareAnnual)}/yr before Medicare, ${formatUSD(plan.healthcare.medicareAnnual)}/yr on Medicare, per person; +${pct(plan.healthcare.excessInflation)} above inflation`],
               ['Returns', `${pct(plan.assumptions.returnPreRetirement)} before / ${pct(plan.assumptions.returnPostRetirement)} after retirement; volatility ${pct(plan.assumptions.volatilityPreRetirement, 0)} / ${pct(plan.assumptions.volatilityPostRetirement, 0)}`],
               ['Inflation', pct(plan.assumptions.inflation)],
@@ -243,7 +257,7 @@ export function Summary() {
                   <li key={s.id}>
                     {s.name} ({INCOME_KIND_LABEL[s.kind]}): {formatUSD(s.annualAmount)}/yr from {s.startAge}
                     {s.endAge === null ? ' for life' : ` to ${s.endAge}`}, {s.inflationAdjusted ? 'rises with inflation' : 'fixed'},{' '}
-                    {pct(s.taxableShare, 0)} taxable
+                    {pct(s.taxableShare, 0)} taxable{people === 2 ? `, ${pct(s.survivorShare, 0)} continues after a death` : ''}
                   </li>
                 ))}
                 {a.enabled && (
@@ -311,8 +325,7 @@ export function Summary() {
               exemptions use the amount you entered.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care, survivor
-              benefits. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Not modeled: local/city income tax, state income-based phase-outs, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>

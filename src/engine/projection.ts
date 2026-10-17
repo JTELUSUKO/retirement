@@ -1,7 +1,7 @@
 import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets, withdrawProportionally } from './accounts'
 import { CONFIG_2026 } from './config/2026'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
-import { benefitAtClaimAge } from './socialSecurity'
+import { householdAt, socialSecurityYearly } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcareCost } from './healthcare'
 import { incomeAtAge } from './income'
@@ -44,6 +44,8 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   modeled). Taxes during working years are not modeled.
  * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
  * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
+ * - Married couples can model one spouse dying first (see survivor.ts): from that age the survivor keeps
+ *   the larger Social Security benefit, spends less, pays healthcare for one, and files single the next year.
  * - Income beyond spending and tax is reinvested in a taxable account.
  * - An annuity purchase (at or after retirement) moves the premium out of savings at the
  *   start of the purchase year; payments start that year and last for life.
@@ -114,7 +116,6 @@ export function simulatePath(
   const birthYear = startYear - plan.currentAge
   // Tax brackets are in 2026 dollars; shift them if the projection starts in another year.
   const taxIndexAtStart = (1 + plan.assumptions.inflation) ** (startYear - CONFIG_2026.year)
-  const ssYearly = benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge) * 12
 
   // Annuity bought during the projection: fixed nominal payment (or one indexed to inflation)
   let annuity: { payment: number; priceLevelAtPurchase: number; taxableShare: number } | null = null
@@ -159,15 +160,17 @@ export function simulatePath(
       ? annuity.payment * (purchase.inflationAdjusted ? priceLevel / annuity.priceLevelAtPurchase : 1)
       : 0
 
+    const household = householdAt(plan, age)
     let spending = 0
     let healthcare = 0
     let ssIncome = 0
     let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
-      healthcare = healthcareCost(plan, age) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
-      spending = plan.annualSpending * priceLevel + healthcare
-      other = incomeAtAge(plan.incomeStreams, age, priceLevel)
-      if (age >= plan.socialSecurityClaimAge) ssIncome = ssYearly * priceLevel
+      healthcare = healthcareCost(plan, age, household.people) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
+      const baseSpending = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1)
+      spending = baseSpending * priceLevel + healthcare
+      other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
+      if (age >= plan.socialSecurityClaimAge) ssIncome = socialSecurityYearly(plan, household.widowed) * priceLevel
     }
     const income = other.amount + ssIncome + annuityIncome
     // Negative when income exceeds spending; the surplus (after tax) is reinvested below
@@ -196,17 +199,17 @@ export function simulatePath(
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
-          status: plan.filingStatus,
+          status: household.taxStatus,
           priceLevel: taxPriceLevel,
         })
         const penalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
           state: plan.state,
-          status: plan.filingStatus,
+          status: household.taxStatus,
           age,
           ordinaryIncome,
           retirementIncome: draw.pretaxWithdrawn + other.taxableRetirement + annuityTaxable,
-          taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome, ssIncome, plan.filingStatus),
+          taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome, ssIncome, household.taxStatus),
           retirementExclusionPerPerson: plan.stateRetirementExclusion,
           priceLevel: taxPriceLevel,
         })
@@ -255,6 +258,7 @@ export function simulatePath(
       startByBucketReal,
       income,
       otherIncome: other.amount,
+      widowed: household.widowed,
       annuityIncome,
       annuityPremium,
       surplusReinvested: surplus,

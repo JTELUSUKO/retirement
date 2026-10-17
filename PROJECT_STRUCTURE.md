@@ -26,6 +26,8 @@ retirement/
 │   │   ├── taxes.test.ts
 │   │   ├── stateTax.ts          # State income tax (brackets, deductions, retirement exemptions, SS)
 │   │   ├── stateTax.test.ts
+│   │   ├── survivor.ts          # Couples: household by age (widowed, tax status, people), Social Security
+│   │   ├── survivor.test.ts
 │   │   ├── healthcare.ts        # Healthcare cost by age (pre-Medicare vs Medicare, per person)
 │   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
 │   │   ├── income.ts            # Other income streams (annuity, pension, work, rental) by age
@@ -63,7 +65,10 @@ retirement/
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
 │   │   ├── GettingStarted.tsx   # Checklist shown until the essentials are filled in
+│   │   ├── OutcomeComparison.tsx# Two simulations side by side (used by the annuity and survivor panels)
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
+│   │   ├── SurvivorComparison.tsx# Both live vs. one dies at the chosen age
+│   │   ├── SurvivorSection.tsx  # Couples: "If one of you dies first" inputs
 │   │   ├── ScenarioChart.tsx    # Median savings by age per scenario, de-collided end labels (wide screens)
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
@@ -161,6 +166,19 @@ One row per year; the age is your age at the **start** of that year.
   Data: `config/stateTax2026.ts`, generated from the Tax Foundation's 2026 table.
 - **Not modeled:** local/city tax, state income-based phase-outs, capital gains, IRMAA, credits, and taxes
   during working years.
+
+## Couples and survivors
+
+- Married filing jointly: both spouses are assumed the same age and to claim Social Security at the same age;
+  each spouse's benefit is entered separately.
+- Optional **survivor modeling**: one spouse dies at `survivor.firstDeathAge`. From that age the survivor keeps
+  the **larger** of the two Social Security benefits, spends `survivor.spendingShare` of the couple's spending,
+  pays healthcare for one person, and receives each income stream at its `survivorShare` (e.g. a 50% survivor
+  pension). From the following year they file as **single** (federal and state), which usually raises the tax
+  rate. Annuity purchases for couples are joint-life, so they continue in full.
+- The dashboard compares the plan with and without the early death.
+- Not modeled: different spouse ages or claiming ages, spousal benefits (enter each spouse's ssa.gov estimate),
+  survivor benefit reductions for early claiming.
 
 ## Healthcare
 

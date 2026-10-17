@@ -30,7 +30,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 /** Returns the first problem with the plan's shape, or null if it looks complete. */
 function shapeProblem(plan: unknown): string | null {
   if (!isObj(plan)) return 'the plan is missing'
-  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'socialSecurityClaimAge']) {
+  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'spouseSocialSecurityAtFRA', 'socialSecurityClaimAge']) {
     if (!isNum(plan[key])) return `“${key}” must be a number`
   }
   if (plan.filingStatus !== 'single' && plan.filingStatus !== 'married') return '“filingStatus” must be single or married'
@@ -55,6 +55,11 @@ function shapeProblem(plan: unknown): string | null {
     for (const key of ['balance', 'annualContribution', 'employerMatch']) {
       if (!isNum(a[key])) return `account “${a.name}”: “${key}” must be a number`
     }
+  }
+
+  const survivor = plan.survivor
+  if (!isObj(survivor) || typeof survivor.enabled !== 'boolean' || !isNum(survivor.firstDeathAge) || !isNum(survivor.spendingShare)) {
+    return 'the survivor settings are incomplete'
   }
 
   const annuity = plan.annuityPurchase
@@ -83,7 +88,9 @@ function shapeProblem(plan: unknown): string | null {
   for (const [i, s] of plan.incomeStreams.entries()) {
     if (!isObj(s) || typeof s.id !== 'string' || typeof s.name !== 'string') return `income ${i + 1} is incomplete`
     if (!INCOME_KINDS.includes(s.kind as string)) return `income “${s.name}” has an unknown type`
-    if (!isNum(s.annualAmount) || !isNum(s.startAge) || !isNum(s.taxableShare)) return `income “${s.name}” is incomplete`
+    if (!isNum(s.annualAmount) || !isNum(s.startAge) || !isNum(s.taxableShare) || !isNum(s.survivorShare)) {
+      return `income “${s.name}” is incomplete`
+    }
     if (s.endAge !== null && !isNum(s.endAge)) return `income “${s.name}”: end age must be a number or empty`
     if (typeof s.inflationAdjusted !== 'boolean') return `income “${s.name}”: “inflationAdjusted” must be true or false`
   }

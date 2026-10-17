@@ -53,12 +53,28 @@ export function validatePlan(plan: Plan): PlanIssue[] {
   const amounts = [
     plan.annualSpending,
     plan.socialSecurityAtFRA,
+    plan.spouseSocialSecurityAtFRA,
     ...plan.incomeStreams.map((i) => i.annualAmount),
     plan.healthcare.preMedicareAnnual,
     plan.healthcare.medicareAnnual,
     plan.stateRetirementExclusion,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
+  if (plan.filingStatus === 'married' && plan.survivor.enabled) {
+    const { firstDeathAge, spendingShare } = plan.survivor
+    if (firstDeathAge <= currentAge || firstDeathAge >= lifeExpectancy) {
+      issues.push({ field: 'survivor', message: 'The age one of you dies must be after today and before your “plan to” age.' })
+    }
+    if (spendingShare < 0.3 || spendingShare > 1) {
+      issues.push({ field: 'survivor', message: 'Survivor spending should be between 30% and 100% of the couple’s.' })
+    }
+  }
+  for (const stream of plan.incomeStreams) {
+    if (stream.survivorShare < 0 || stream.survivorShare > 1) {
+      issues.push({ field: 'incomeStreams', message: `“${stream.name}” survivor share must be 0–100%.` })
+    }
+  }
+
   const annuity = plan.annuityPurchase
   if (annuity.enabled) {
     if (annuity.purchaseAge < retirementAge || annuity.purchaseAge > lifeExpectancy) {

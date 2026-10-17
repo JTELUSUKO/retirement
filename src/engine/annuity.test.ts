@@ -76,7 +76,7 @@ describe('buying an annuity in the projection', () => {
   it('reinvests income beyond spending and tax', () => {
     const y = projectPlan(
       { ...basePlan, annualSpending: 10_000, incomeStreams: [
-        { id: 'p', name: 'Pension', kind: 'pension', annualAmount: 15_000, startAge: 60, endAge: null, inflationAdjusted: false, taxableShare: 1 },
+        { id: 'p', name: 'Pension', kind: 'pension', annualAmount: 15_000, startAge: 60, endAge: null, inflationAdjusted: false, taxableShare: 1, survivorShare: 1 },
       ] },
       2026,
     ).years[0]

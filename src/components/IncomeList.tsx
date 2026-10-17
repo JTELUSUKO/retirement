@@ -17,7 +17,7 @@ const labelOf = (kind: IncomeKind) => INCOME_KIND_LABEL[kind]
 
 const checkbox = 'h-4 w-4 accent-teal-700 dark:accent-teal-400'
 
-function IncomeCard({ stream }: { stream: IncomeStream }) {
+function IncomeCard({ stream, married }: { stream: IncomeStream; married: boolean }) {
   const { updateIncome, removeIncome } = usePlanStore()
   const set = (patch: Partial<IncomeStream>) => updateIncome(stream.id, patch)
   const lifetime = stream.endAge === null
@@ -92,6 +92,11 @@ function IncomeCard({ stream }: { stream: IncomeStream }) {
         <div className="w-28">
           <PercentField label="Taxable" min={0} max={100} value={stream.taxableShare} onChange={(v) => set({ taxableShare: v })} />
         </div>
+        {married && (
+          <div className="w-36">
+            <PercentField label="After a death" min={0} max={100} value={stream.survivorShare} onChange={(v) => set({ survivorShare: v })} />
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-slate-500">
@@ -109,7 +114,7 @@ export function IncomeList() {
   return (
     <div className="space-y-3">
       {plan.incomeStreams.map((s) => (
-        <IncomeCard key={s.id} stream={s} />
+        <IncomeCard key={s.id} stream={s} married={plan.filingStatus === 'married'} />
       ))}
       <button type="button" onClick={addIncome} className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-400">
         + Add income (annuity, pension, part-time work, rental)
