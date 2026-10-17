@@ -21,6 +21,8 @@ retirement/
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
 │   │   ├── random.ts            # Seeded random numbers (repeatable results)
+│   │   ├── validation.ts        # Input checks (age order, ranges); results hidden until valid
+│   │   ├── validation.test.ts
 │   │   ├── testFixtures.ts      # Shared sample plans for tests
 │   │   ├── socialSecurity.ts    # Benefit adjustment for claiming at ages 62–70
 │   │   ├── socialSecurity.test.ts
@@ -28,10 +30,11 @@ retirement/
 │   ├── store/
 │   │   └── planStore.ts         # Zustand store: the user's plan + localStorage persistence
 │   ├── components/              # Reusable UI pieces
-│   │   ├── NumberField.tsx      # Number / percent inputs
+│   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
-│   │   └── StatCard.tsx         # Headline number tiles
+│   │   ├── StatCard.tsx         # Headline number tiles
+│   │   └── YearTable.tsx        # Year-by-year table: average returns or simulation percentiles
 │   ├── pages/
 │   │   └── Dashboard.tsx        # Form + results (stat cards, chart, yearly table)
 │   ├── utils/
@@ -56,10 +59,21 @@ retirement/
    and reports both nominal and inflation-adjusted values.
 4. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
 
+## Timing rules
+
+One row per year; the age is your age at the **start** of that year.
+
+- **Working years:** the balance grows for the year, then that year's contributions are added at year end.
+- **Retired years:** spending not covered by income is withdrawn at the start of the year, then the rest grows.
+- **"Savings at retirement"** and the chart both use the balance at the start of each age.
+- Amounts are entered in today's dollars and rise with inflation (the realized inflation path in simulations).
+
 ## How the Monte Carlo works
 
 - Each run draws a random return for every year from a **lognormal** distribution, using the
   average return and volatility assumptions (separate values before and after retirement).
+- Inflation is random too: it drifts around your average inflation (AR(1), persistence 0.6, yearly
+  shock 1.2%), so high-inflation years cluster together like they did in the 1970s.
 - A run **succeeds** if the money covers spending every year up to the planning age.
 - The success rate is the share of 1,000 runs that succeed. Percentile bands show the spread of balances.
 - The random seed is fixed, so results stay stable while you edit inputs.
@@ -70,10 +84,11 @@ retirement/
 PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboard
                                                           │
                                                           ▼
+                    engine.validatePlan(plan) → issues? show them instead of results
                               engine.runMonteCarlo(plan) · engine.projectPlan(plan)
                                                           │
                                                           ▼
-                                       StatCards · ProbabilityChart · table
+                                     StatCards · ProbabilityChart · YearTable
 ```
 
 ## Planned additions (by phase)
@@ -96,6 +111,6 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 ## Deployment
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which tests, builds and publishes `dist/` to GitHub Pages.
+Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to GitHub Pages.
 The site is served at `https://<github-username>.github.io/retirement/`.
 If the repo is renamed, update `base` in `vite.config.ts` to match.

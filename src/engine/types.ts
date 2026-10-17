@@ -41,6 +41,10 @@ export interface Plan {
 export interface YearResult {
   age: number
   year: number
+  /** Balance at the start of the year, nominal dollars. */
+  startBalance: number
+  /** Balance at the start of the year, in today's dollars. */
+  startBalanceReal: number
   /** End-of-year portfolio balance, nominal dollars. */
   balance: number
   /** End-of-year balance in today's dollars. */
@@ -61,7 +65,7 @@ export interface ProjectionResult {
 
 export interface PercentileYear {
   age: number
-  /** Balances in today's dollars at each percentile. */
+  /** Start-of-year balances in today's dollars at each percentile. */
   p10: number
   p25: number
   p50: number
@@ -74,4 +78,9 @@ export interface MonteCarloResult {
   /** Share of runs where the money lasted to the planning age (0–1). */
   successRate: number
   years: PercentileYear[]
+}
+
+export interface PlanIssue {
+  field: keyof Plan | 'accounts'
+  message: string
 }

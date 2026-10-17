@@ -27,14 +27,15 @@ describe('runMonteCarlo', () => {
       ...volatilePlan,
       assumptions: { ...volatilePlan.assumptions, volatilityPreRetirement: 0, volatilityPostRetirement: 0 },
     }
-    const mc = runMonteCarlo(plan, { runs: 20, startYear: 2026 })
+    const mc = runMonteCarlo(plan, { runs: 20, startYear: 2026, randomInflation: false })
     const det = projectPlan(plan, 2026)
-    mc.years.forEach((y, t) => expect(y.p50).toBeCloseTo(det.years[t].balanceReal, 4))
+    mc.years.forEach((y, t) => expect(y.p50).toBeCloseTo(det.years[t].startBalanceReal, 4))
     expect(mc.successRate).toBe(det.depletionAge === null ? 1 : 0)
   })
 
   it('reports 0% success when the plan always runs out', () => {
-    expect(runMonteCarlo(basePlan, { runs: 50 }).successRate).toBe(0)
+    // Needs $220k over 11 years from $100k with no growth
+    expect(runMonteCarlo({ ...basePlan, annualSpending: 20_000 }, { runs: 50 }).successRate).toBe(0)
   })
 
   it('is repeatable for the same seed', () => {
@@ -53,6 +54,16 @@ describe('runMonteCarlo', () => {
       expect(y.p50).toBeLessThanOrEqual(y.p75)
       expect(y.p75).toBeLessThanOrEqual(y.p90)
     }
+  })
+
+  it('random inflation adds risk compared with fixed inflation', () => {
+    const fixed = runMonteCarlo(volatilePlan, { runs: 2000, randomInflation: false })
+    const random = runMonteCarlo(volatilePlan, { runs: 2000 })
+    expect(random.successRate).toBeLessThan(fixed.successRate)
+  })
+
+  it('returns no rows instead of crashing when the plan has no years', () => {
+    expect(runMonteCarlo({ ...volatilePlan, lifeExpectancy: 40 }, { runs: 5 }).years).toEqual([])
   })
 
   it('has one percentile row per year of the plan', () => {

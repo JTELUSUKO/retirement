@@ -1,5 +1,7 @@
 export * from './types'
 export { projectPlan, simulatePath } from './projection'
+export type { MarketFn, YearMarket } from './projection'
 export { runMonteCarlo } from './monteCarlo'
+export { validatePlan, AGE_LIMITS } from './validation'
 export { benefitAtClaimAge } from './socialSecurity'
 export { CONFIG_2026 } from './config/2026'

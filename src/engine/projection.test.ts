@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { projectPlan } from './projection'
+import { projectPlan, simulatePath } from './projection'
 import { basePlan } from './testFixtures'
 import type { Plan } from './types'
 
@@ -28,6 +28,34 @@ describe('projectPlan', () => {
     const result = projectPlan({ ...basePlan, annualPension: 10_000 })
     expect(result.depletionAge).toBeNull()
     expect(result.years.at(-1)!.balance).toBe(100_000)
+  })
+
+  it('reports savings at retirement as the start-of-year balance', () => {
+    const plan: Plan = {
+      ...basePlan,
+      retirementAge: 62,
+      accounts: [{ ...basePlan.accounts[0], annualContribution: 10_000 }],
+    }
+    const result = projectPlan(plan)
+    const at62 = result.years.find((y) => y.age === 62)!
+    expect(result.balanceAtRetirement).toBe(120_000)
+    expect(at62.startBalance).toBe(120_000)
+    expect(at62.withdrawal).toBe(10_000)
+  })
+
+  it('raises spending with inflation and reports real balances in today’s dollars', () => {
+    const plan: Plan = { ...basePlan, assumptions: { ...basePlan.assumptions, inflation: 0.1 } }
+    const [y0, y1] = projectPlan(plan).years
+    expect(y0.spending).toBeCloseTo(10_000)
+    expect(y1.spending).toBeCloseTo(11_000)
+    expect(y1.startBalanceReal).toBeCloseTo(90_000 / 1.1)
+    expect(y0.balanceReal).toBeCloseTo(y1.startBalanceReal)
+  })
+
+  it('uses the inflation path it is given each year', () => {
+    const inflations = [0.0, 0.2, 0.0]
+    const result = simulatePath({ ...basePlan, lifeExpectancy: 62 }, (t) => ({ return: 0, inflation: inflations[t] }))
+    expect(result.years.map((y) => Math.round(y.spending))).toEqual([10_000, 10_000, 12_000])
   })
 
   it('starts Social Security at the claim age', () => {

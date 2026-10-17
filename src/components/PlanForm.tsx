@@ -1,4 +1,4 @@
-import type { AccountType } from '../engine'
+import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { NumberField, PercentField } from './NumberField'
 
@@ -22,14 +22,17 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function PlanForm() {
   const { plan, update, updateAssumptions, updateAccount, addAccount, removeAccount, reset } = usePlanStore()
+  const issues = validatePlan(plan)
+  const errorFor = (field: PlanIssue['field']) => issues.find((i) => i.field === field)?.message
+  const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
 
   return (
     <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
       <Section title="You">
         <div className="grid grid-cols-3 gap-3">
-          <NumberField label="Age" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={18} max={100} />
-          <NumberField label="Retire at" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={plan.currentAge} max={100} />
-          <NumberField label="Plan to age" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={plan.retirementAge} max={110} />
+          <NumberField label="Age" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
+          <NumberField label="Retire at" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />
+          <NumberField label="Plan to age" value={plan.lifeExpectancy} onChange={(v) => update({ lifeExpectancy: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('lifeExpectancy')} />
         </div>
       </Section>
 
@@ -63,9 +66,9 @@ export function PlanForm() {
               </button>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <NumberField label="Balance" prefix="$" step={1000} value={acc.balance} onChange={(v) => updateAccount(acc.id, { balance: v })} />
-              <NumberField label="You add / yr" prefix="$" step={500} value={acc.annualContribution} onChange={(v) => updateAccount(acc.id, { annualContribution: v })} />
-              <NumberField label="Match / yr" prefix="$" step={500} value={acc.employerMatch} onChange={(v) => updateAccount(acc.id, { employerMatch: v })} />
+              <NumberField label="Balance" prefix="$" min={0} step={1000} value={acc.balance} onChange={(v) => updateAccount(acc.id, { balance: v })} />
+              <NumberField label="You add / yr" prefix="$" min={0} step={500} value={acc.annualContribution} onChange={(v) => updateAccount(acc.id, { annualContribution: v })} />
+              <NumberField label="Match / yr" prefix="$" min={0} step={500} value={acc.employerMatch} onChange={(v) => updateAccount(acc.id, { employerMatch: v })} />
             </div>
           </div>
         ))}
@@ -75,26 +78,26 @@ export function PlanForm() {
       </Section>
 
       <Section title="Retirement income & spending">
-        <NumberField label="Yearly spending (today's $)" prefix="$" step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
+        <NumberField label="Yearly spending (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
         <div className="grid grid-cols-2 gap-3">
-          <NumberField label="Social Security at 67 / mo" prefix="$" step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
-          <NumberField label="Claim at age" min={62} max={70} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
+          <NumberField label="Social Security at 67 / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
+          <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
         </div>
         <p className="text-xs text-slate-500">
           Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
-        <NumberField label="Pension / yr (today's $)" prefix="$" step={1000} value={plan.annualPension} onChange={(v) => update({ annualPension: v })} />
+        <NumberField label="Pension / yr (today's $)" prefix="$" min={0} step={1000} value={plan.annualPension} onChange={(v) => update({ annualPension: v })} />
       </Section>
 
       <Section title="Assumptions">
         <div className="grid grid-cols-3 gap-3">
-          <PercentField label="Return before" value={plan.assumptions.returnPreRetirement} onChange={(v) => updateAssumptions({ returnPreRetirement: v })} />
-          <PercentField label="Return after" value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
-          <PercentField label="Inflation" value={plan.assumptions.inflation} onChange={(v) => updateAssumptions({ inflation: v })} />
+          <PercentField label="Return before" min={-50} max={50} value={plan.assumptions.returnPreRetirement} onChange={(v) => updateAssumptions({ returnPreRetirement: v })} />
+          <PercentField label="Return after" min={-50} max={50} value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
+          <PercentField label="Inflation" min={-5} max={20} value={plan.assumptions.inflation} onChange={(v) => updateAssumptions({ inflation: v })} />
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <PercentField label="Volatility before" value={plan.assumptions.volatilityPreRetirement} onChange={(v) => updateAssumptions({ volatilityPreRetirement: v })} />
-          <PercentField label="Volatility after" value={plan.assumptions.volatilityPostRetirement} onChange={(v) => updateAssumptions({ volatilityPostRetirement: v })} />
+          <PercentField label="Volatility before" min={0} max={60} value={plan.assumptions.volatilityPreRetirement} onChange={(v) => updateAssumptions({ volatilityPreRetirement: v })} />
+          <PercentField label="Volatility after" min={0} max={60} value={plan.assumptions.volatilityPostRetirement} onChange={(v) => updateAssumptions({ volatilityPostRetirement: v })} />
         </div>
         <p className="text-xs text-slate-500">
           Volatility is how much returns swing year to year. Roughly 15% for a stock-heavy mix, 10% for a balanced one.
