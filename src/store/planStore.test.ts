@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { defaultPlan, usePlanStore } from './planStore'
+import { defaultPlan, migratePlanState, usePlanStore } from './planStore'
 
 const state = () => usePlanStore.getState()
 
@@ -38,5 +38,15 @@ describe('plan store: clear, load example, undo', () => {
     state().clear()
     state().update({ currentAge: 50 })
     expect(state().undo).toBeNull()
+  })
+})
+
+describe('plan store: migrations', () => {
+  it('upgrades a v2 plan (no filing status, no healthcare)', () => {
+    const { filingStatus: _f, healthcare: _h, ...v2plan } = defaultPlan
+    const migrated = migratePlanState({ plan: v2plan }, 2)
+    expect(migrated.plan.filingStatus).toBe('single')
+    expect(migrated.plan.healthcare).toEqual(defaultPlan.healthcare)
+    expect(migrated.plan.annualSpending).toBe(defaultPlan.annualSpending)
   })
 })

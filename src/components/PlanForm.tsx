@@ -21,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function PlanForm() {
-  const { plan, undo, update, updateAssumptions, updateAccount, addAccount, removeAccount, clear, loadExample, undoLast } =
+  const { plan, undo, update, updateAssumptions, updateHealthcare, updateAccount, addAccount, removeAccount, clear, loadExample, undoLast } =
     usePlanStore()
   const issues = validatePlan(plan)
   const errorFor = (field: PlanIssue['field']) => issues.find((i) => i.field === field)?.message
@@ -120,7 +120,7 @@ export function PlanForm() {
       </Section>
 
       <Section title="Retirement income & spending">
-        <NumberField label="Yearly spending (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
+        <NumberField label="Yearly spending, excluding healthcare (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
         <div className="grid grid-cols-2 gap-3">
           <NumberField label={plan.filingStatus === 'married' ? 'Social Security at 67 / mo (both)' : 'Social Security at 67 / mo'} prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />
           <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
@@ -129,6 +129,39 @@ export function PlanForm() {
           Find your estimate at <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
         <NumberField label="Pension / yr (today's $)" prefix="$" min={0} step={1000} value={plan.annualPension} onChange={(v) => update({ annualPension: v })} />
+      </Section>
+
+      <Section title="Healthcare in retirement">
+        <div className="grid grid-cols-2 gap-3">
+          <NumberField
+            label="Before Medicare / yr"
+            prefix="$"
+            min={0}
+            step={500}
+            value={plan.healthcare.preMedicareAnnual}
+            onChange={(v) => updateHealthcare({ preMedicareAnnual: v })}
+          />
+          <NumberField
+            label="On Medicare (65+) / yr"
+            prefix="$"
+            min={0}
+            step={500}
+            value={plan.healthcare.medicareAnnual}
+            onChange={(v) => updateHealthcare({ medicareAnnual: v })}
+          />
+        </div>
+        <PercentField
+          label="Medical costs rise faster than inflation by"
+          min={-5}
+          max={10}
+          value={plan.healthcare.excessInflation}
+          onChange={(v) => updateHealthcare({ excessInflation: v })}
+        />
+        <p className="text-xs text-slate-500">
+          Per person, in today's dollars: premiums plus out-of-pocket costs.
+          {plan.filingStatus === 'married' && ' Counted for both of you.'} "Before Medicare" only applies if you retire
+          before 65. Any HSA pays these costs first, tax-free.
+        </p>
       </Section>
 
       <Section title="Assumptions">

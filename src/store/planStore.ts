@@ -13,10 +13,11 @@ export const defaultPlan: Plan = {
     { id: '3', name: 'Brokerage', type: 'taxable', balance: 60_000, annualContribution: 6_000, employerMatch: 0 },
     { id: '4', name: 'Emergency fund', type: 'cash', balance: 30_000, annualContribution: 0, employerMatch: 0 },
   ],
-  annualSpending: 70_000,
+  annualSpending: 60_000,
   socialSecurityAtFRA: 2_800,
   socialSecurityClaimAge: 67,
   annualPension: 0,
+  healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
     returnPostRetirement: 0.05,
@@ -26,7 +27,7 @@ export const defaultPlan: Plan = {
   },
 }
 
-/** Keeps ages, filing status and assumptions; removes accounts and zeroes every dollar amount. */
+/** Keeps ages, filing status, healthcare estimates and assumptions; removes accounts and zeroes income and spending. */
 export const clearedPlan = (plan: Plan): Plan => ({
   ...plan,
   accounts: [],
@@ -34,6 +35,24 @@ export const clearedPlan = (plan: Plan): Plan => ({
   socialSecurityAtFRA: 0,
   annualPension: 0,
 })
+
+/** Upgrade a plan saved by an older version of the app. */
+export function migratePlanState(persisted: unknown, version: number): { plan: Plan } {
+  const state = persisted as { plan: Plan }
+  // v1 → v2: volatility assumptions added
+  if (version < 2) {
+    state.plan.assumptions = { ...defaultPlan.assumptions, ...state.plan.assumptions }
+  }
+  // v2 → v3: filing status added
+  if (version < 3) {
+    state.plan = { ...state.plan, filingStatus: state.plan.filingStatus ?? 'single' }
+  }
+  // v3 → v4: healthcare costs added (spending now excludes healthcare)
+  if (version < 4) {
+    state.plan = { ...state.plan, healthcare: state.plan.healthcare ?? defaultPlan.healthcare }
+  }
+  return state
+}
 
 type UndoAction = 'cleared' | 'example'
 
@@ -43,6 +62,7 @@ interface PlanState {
   undo: { plan: Plan; action: UndoAction } | null
   update: (patch: Partial<Plan>) => void
   updateAssumptions: (patch: Partial<Plan['assumptions']>) => void
+  updateHealthcare: (patch: Partial<Plan['healthcare']>) => void
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
@@ -62,6 +82,7 @@ export const usePlanStore = create<PlanState>()(
         undo: null,
         update: (patch) => edit((p) => ({ ...p, ...patch })),
         updateAssumptions: (patch) => edit((p) => ({ ...p, assumptions: { ...p.assumptions, ...patch } })),
+        updateHealthcare: (patch) => edit((p) => ({ ...p, healthcare: { ...p.healthcare, ...patch } })),
         updateAccount: (id, patch) =>
           edit((p) => ({ ...p, accounts: p.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
         addAccount: () =>
@@ -80,20 +101,9 @@ export const usePlanStore = create<PlanState>()(
     },
     {
       name: 'retirement-plan',
-      version: 3,
+      version: 4,
       partialize: (s) => ({ plan: s.plan }),
-      migrate: (persisted, version) => {
-        const state = persisted as { plan: Plan }
-        // v1 → v2: volatility assumptions added
-        if (version < 2) {
-          state.plan.assumptions = { ...defaultPlan.assumptions, ...state.plan.assumptions }
-        }
-        // v2 → v3: filing status added
-        if (version < 3) {
-          state.plan = { ...state.plan, filingStatus: state.plan.filingStatus ?? 'single' }
-        }
-        return state as PlanState
-      },
+      migrate: (persisted, version) => migratePlanState(persisted, version) as PlanState,
     },
   ),
 )

@@ -19,6 +19,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
+  const lifetimeHealthReal = retiredYears.reduce((sum, y) => sum + y.healthcare / y.priceLevel, 0)
   const avgTaxRate =
     retiredYears.reduce((sum, y) => sum + y.tax, 0) /
     Math.max(retiredYears.reduce((sum, y) => sum + y.withdrawal + y.income, 0), 1)
@@ -53,6 +54,9 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         Federal income tax over retirement (average returns):{' '}
         <strong className="tabular-nums">{formatUSDCompact(lifetimeTaxReal)}</strong> in today's dollars, about{' '}
         {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals. State tax and capital gains aren't included.
+        <br />
+        Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
+        today's dollars, including medical costs rising faster than inflation.
       </p>
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
@@ -67,9 +71,9 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Savings by account type</h2>
         <p className="text-sm text-slate-500">
-          With average returns, in today's dollars. Spending and federal income tax come from cash → taxable → pre-tax →
-          Roth → HSA. Required minimum distributions (RMDs) start at {rmdAge}; any you don't spend are reinvested in
-          taxable.
+          With average returns, in today's dollars. Healthcare is paid from your HSA first; other spending and federal
+          income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
+          {rmdAge}; any you don't spend are reinvested in taxable.
         </p>
         <BucketChart years={result.years} retirementAge={plan.retirementAge} rmdStartAge={rmdAge} />
       </div>

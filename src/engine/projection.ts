@@ -2,8 +2,12 @@ import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets, withdrawProportionally } fro
 import { CONFIG_2026 } from './config/2026'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { benefitAtClaimAge } from './socialSecurity'
+import { healthcareCost } from './healthcare'
 import { federalIncomeTax } from './taxes'
 import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
+
+/** Penalty on non-medical HSA withdrawals before 65. */
+export const HSA_PENALTY = 0.2
 
 /** Id of the hidden taxable account that holds reinvested RMDs when the plan has none. */
 export const REINVESTED_RMD_ID = 'reinvested-rmd'
@@ -30,9 +34,11 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   within each tax bucket). RMD money not needed for spending is reinvested in a
  *   taxable account.
  * - Federal income tax (retired years) is paid from savings too: pre-tax withdrawals
- *   (including the whole RMD), pension and taxable Social Security are taxed. Roth, HSA
- *   (assumed spent on medical costs), cash and taxable-account withdrawals are untaxed
- *   (capital gains are not modeled). Taxes during working years are not modeled.
+ *   (including the whole RMD), pension, taxable Social Security and non-medical HSA
+ *   withdrawals are taxed (plus a 20% penalty on non-medical HSA money before 65).
+ *   Roth, cash and taxable-account withdrawals are untaxed (capital gains are not
+ *   modeled). Taxes during working years are not modeled.
+ * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
  * - Then every account grows for the year (cash earns inflation; others earn the
  *   market return), and working years add contributions at year end.
  * - "Savings at retirement" is the total balance at the start of the retirement-age year.
@@ -54,14 +60,16 @@ export function simulatePath(
   const bucketOf = accounts.map((a) => BUCKET_OF[a.type])
   const indexesIn = (bucket: TaxBucket) => bucketOf.flatMap((b, i) => (b === bucket ? [i] : []))
   const pretax = indexesIn('pretax')
+  const hsa = indexesIn('hsa')
   const firstTaxable = bucketOf.indexOf('taxable')
   const total = () => balances.reduce((sum, b) => sum + b, 0)
 
   /**
-   * Take the RMD, then `need` dollars in withdrawal order, from a copy of `from`.
+   * Take the RMD, then `need` dollars from a copy of `from`: the HSA pays up to
+   * `medicalCost` first (tax-free), then accounts in withdrawal order.
    * Pure: lets the tax loop try different amounts before committing.
    */
-  const drawDown = (from: number[], need: number, rmdRequired: number) => {
+  const drawDown = (from: number[], need: number, rmdRequired: number, medicalCost: number) => {
     const next = [...from]
     const withdrawalsByBucket = emptyBuckets()
     const rmd = withdrawProportionally(next, pretax, rmdRequired)
@@ -69,6 +77,11 @@ export function simulatePath(
     const rmdReinvested = Math.max(rmd - need, 0)
     next[firstTaxable] += rmdReinvested
     let remaining = Math.max(need - rmd, 0)
+
+    const hsaMedical = withdrawProportionally(next, hsa, Math.min(medicalCost, remaining))
+    withdrawalsByBucket.hsa += hsaMedical
+    remaining -= hsaMedical
+
     for (const bucket of WITHDRAWAL_ORDER) {
       if (remaining <= 0) break
       const taken = withdrawProportionally(next, indexesIn(bucket), remaining)
@@ -83,6 +96,8 @@ export function simulatePath(
       rmdReinvested,
       /** All pre-tax money taken out this year (taxable as ordinary income). */
       pretaxWithdrawn: rmd + extraPretax,
+      /** HSA money used for non-medical spending (taxable; 20% penalty before 65). */
+      hsaNonMedical: withdrawalsByBucket.hsa - hsaMedical,
       shortfall: remaining,
     }
   }
@@ -115,10 +130,12 @@ export function simulatePath(
     }
 
     let spending = 0
+    let healthcare = 0
     let ssIncome = 0
     let pensionIncome = 0
     if (retired) {
-      spending = plan.annualSpending * priceLevel
+      healthcare = healthcareCost(plan, age) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
+      spending = plan.annualSpending * priceLevel + healthcare
       pensionIncome = plan.annualPension * priceLevel
       if (age >= plan.socialSecurityClaimAge) ssIncome = ssYearly * priceLevel
     }
@@ -135,22 +152,23 @@ export function simulatePath(
     // passes because the marginal rate is well below 100%.
     let tax = 0
     let taxableIncome = 0
-    let draw = drawDown(balances, gap, rmdRequired)
+    let draw = drawDown(balances, gap, rmdRequired, healthcare)
     if (retired) {
       for (let pass = 0; pass < 25; pass++) {
         const result = federalIncomeTax({
-          ordinaryIncome: draw.pretaxWithdrawn + pensionIncome,
+          ordinaryIncome: draw.pretaxWithdrawn + draw.hsaNonMedical + pensionIncome,
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
           status: plan.filingStatus,
           priceLevel: priceLevel * taxIndexAtStart,
         })
+        const penalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         taxableIncome = result.taxableIncome
-        const settled = Math.abs(result.tax - tax) < 0.5
-        tax = result.tax
+        const settled = Math.abs(result.tax + penalty - tax) < 0.5
+        tax = result.tax + penalty
         if (settled) break
-        draw = drawDown(balances, gap + tax, rmdRequired)
+        draw = drawDown(balances, gap + tax, rmdRequired, healthcare)
       }
     }
     balances.splice(0, balances.length, ...draw.balances)
@@ -187,6 +205,7 @@ export function simulatePath(
       startByBucketReal,
       income,
       spending,
+      healthcare,
       tax,
       taxableIncome,
     })

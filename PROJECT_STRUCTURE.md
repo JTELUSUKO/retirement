@@ -23,6 +23,8 @@ retirement/
 │   │   ├── rmd.test.ts
 │   │   ├── taxes.ts             # Federal income tax + taxable Social Security
 │   │   ├── taxes.test.ts
+│   │   ├── healthcare.ts        # Healthcare cost by age (pre-Medicare vs Medicare, per person)
+│   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
 │   │   ├── projection.test.ts
 │   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
 │   │   ├── monteCarlo.test.ts
@@ -74,8 +76,9 @@ One row per year; the age is your age at the **start** of that year.
 
 1. **RMDs** (from age 73, or 75 if born 1960+) come out of pre-tax accounts at the start of the year,
    using the start-of-year pre-tax balance and the IRS Uniform Lifetime Table. This applies even while working.
-2. **Retired years:** spending not covered by income is withdrawn at the start of the year: the RMD first,
-   then **cash → taxable → pre-tax → Roth → HSA**, split proportionally across accounts of the same type.
+2. **Retired years:** spending (including healthcare) not covered by income is withdrawn at the start of the
+   year: the RMD first, then the **HSA for healthcare costs**, then **cash → taxable → pre-tax → Roth → HSA**,
+   split proportionally across accounts of the same type.
    RMD money you don't need is reinvested in a taxable account (a hidden one is created if you have none).
 3. **Federal income tax** (retired years) is added to what must be withdrawn, and solved iteratively because
    pre-tax withdrawals are themselves taxable. See "How taxes work" below.
@@ -89,13 +92,23 @@ One row per year; the age is your age at the **start** of that year.
 
 - **Taxed as income:** pre-tax withdrawals (including the whole RMD, even the part reinvested), pension,
   and the taxable part of Social Security (IRS provisional-income test, up to 85%).
-- **Not taxed:** Roth, cash, HSA (assumed spent on medical costs), and taxable-account withdrawals
+- **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
+  plus a 20% penalty before 65.
+- **Not taxed:** Roth, cash, and taxable-account withdrawals
   (capital gains aren't modeled; many retirees fall in the 0% capital-gains bracket).
 - **Deductions:** standard deduction, the extra 65+ deduction, and the temporary $6,000 senior deduction
   (2025–2028, phased out above $75k/$150k).
 - **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
 - Brackets and deductions rise with inflation; the Social Security thresholds don't (as in the law).
 - **Not modeled:** state tax, capital gains, IRMAA, credits, and taxes during working years.
+
+## Healthcare
+
+- Applies only in retirement (employer coverage is assumed while working).
+- Two per-person yearly costs in today's dollars: **before Medicare** (if you retire before 65) and
+  **on Medicare** (65+). Married filing jointly counts two people of the same age.
+- Costs rise with inflation **plus** an extra medical inflation rate (default 2%).
+- "Yearly spending" excludes healthcare. Not modeled yet: IRMAA surcharges, ACA subsidies, long-term care.
 
 ## How the Monte Carlo works
 
@@ -124,7 +137,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 | Phase | New files |
 |---|---|
-| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · next: `engine/healthcare.ts` (pre-Medicare premiums, Medicare, HSA pays medical costs first) |
+| 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · next: other income (annuities, part-time work, rental) replacing the single pension field |
 | 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 

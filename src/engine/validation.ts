@@ -32,6 +32,8 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     plan.annualSpending,
     plan.socialSecurityAtFRA,
     plan.annualPension,
+    plan.healthcare.preMedicareAnnual,
+    plan.healthcare.medicareAnnual,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
   if (amounts.some((n) => !Number.isFinite(n) || n < 0)) {

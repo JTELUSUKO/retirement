@@ -37,14 +37,25 @@ export interface Plan {
   retirementAge: number
   lifeExpectancy: number
   accounts: Account[]
-  /** Yearly spending in retirement, in today's dollars. */
+  /** Yearly spending in retirement excluding healthcare, in today's dollars. */
   annualSpending: number
   /** Monthly benefit at full retirement age (67), from your ssa.gov statement (combined for couples). */
   socialSecurityAtFRA: number
   socialSecurityClaimAge: number
   /** Yearly pension, in today's dollars. Starts at retirement. */
   annualPension: number
+  healthcare: HealthcareCosts
   assumptions: Assumptions
+}
+
+/** Healthcare costs in retirement, per person per year in today's dollars. */
+export interface HealthcareCosts {
+  /** Premiums + out-of-pocket before Medicare (only if you retire before 65). */
+  preMedicareAnnual: number
+  /** Medicare Part B + Part D + supplement + out-of-pocket, from 65. */
+  medicareAnnual: number
+  /** How much faster medical costs rise than general inflation, e.g. 0.02 */
+  excessInflation: number
 }
 
 export interface YearResult {
@@ -71,8 +82,11 @@ export interface YearResult {
   /** Start-of-year balances by tax bucket, in today's dollars. */
   startByBucketReal: BucketAmounts
   income: number
+  /** Total spending need for the year, including healthcare. */
   spending: number
-  /** Federal income tax for the year (retired years only), paid from savings. */
+  /** Healthcare costs for the year (included in spending). */
+  healthcare: number
+  /** Federal income tax (plus any HSA penalty) for the year, retired years only, paid from savings. */
   tax: number
   /** Taxable income after deductions. */
   taxableIncome: number
