@@ -69,7 +69,10 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   return state
 }
 
-type UndoAction = 'cleared' | 'example'
+/** Bump when the saved plan shape changes, and add a step to migratePlanState. */
+export const PLAN_VERSION = 5
+
+type UndoAction = 'cleared' | 'example' | 'imported'
 
 interface PlanState {
   plan: Plan
@@ -86,6 +89,7 @@ interface PlanState {
   removeIncome: (id: string) => void
   clear: () => void
   loadExample: () => void
+  importPlan: (plan: Plan) => void
   undoLast: () => void
 }
 
@@ -134,12 +138,13 @@ export const usePlanStore = create<PlanState>()(
         removeIncome: (id) => edit((p) => ({ ...p, incomeStreams: p.incomeStreams.filter((i) => i.id !== id) })),
         clear: () => set((s) => ({ plan: clearedPlan(s.plan), undo: { plan: s.plan, action: 'cleared' } })),
         loadExample: () => set((s) => ({ plan: defaultPlan, undo: { plan: s.plan, action: 'example' } })),
+        importPlan: (plan) => set((s) => ({ plan, undo: { plan: s.plan, action: 'imported' } })),
         undoLast: () => set((s) => (s.undo ? { plan: s.undo.plan, undo: null } : s)),
       }
     },
     {
       name: 'retirement-plan',
-      version: 5,
+      version: PLAN_VERSION,
       partialize: (s) => ({ plan: s.plan }),
       migrate: (persisted, version) => migratePlanState(persisted, version) as PlanState,
     },

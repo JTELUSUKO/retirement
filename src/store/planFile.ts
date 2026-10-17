@@ -1,0 +1,88 @@
+import type { Plan } from '../engine'
+import { PLAN_VERSION, migratePlanState } from './planStore'
+
+const APP_ID = 'retirement-planner'
+export const MAX_FILE_BYTES = 1_000_000
+
+const ACCOUNT_TYPES = ['401k', 'traditional-ira', 'roth', 'hsa', 'taxable', 'cash']
+const INCOME_KINDS = ['pension', 'annuity', 'work', 'rental', 'other']
+
+export interface PlanFile {
+  app: typeof APP_ID
+  version: number
+  exportedAt: string
+  plan: Plan
+}
+
+/** JSON text for a backup file. */
+export function serializePlan(plan: Plan, now = new Date()): string {
+  const file: PlanFile = { app: APP_ID, version: PLAN_VERSION, exportedAt: now.toISOString(), plan }
+  return JSON.stringify(file, null, 2)
+}
+
+export const backupFileName = (now = new Date()) => `retirement-plan-${now.toISOString().slice(0, 10)}.json`
+
+export type ParseResult = { ok: true; plan: Plan } | { ok: false; error: string }
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+/** Returns the first problem with the plan's shape, or null if it looks complete. */
+function shapeProblem(plan: unknown): string | null {
+  if (!isObj(plan)) return 'the plan is missing'
+  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'socialSecurityClaimAge']) {
+    if (!isNum(plan[key])) return `“${key}” must be a number`
+  }
+  if (plan.filingStatus !== 'single' && plan.filingStatus !== 'married') return '“filingStatus” must be single or married'
+
+  for (const [group, keys] of [
+    ['assumptions', ['returnPreRetirement', 'returnPostRetirement', 'volatilityPreRetirement', 'volatilityPostRetirement', 'inflation']],
+    ['healthcare', ['preMedicareAnnual', 'medicareAnnual', 'excessInflation']],
+  ] as const) {
+    const obj = plan[group]
+    if (!isObj(obj)) return `“${group}” is missing`
+    for (const key of keys) if (!isNum(obj[key])) return `“${group}.${key}” must be a number`
+  }
+
+  if (!Array.isArray(plan.accounts)) return '“accounts” must be a list'
+  for (const [i, a] of plan.accounts.entries()) {
+    if (!isObj(a) || typeof a.id !== 'string' || typeof a.name !== 'string') return `account ${i + 1} is incomplete`
+    if (!ACCOUNT_TYPES.includes(a.type as string)) return `account “${a.name}” has an unknown type`
+    for (const key of ['balance', 'annualContribution', 'employerMatch']) {
+      if (!isNum(a[key])) return `account “${a.name}”: “${key}” must be a number`
+    }
+  }
+
+  if (!Array.isArray(plan.incomeStreams)) return '“incomeStreams” must be a list'
+  for (const [i, s] of plan.incomeStreams.entries()) {
+    if (!isObj(s) || typeof s.id !== 'string' || typeof s.name !== 'string') return `income ${i + 1} is incomplete`
+    if (!INCOME_KINDS.includes(s.kind as string)) return `income “${s.name}” has an unknown type`
+    if (!isNum(s.annualAmount) || !isNum(s.startAge) || !isNum(s.taxableShare)) return `income “${s.name}” is incomplete`
+    if (s.endAge !== null && !isNum(s.endAge)) return `income “${s.name}”: end age must be a number or empty`
+    if (typeof s.inflationAdjusted !== 'boolean') return `income “${s.name}”: “inflationAdjusted” must be true or false`
+  }
+  return null
+}
+
+/** Parse and check a backup file; older versions are upgraded. Never throws. */
+export function parsePlanFile(text: string): ParseResult {
+  let data: unknown
+  try {
+    data = JSON.parse(text)
+  } catch {
+    return { ok: false, error: 'This file isn’t valid JSON.' }
+  }
+  if (!isObj(data) || data.app !== APP_ID || !isNum(data.version)) {
+    return { ok: false, error: 'This doesn’t look like a Retirement Planner backup file.' }
+  }
+  if (data.version > PLAN_VERSION) {
+    return { ok: false, error: 'This file was made by a newer version of the app. Reload the page and try again.' }
+  }
+  try {
+    const plan: unknown = migratePlanState(structuredClone({ plan: data.plan }), data.version).plan
+    const problem = shapeProblem(plan)
+    return problem ? { ok: false, error: `The file is damaged or incomplete: ${problem}.` } : { ok: true, plan: plan as Plan }
+  } catch {
+    return { ok: false, error: 'The file is damaged or incomplete.' }
+  }
+}

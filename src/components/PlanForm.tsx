@@ -2,6 +2,7 @@ import { AGE_LIMITS, CONFIG_2026, validatePlan, type AccountType, type Plan, typ
 import { usePlanStore } from '../store/planStore'
 import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
+import { PlanToolbar } from './PlanToolbar'
 
 const accountTypes: { value: AccountType; label: string }[] = [
   { value: '401k', label: '401(k) / 403(b)' },
@@ -22,40 +23,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export function PlanForm() {
-  const { plan, undo, update, updateAssumptions, updateHealthcare, updateAccount, addAccount, removeAccount, clear, loadExample, undoLast } =
-    usePlanStore()
+  const { plan, update, updateAssumptions, updateHealthcare, updateAccount, addAccount, removeAccount } = usePlanStore()
   const issues = validatePlan(plan)
   const errorFor = (field: PlanIssue['field']) => issues.find((i) => i.field === field)?.message
   const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
 
   return (
     <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={clear}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
-          >
-            Clear all
-          </button>
-          <button
-            type="button"
-            onClick={loadExample}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
-          >
-            Load example
-          </button>
-        </div>
-        {undo && (
-          <div role="status" className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900">
-            <span>{undo.action === 'cleared' ? 'Plan cleared.' : 'Example plan loaded.'}</span>
-            <button type="button" onClick={undoLast} className="font-medium underline underline-offset-2">
-              Undo
-            </button>
-          </div>
-        )}
-      </div>
+      <PlanToolbar />
 
       <Section title="You">
         <label className="block text-sm">

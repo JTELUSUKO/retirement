@@ -38,13 +38,16 @@ retirement/
 │   │   ├── socialSecurity.test.ts
 │   │   └── index.ts             # Public exports of the engine
 │   ├── store/
-│   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/undo
-│   │   └── planStore.test.ts
+│   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/import/undo
+│   │   ├── planStore.test.ts
+│   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
+│   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
+│   │   ├── PlanToolbar.tsx      # Clear / Load example / Export / Import, Undo bar, import errors
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
 │   │   ├── StatCard.tsx         # Headline number tiles
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
@@ -72,6 +75,10 @@ retirement/
 3. **Today's dollars in the UI.** Users enter amounts in today's dollars; the engine inflates them internally
    and reports both nominal and inflation-adjusted values.
 4. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
+   **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
+   with a reason, and Undo brings back the previous plan).
+5. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
+   Both saved browser data and backup files go through the same migration.
 
 ## Timing rules
 

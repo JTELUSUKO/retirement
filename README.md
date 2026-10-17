@@ -14,7 +14,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Other income: annuities, pensions, part-time work and rental income
 - A year-by-year table
 
-Your data never leaves your browser.
+Your data never leaves your browser. Use **Export** to save a backup file and **Import** to restore it.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
 > Projections use simplified assumptions (a fixed withdrawal order, federal tax only, no capital gains).
