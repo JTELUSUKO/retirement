@@ -5,7 +5,8 @@ A private, browser-only retirement planner for US pre-retirees (ages 50–65).
 Enter your accounts, savings, expected spending and Social Security estimate to see:
 
 - Projected savings at retirement (in today's dollars and future dollars)
-- Whether your money lasts to your planning age
+- Your chance of the money lasting, from 1,000 simulated market histories (Monte Carlo)
+- The range of outcomes, from poor markets to good ones
 - Your Social Security benefit for any claiming age from 62 to 70
 - A year-by-year balance chart and table
 

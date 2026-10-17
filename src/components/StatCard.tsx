@@ -2,13 +2,14 @@ interface Props {
   label: string
   value: string
   detail?: string
-  tone?: 'default' | 'good' | 'bad'
+  tone?: 'default' | 'good' | 'warn' | 'bad'
 }
 
 const toneClass = {
   default: '',
-  good: 'border-l-4 border-l-emerald-600',
-  bad: 'border-l-4 border-l-red-600',
+  good: 'border-l-4 border-l-emerald-600 dark:border-l-emerald-500',
+  warn: 'border-l-4 border-l-amber-500 dark:border-l-amber-400',
+  bad: 'border-l-4 border-l-red-600 dark:border-l-red-500',
 }
 
 export function StatCard({ label, value, detail, tone = 'default' }: Props) {

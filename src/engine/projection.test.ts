@@ -1,20 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { projectPlan } from './projection'
+import { basePlan } from './testFixtures'
 import type { Plan } from './types'
 
-const basePlan: Plan = {
-  currentAge: 60,
-  retirementAge: 60,
-  lifeExpectancy: 70,
-  accounts: [
-    { id: 'a', name: '401k', type: '401k', balance: 100_000, annualContribution: 0, employerMatch: 0 },
-  ],
-  annualSpending: 10_000,
-  socialSecurityAtFRA: 0,
-  socialSecurityClaimAge: 67,
-  annualPension: 0,
-  assumptions: { returnPreRetirement: 0, returnPostRetirement: 0, inflation: 0 },
-}
 
 describe('projectPlan', () => {
   it('grows savings and adds contributions before retirement', () => {

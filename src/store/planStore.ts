@@ -14,7 +14,13 @@ export const defaultPlan: Plan = {
   socialSecurityAtFRA: 2_800,
   socialSecurityClaimAge: 67,
   annualPension: 0,
-  assumptions: { returnPreRetirement: 0.07, returnPostRetirement: 0.05, inflation: 0.025 },
+  assumptions: {
+    returnPreRetirement: 0.07,
+    returnPostRetirement: 0.05,
+    volatilityPreRetirement: 0.15,
+    volatilityPostRetirement: 0.1,
+    inflation: 0.025,
+  },
 }
 
 interface PlanState {
@@ -53,6 +59,17 @@ export const usePlanStore = create<PlanState>()(
         set((s) => ({ plan: { ...s.plan, accounts: s.plan.accounts.filter((a) => a.id !== id) } })),
       reset: () => set({ plan: defaultPlan }),
     }),
-    { name: 'retirement-plan', version: 1 },
+    {
+      name: 'retirement-plan',
+      version: 2,
+      // v1 plans have no volatility assumptions; fill them from the defaults.
+      migrate: (persisted, version) => {
+        const state = persisted as { plan: Plan }
+        if (version < 2) {
+          state.plan.assumptions = { ...defaultPlan.assumptions, ...state.plan.assumptions }
+        }
+        return state as PlanState
+      },
+    },
   ),
 )

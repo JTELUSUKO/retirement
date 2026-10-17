@@ -1,13 +1,20 @@
 import { benefitAtClaimAge } from './socialSecurity'
 import type { Plan, ProjectionResult, YearResult } from './types'
 
+/** Nominal return for year `t` (0 = current year). */
+export type ReturnFn = (t: number, retired: boolean) => number
+
 /**
- * Deterministic year-by-year projection.
+ * Year-by-year projection with the given yearly returns.
  * All accounts are pooled into one balance (tax treatment comes in a later phase).
  * Contributions, spending, pension and Social Security are entered in today's
  * dollars and grow with inflation.
  */
-export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): ProjectionResult {
+export function simulatePath(
+  plan: Plan,
+  returnFor: ReturnFn,
+  startYear = new Date().getFullYear(),
+): ProjectionResult {
   const { assumptions: a } = plan
   let balance = plan.accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const yearlySavings = plan.accounts.reduce(
@@ -34,7 +41,7 @@ export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): P
 
     if (!retired) {
       contributions = yearlySavings * inflationFactor
-      balance = balance * (1 + a.returnPreRetirement) + contributions
+      balance = balance * (1 + returnFor(t, false)) + contributions
     } else {
       spending = plan.annualSpending * inflationFactor
       income = plan.annualPension * inflationFactor
@@ -43,7 +50,7 @@ export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): P
       const needed = Math.max(spending - income, 0)
       withdrawal = Math.min(needed, balance)
       if (needed > balance && depletionAge === null) depletionAge = age
-      balance = (balance - withdrawal) * (1 + a.returnPostRetirement)
+      balance = (balance - withdrawal) * (1 + returnFor(t, true))
     }
 
     years.push({
@@ -65,4 +72,10 @@ export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): P
     balanceAtRetirementReal: balanceAtRetirement / (1 + a.inflation) ** yearsToRetirement,
     depletionAge,
   }
+}
+
+/** Deterministic projection using the average return assumptions every year. */
+export function projectPlan(plan: Plan, startYear = new Date().getFullYear()): ProjectionResult {
+  const { returnPreRetirement, returnPostRetirement } = plan.assumptions
+  return simulatePath(plan, (_, retired) => (retired ? returnPostRetirement : returnPreRetirement), startYear)
 }

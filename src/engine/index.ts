@@ -1,4 +1,5 @@
 export * from './types'
-export { projectPlan } from './projection'
+export { projectPlan, simulatePath } from './projection'
+export { runMonteCarlo } from './monteCarlo'
 export { benefitAtClaimAge } from './socialSecurity'
 export { CONFIG_2026 } from './config/2026'

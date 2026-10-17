@@ -16,6 +16,10 @@ export interface Assumptions {
   returnPreRetirement: number
   /** Nominal annual return after retirement, e.g. 0.05 */
   returnPostRetirement: number
+  /** Standard deviation of yearly returns before retirement, e.g. 0.15 */
+  volatilityPreRetirement: number
+  /** Standard deviation of yearly returns after retirement, e.g. 0.10 */
+  volatilityPostRetirement: number
   inflation: number
 }
 
@@ -53,4 +57,21 @@ export interface ProjectionResult {
   balanceAtRetirementReal: number
   /** First age at which the portfolio cannot cover spending, or null if it lasts. */
   depletionAge: number | null
+}
+
+export interface PercentileYear {
+  age: number
+  /** Balances in today's dollars at each percentile. */
+  p10: number
+  p25: number
+  p50: number
+  p75: number
+  p90: number
+}
+
+export interface MonteCarloResult {
+  runs: number
+  /** Share of runs where the money lasted to the planning age (0–1). */
+  successRate: number
+  years: PercentileYear[]
 }

@@ -16,17 +16,21 @@ retirement/
 │   │   ├── config/
 │   │   │   └── 2026.ts          # Yearly US limits/rules (401k, IRA, HSA, SS, RMD). Update each January.
 │   │   ├── types.ts             # Plan, Account, YearResult, ProjectionResult
-│   │   ├── projection.ts        # Year-by-year balance simulation
+│   │   ├── projection.ts        # Year-by-year simulation (simulatePath) + average-return projection
 │   │   ├── projection.test.ts
+│   │   ├── monteCarlo.ts        # 1,000 random market histories → success rate + percentile bands
+│   │   ├── monteCarlo.test.ts
+│   │   ├── random.ts            # Seeded random numbers (repeatable results)
+│   │   ├── testFixtures.ts      # Shared sample plans for tests
 │   │   ├── socialSecurity.ts    # Benefit adjustment for claiming at ages 62–70
 │   │   ├── socialSecurity.test.ts
 │   │   └── index.ts             # Public exports of the engine
 │   ├── store/
 │   │   └── planStore.ts         # Zustand store: the user's plan + localStorage persistence
 │   ├── components/              # Reusable UI pieces
-│   │   ├── BalanceChart.tsx     # Recharts area chart of balance by age
 │   │   ├── NumberField.tsx      # Number / percent inputs
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
+│   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
 │   │   └── StatCard.tsx         # Headline number tiles
 │   ├── pages/
 │   │   └── Dashboard.tsx        # Form + results (stat cards, chart, yearly table)
@@ -52,23 +56,31 @@ retirement/
    and reports both nominal and inflation-adjusted values.
 4. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
 
+## How the Monte Carlo works
+
+- Each run draws a random return for every year from a **lognormal** distribution, using the
+  average return and volatility assumptions (separate values before and after retirement).
+- A run **succeeds** if the money covers spending every year up to the planning age.
+- The success rate is the share of 1,000 runs that succeed. Percentile bands show the spread of balances.
+- The random seed is fixed, so results stay stable while you edit inputs.
+
 ## Data flow
 
 ```
 PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboard
                                                           │
                                                           ▼
-                                             engine.projectPlan(plan)
+                              engine.runMonteCarlo(plan) · engine.projectPlan(plan)
                                                           │
                                                           ▼
-                                         StatCards · BalanceChart · table
+                                       StatCards · ProbabilityChart · table
 ```
 
 ## Planned additions (by phase)
 
 | Phase | New files |
 |---|---|
-| 2: Realism | `engine/monteCarlo.ts`, `engine/withdrawals.ts` (RMDs, drawdown order), `engine/taxes.ts`, `engine/healthcare.ts`, `components/ProbabilityChart.tsx` |
+| 2: Realism | ✅ `engine/monteCarlo.ts`, `components/ProbabilityChart.tsx` · next: `engine/withdrawals.ts` (RMDs, drawdown order), `engine/taxes.ts`, `engine/healthcare.ts` |
 | 3: Scenarios | `pages/Scenarios.tsx`, `components/ScenarioCompare.tsx`, `utils/exportImport.ts`, `pages/PrintSummary.tsx` |
 | 4: AI assistant | `src/ai/` (Claude chat UI) + a small serverless function to keep the API key off the client |
 

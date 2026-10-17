@@ -92,6 +92,13 @@ export function PlanForm() {
           <PercentField label="Return after" value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
           <PercentField label="Inflation" value={plan.assumptions.inflation} onChange={(v) => updateAssumptions({ inflation: v })} />
         </div>
+        <div className="grid grid-cols-3 gap-3">
+          <PercentField label="Volatility before" value={plan.assumptions.volatilityPreRetirement} onChange={(v) => updateAssumptions({ volatilityPreRetirement: v })} />
+          <PercentField label="Volatility after" value={plan.assumptions.volatilityPostRetirement} onChange={(v) => updateAssumptions({ volatilityPostRetirement: v })} />
+        </div>
+        <p className="text-xs text-slate-500">
+          Volatility is how much returns swing year to year. Roughly 15% for a stock-heavy mix, 10% for a balanced one.
+        </p>
       </Section>
 
       <button type="button" onClick={reset} className="text-sm text-slate-500 hover:underline">
