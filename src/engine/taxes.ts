@@ -48,8 +48,9 @@ export function federalIncomeTax(input: TaxInput): TaxResult {
     deduction += T.additionalDeduction65[status] * people * priceLevel
     if (year <= T.seniorDeduction.lastYear) {
       const { amount, phaseOutStart, phaseOutRate } = T.seniorDeduction
+      // Schedule 1-A Part V: each person's $6,000 is reduced by 6% of income over the threshold
       const reduction = Math.max(grossIncome - phaseOutStart[status], 0) * phaseOutRate
-      deduction += Math.max(amount * people - reduction, 0)
+      deduction += Math.max(amount - reduction, 0) * people
     }
   }
 

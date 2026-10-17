@@ -1,6 +1,8 @@
 // US limits and rules for tax year 2026.
-// Update this file each year. Sources: irs.gov (contribution limits, Rev. Proc. 2025-32 for
-// 2026 brackets and deductions), ssa.gov.
+// Update this file each year. Verified 2026-10-17 against:
+//   IR-2025-111 (401k/IRA limits), Rev. Proc. 2025-19 (HSA), Rev. Proc. 2025-32 (brackets, standard and
+//   65+ deductions), Schedule 1-A Part V (senior deduction), Pub. 590-B Table III (RMD divisors),
+//   IRS Social Security taxation thresholds, SSA early/late claiming rules.
 
 export const CONFIG_2026 = {
   year: 2026,
@@ -50,8 +52,8 @@ export const CONFIG_2026 = {
     /** Extra standard deduction per person aged 65+. Indexed. */
     additionalDeduction65: { single: 2_050, married: 1_650 },
     /**
-     * Temporary senior deduction (OBBBA): $6,000 per person 65+, tax years 2025–2028,
-     * reduced by 6% of income above the threshold. Not indexed.
+     * Temporary senior deduction (OBBBA): $6,000 per person 65+, tax years 2025–2028; each person's
+     * $6,000 is reduced by 6% of MAGI above the threshold (Schedule 1-A Part V). Not indexed.
      */
     seniorDeduction: { amount: 6_000, lastYear: 2028, phaseOutStart: { single: 75_000, married: 150_000 }, phaseOutRate: 0.06 },
     /** Social Security taxation thresholds on provisional income. Not indexed by law. */

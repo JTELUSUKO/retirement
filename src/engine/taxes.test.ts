@@ -31,6 +31,12 @@ describe('federalIncomeTax (2026)', () => {
     expect(tax(175_000, { age: 66 }).taxableIncome).toBeCloseTo(175_000 - 16_100 - 2_050)
   })
 
+  it('reduces each spouse’s senior deduction separately (Schedule 1-A Part V)', () => {
+    // $200,000: excess $50,000 × 6% = $3,000 off each $6,000 → $3,000 × 2 = $6,000
+    const r = tax(200_000, { age: 66, status: 'married' })
+    expect(r.taxableIncome).toBeCloseTo(200_000 - 32_200 - 1_650 * 2 - 6_000)
+  })
+
   it('indexes brackets and deductions with inflation', () => {
     expect(tax(100_000, { priceLevel: 2 }).tax).toBeCloseTo(tax(50_000).tax * 2)
   })
