@@ -50,7 +50,7 @@ describe('plan store: clear, load example, undo', () => {
 
 describe('plan store: migrations', () => {
   it('upgrades a v2 plan (no filing status, no healthcare)', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = examplePlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, ...rest } = examplePlan
     const v2plan = { ...rest, annualPension: 0 }
     const migrated = migratePlanState({ plan: v2plan }, 2)
     expect(migrated.plan.filingStatus).toBe('single')
@@ -102,6 +102,13 @@ describe('plan store: scenarios', () => {
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3])
     add()
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3, 1])
+  })
+
+  it('upgrades a v8 plan with no state chosen', () => {
+    const { state: _s, stateRetirementExclusion: _e, ...v8 } = examplePlan
+    const { plan } = migratePlanState({ plan: v8 }, 8)
+    expect(plan.state).toBe('')
+    expect(plan.stateRetirementExclusion).toBe(0)
   })
 
   it('gives v7 scenarios slots by position', () => {

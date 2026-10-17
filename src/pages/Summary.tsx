@@ -6,6 +6,8 @@ import {
   benefitAtClaimAge,
   evaluatePlan,
   missingEssentials,
+  NO_INCOME_TAX_STATES,
+  stateRule,
   payoutRate,
   STRESS_LABEL,
   type Plan,
@@ -15,6 +17,7 @@ import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL } from '../utils/labels'
 
+const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits)}%`
 const th = 'border-b border-slate-300 py-1 pr-3 text-left font-medium'
 const td = 'border-b border-slate-100 py-1 pr-3'
@@ -131,7 +134,8 @@ export function Summary() {
             ))}
           </div>
           <p className="text-sm text-slate-700">
-            Over retirement (average returns, today's dollars): federal income tax {formatUSDCompact(base.lifetimeTax)},
+            Over retirement (average returns, today's dollars): income tax {formatUSDCompact(base.lifetimeTax)} (
+            {formatUSDCompact(base.lifetimeFederalTax)} federal, {formatUSDCompact(base.lifetimeStateTax)} state),
             healthcare {formatUSDCompact(base.lifetimeHealthcare)}. Savings left at {plan.lifeExpectancy}:{' '}
             {formatUSDCompact(base.leftTypical)} in typical markets, {formatUSDCompact(base.leftPoor)} in poor markets.
           </p>
@@ -186,6 +190,7 @@ export function Summary() {
           <Facts
             rows={[
               ['Filing status', plan.filingStatus === 'married' ? 'Married filing jointly (spouse assumed same age)' : 'Single'],
+              ['State', plan.state ? `${stateName(plan.state)}${plan.stateRetirementExclusion > 0 ? `, ${formatUSD(plan.stateRetirementExclusion)}/yr per person of retirement income exempt` : ''}` : 'Not chosen (no state tax)'],
               ['Ages', `Now ${plan.currentAge} · retire at ${plan.retirementAge} · plan to ${plan.lifeExpectancy}`],
               ['Yearly spending', `${formatUSD(plan.annualSpending)} in today's dollars, excluding healthcare`],
               ['Social Security', `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67${people === 2 ? ' (combined)' : ''}, claiming at ${plan.socialSecurityClaimAge}`],
@@ -262,7 +267,7 @@ export function Summary() {
                 <th className={`${th} ${num}`}>Savings</th>
                 <th className={`${th} ${num}`}>Spending incl. healthcare</th>
                 <th className={`${th} ${num}`}>Income</th>
-                <th className={`${th} ${num}`}>Federal tax</th>
+                <th className={`${th} ${num}`}>Income tax</th>
                 <th className={`${th} ${num}`}>Required min. distribution</th>
               </tr>
             </thead>
@@ -302,9 +307,11 @@ export function Summary() {
             </li>
             <li>
               Federal income tax uses 2026 brackets and deductions, indexed to inflation, and taxes up to 85% of Social Security.
+              State income tax uses each state’s 2026 brackets, deductions and full retirement-income exemptions; partial
+              exemptions use the amount you entered.
             </li>
             <li>
-              Not modeled: state tax, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care, survivor
+              Not modeled: local/city income tax, state income-based phase-outs, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care, survivor
               benefits. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (

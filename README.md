@@ -9,7 +9,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - The range of outcomes, from poor markets to good ones
 - Your Social Security benefit for any claiming age from 62 to 70
 - How each account type (pre-tax, Roth, taxable, cash, HSA) is drawn down, including RMDs
-- Approximate federal income tax on retirement withdrawals and Social Security
+- Approximate federal and state income tax on retirement withdrawals and Social Security (all 50 states + DC)
 - Healthcare costs before and after Medicare, paid from your HSA first
 - Other income: annuities, pensions, part-time work and rental income
 - What buying an annuity with part of your savings would do to your odds and what you leave behind
@@ -23,7 +23,7 @@ Your data stays in your browser. Use **Export** to save a backup file and **Impo
 app's own calculations. Your plan is sent to Anthropic only when you ask a question, and usage is billed to your key.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
-> Projections use simplified assumptions (a fixed withdrawal order, federal tax only, no capital gains).
+> Projections use simplified assumptions (a fixed withdrawal order, approximate state rules, no capital gains).
 
 ## Run locally
 

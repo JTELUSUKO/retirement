@@ -22,3 +22,4 @@ export {
 export type { Scenario, ScenarioOverrides, StressTest, MarketAdjust } from './scenarios'
 export { evaluatePlan } from './evaluate'
 export type { PlanEvaluation } from './evaluate'
+export { stateIncomeTax, describeStateRule, stateRule, NO_INCOME_TAX_STATES, STATE_TAX_2026 } from './stateTax'

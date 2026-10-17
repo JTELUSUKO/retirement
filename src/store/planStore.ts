@@ -5,6 +5,8 @@ import type { Account, IncomeStream, Plan, Scenario } from '../engine'
 /** Sample plan behind “Load example”. */
 export const examplePlan: Plan = {
   filingStatus: 'single',
+  state: 'NC',
+  stateRetirementExclusion: 0,
   currentAge: 55,
   retirementAge: 65,
   lifeExpectancy: 95,
@@ -43,6 +45,8 @@ export const examplePlan: Plan = {
  */
 export const blankPlan: Plan = {
   ...examplePlan,
+  state: '',
+  stateRetirementExclusion: 0,
   currentAge: 0,
   retirementAge: 0,
   lifeExpectancy: 0,
@@ -109,6 +113,14 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       scenarios: state.plan.scenarios.map((sc, i) => ({ ...sc, slot: sc.slot ?? i + 1 })),
     }
   }
+  // v8 → v9: state income tax (not chosen yet)
+  if (version < 9) {
+    state.plan = {
+      ...state.plan,
+      state: state.plan.state ?? '',
+      stateRetirementExclusion: state.plan.stateRetirementExclusion ?? 0,
+    }
+  }
   return state
 }
 
@@ -116,7 +128,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 8
+export const PLAN_VERSION = 9
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 

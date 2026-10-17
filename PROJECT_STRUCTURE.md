@@ -14,7 +14,8 @@ retirement/
 ├── src/
 │   ├── engine/                  # Pure calculation code. No React, no browser APIs.
 │   │   ├── config/
-│   │   │   └── 2026.ts          # Yearly US rules: limits, SS, RMD table, federal tax brackets/deductions. Update each January.
+│   │   │   ├── 2026.ts          # Yearly US rules: limits, SS, RMD table, federal tax brackets/deductions. Update each January.
+│   │   │   └── stateTax2026.ts  # GENERATED from the Tax Foundation 2026 table (41 states + DC); regenerate, don't hand-edit
 │   │   ├── types.ts             # Plan, Account, YearResult, ProjectionResult
 │   │   ├── projection.ts        # Year-by-year simulation per account (simulatePath) + average-return projection
 │   │   ├── accounts.ts          # Account type → tax bucket, withdrawal order, proportional withdrawals
@@ -23,6 +24,8 @@ retirement/
 │   │   ├── rmd.test.ts
 │   │   ├── taxes.ts             # Federal income tax + taxable Social Security
 │   │   ├── taxes.test.ts
+│   │   ├── stateTax.ts          # State income tax (brackets, deductions, retirement exemptions, SS)
+│   │   ├── stateTax.test.ts
 │   │   ├── healthcare.ts        # Healthcare cost by age (pre-Medicare vs Medicare, per person)
 │   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
 │   │   ├── income.ts            # Other income streams (annuity, pension, work, rental) by age
@@ -69,6 +72,7 @@ retirement/
 │   │   ├── PlanToolbar.tsx      # Clear / Load example / Export / Import, Undo bar, import errors
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
 │   │   ├── StatCard.tsx         # Headline number tiles
+│   │   ├── StateField.tsx       # State picker + how the state taxes retirees + partial exemption amount
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
@@ -149,7 +153,14 @@ One row per year; the age is your age at the **start** of that year.
   (2025–2028, phased out above $75k/$150k).
 - **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
 - Brackets and deductions rise with inflation; the Social Security thresholds don't (as in the law).
-- **Not modeled:** state tax, capital gains, IRMAA, credits, and taxes during working years.
+- **State income tax:** the plan's state (or none). Starts from federal ordinary income, removes retirement
+  income in states that fully exempt it (IL; IA from 55; MS and PA from about 59) or the user's per-person
+  exemption amount otherwise, adds federally taxable Social Security in the 8 states that tax it (CO, CT, MN, MT,
+  NM, RI, UT, VT; their own exemptions aren't modeled), subtracts the state standard deduction and exemptions,
+  applies the 2026 brackets and subtracts credits. Brackets are indexed with inflation (not all states do).
+  Data: `config/stateTax2026.ts`, generated from the Tax Foundation's 2026 table.
+- **Not modeled:** local/city tax, state income-based phase-outs, capital gains, IRMAA, credits, and taxes
+  during working years.
 
 ## Healthcare
 

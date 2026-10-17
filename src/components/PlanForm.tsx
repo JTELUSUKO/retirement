@@ -5,6 +5,7 @@ import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
+import { StateField } from './StateField'
 
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export function PlanForm() {
             <option value="married">Married filing jointly (spouse assumed same age)</option>
           </select>
         </label>
+        <StateField />
         <div className="grid grid-cols-3 gap-3">
           <NumberField label="Age" placeholder="e.g. 55" value={plan.currentAge} onChange={(v) => update({ currentAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('currentAge')} />
           <NumberField label="Retire at" placeholder="e.g. 65" value={plan.retirementAge} onChange={(v) => update({ retirementAge: v })} min={AGE_LIMITS.min} max={AGE_LIMITS.max} error={errorFor('retirementAge')} />

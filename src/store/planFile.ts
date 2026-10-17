@@ -1,4 +1,4 @@
-import type { Plan } from '../engine'
+import { NO_INCOME_TAX_STATES, STATE_TAX_2026, type Plan } from '../engine'
 import { PLAN_VERSION, migratePlanState } from './planStore'
 
 const APP_ID = 'retirement-planner'
@@ -34,6 +34,10 @@ function shapeProblem(plan: unknown): string | null {
     if (!isNum(plan[key])) return `“${key}” must be a number`
   }
   if (plan.filingStatus !== 'single' && plan.filingStatus !== 'married') return '“filingStatus” must be single or married'
+  if (typeof plan.state !== 'string' || (plan.state !== '' && !STATE_TAX_2026[plan.state] && !NO_INCOME_TAX_STATES[plan.state])) {
+    return '“state” must be a US state code'
+  }
+  if (!isNum(plan.stateRetirementExclusion)) return '“stateRetirementExclusion” must be a number'
 
   for (const [group, keys] of [
     ['assumptions', ['returnPreRetirement', 'returnPostRetirement', 'volatilityPreRetirement', 'volatilityPostRetirement', 'inflation']],

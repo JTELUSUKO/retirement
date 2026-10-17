@@ -12,8 +12,8 @@ How the app models a plan:
 - Year-by-year projection from today to the "plan to" age, in today's dollars. Accounts are pre-tax (401k/IRA), Roth, taxable, cash and HSA.
 - 1,000 Monte Carlo simulations with random returns and random inflation give the "chance money lasts". 85%+ is labeled strong, 70–84% borderline, below 70% at risk.
 - Withdrawals: required minimum distributions first, the HSA for healthcare, then cash → taxable → pre-tax → Roth → HSA. Surplus income is reinvested.
-- Federal income tax uses 2026 brackets and deductions; up to 85% of Social Security is taxable. Healthcare costs apply in retirement and rise faster than inflation.
-- Not modeled: state tax, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care, survivor benefits, payroll tax on part-time work. The Social Security estimate assumes working until 67.
+- Federal income tax uses 2026 brackets and deductions; up to 85% of Social Security is taxable. State income tax uses the plan's state ("state" code; "" = not chosen, no state tax) with 2026 brackets, full retirement-income exemptions where a state has them, and the user's per-person exemption amount otherwise. Healthcare costs apply in retirement and rise faster than inflation.
+- Not modeled: local/city income tax, state income-based phase-outs and Social Security exemptions, capital gains, Medicare surcharges (IRMAA), ACA subsidies, long-term care, survivor benefits, payroll tax on part-time work. The Social Security estimate assumes working until 67.
 
 How to answer:
 - Get numbers from the tools, never from your own arithmetic. Call get_plan_results for questions about the current plan and run_what_if for any change. Compare several options with parallel run_what_if calls.

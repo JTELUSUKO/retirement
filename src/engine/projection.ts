@@ -6,7 +6,8 @@ import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcareCost } from './healthcare'
 import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
-import { federalIncomeTax } from './taxes'
+import { stateIncomeTax } from './stateTax'
+import { federalIncomeTax, taxableSocialSecurity } from './taxes'
 import type { Plan, ProjectionResult, TaxBucket, YearResult } from './types'
 
 /** Penalty on non-medical HSA withdrawals before 65. */
@@ -41,6 +42,7 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   withdrawals are taxed (plus a 20% penalty on non-medical HSA money before 65).
  *   Roth, cash and taxable-account withdrawals are untaxed (capital gains are not
  *   modeled). Taxes during working years are not modeled.
+ * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
  * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
  * - Income beyond spending and tax is reinvested in a taxable account.
  * - An annuity purchase (at or after retirement) moves the premium out of savings at the
@@ -160,7 +162,7 @@ export function simulatePath(
     let spending = 0
     let healthcare = 0
     let ssIncome = 0
-    let other = { amount: 0, taxable: 0 }
+    let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
       healthcare = healthcareCost(plan, age) * priceLevel * (1 + plan.healthcare.excessInflation) ** t
       spending = plan.annualSpending * priceLevel + healthcare
@@ -180,23 +182,39 @@ export function simulatePath(
     // tax is paid from savings), so repeat until the tax settles. Converges in a few
     // passes because the marginal rate is well below 100%.
     let tax = 0
+    let federalTax = 0
+    let stateTax = 0
     let taxableIncome = 0
     let draw = drawDown(balances, Math.max(gap, 0), rmdRequired, healthcare)
     if (retired) {
+      const annuityTaxable = annuityIncome * (annuity?.taxableShare ?? 0)
+      const taxPriceLevel = priceLevel * taxIndexAtStart
       for (let pass = 0; pass < 25; pass++) {
+        const ordinaryIncome = draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityTaxable
         const result = federalIncomeTax({
-          ordinaryIncome:
-            draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityIncome * (annuity?.taxableShare ?? 0),
+          ordinaryIncome,
           socialSecurity: ssIncome,
           age,
           year: startYear + t,
           status: plan.filingStatus,
-          priceLevel: priceLevel * taxIndexAtStart,
+          priceLevel: taxPriceLevel,
         })
         const penalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
+        const state = stateIncomeTax({
+          state: plan.state,
+          status: plan.filingStatus,
+          age,
+          ordinaryIncome,
+          retirementIncome: draw.pretaxWithdrawn + other.taxableRetirement + annuityTaxable,
+          taxableSocialSecurity: taxableSocialSecurity(ordinaryIncome, ssIncome, plan.filingStatus),
+          retirementExclusionPerPerson: plan.stateRetirementExclusion,
+          priceLevel: taxPriceLevel,
+        })
         taxableIncome = result.taxableIncome
-        const settled = Math.abs(result.tax + penalty - tax) < 0.5
-        tax = result.tax + penalty
+        federalTax = result.tax + penalty
+        stateTax = state
+        const settled = Math.abs(federalTax + stateTax - tax) < 0.5
+        tax = federalTax + stateTax
         if (settled) break
         draw = drawDown(balances, Math.max(gap + tax, 0), rmdRequired, healthcare)
       }
@@ -243,6 +261,8 @@ export function simulatePath(
       spending,
       healthcare,
       tax,
+      federalTax,
+      stateTax,
       taxableIncome,
     })
   }

@@ -14,7 +14,10 @@ export interface PlanEvaluation {
   /** Savings left at the start of the final year, today's dollars */
   leftTypical: number
   leftPoor: number
+  /** All income tax (federal + state), today's dollars */
   lifetimeTax: number
+  lifetimeFederalTax: number
+  lifetimeStateTax: number
   lifetimeHealthcare: number
   /** Full results (null when the plan has issues) */
   projection: ProjectionResult | null
@@ -27,7 +30,7 @@ export function evaluatePlan(plan: Plan, stress: StressTest = 'none'): PlanEvalu
   if (issues.length > 0) {
     return {
       issues, successRate: 0, savingsAtRetirement: 0, depletionAge: null, leftTypical: 0, leftPoor: 0,
-      lifetimeTax: 0, lifetimeHealthcare: 0, projection: null, monteCarlo: null,
+      lifetimeTax: 0, lifetimeFederalTax: 0, lifetimeStateTax: 0, lifetimeHealthcare: 0, projection: null, monteCarlo: null,
     }
   }
   const adjust = stressAdjust(plan, stress)
@@ -44,6 +47,8 @@ export function evaluatePlan(plan: Plan, stress: StressTest = 'none'): PlanEvalu
     leftTypical: last.p50,
     leftPoor: last.p10,
     lifetimeTax: real((y) => y.tax),
+    lifetimeFederalTax: real((y) => y.federalTax),
+    lifetimeStateTax: real((y) => y.stateTax),
     lifetimeHealthcare: real((y) => y.healthcare),
     projection,
     monteCarlo,

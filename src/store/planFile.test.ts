@@ -22,7 +22,7 @@ describe('plan backup files', () => {
   })
 
   it('upgrades a file from an older version', () => {
-    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, ...rest } = examplePlan
+    const { filingStatus: _f, healthcare: _h, incomeStreams: _i, annuityPurchase: _a, scenarios: _s, state: _st, stateRetirementExclusion: _se, ...rest } = examplePlan
     const result = parsePlanFile(fileWith({ version: 2, plan: { ...rest, annualPension: 18_000 } }))
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -51,6 +51,10 @@ describe('plan backup files', () => {
 
   it('rejects a scenario with an unknown stress test', () => {
     expectError(fileWith({ plan: { ...examplePlan, scenarios: [{ id: 'a', name: 'X', overrides: {}, stress: 'meteor', slot: 1 }] } }), /stress test/)
+  })
+
+  it('rejects an unknown state code', () => {
+    expectError(fileWith({ plan: { ...examplePlan, state: 'ZZ' } }), /state/)
   })
 
   it('rejects a file with no plan at all', () => {

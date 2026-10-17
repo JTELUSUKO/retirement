@@ -35,6 +35,10 @@ export interface Assumptions {
 
 export interface Plan {
   filingStatus: FilingStatus
+  /** Two-letter state code for state income tax ('' = not chosen yet: no state tax) */
+  state: string
+  /** Retirement income exempt from state tax, per person per year, today's dollars (partial state exclusions) */
+  stateRetirementExclusion: number
   currentAge: number
   retirementAge: number
   lifeExpectancy: number
@@ -135,8 +139,11 @@ export interface YearResult {
   spending: number
   /** Healthcare costs for the year (included in spending). */
   healthcare: number
-  /** Federal income tax (plus any HSA penalty) for the year, retired years only, paid from savings. */
+  /** All income tax for the year (federal + HSA penalty + state), retired years only, paid from savings. */
   tax: number
+  /** Federal income tax plus any HSA penalty */
+  federalTax: number
+  stateTax: number
   /** Taxable income after deductions. */
   taxableIncome: number
 }

@@ -19,7 +19,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
     name: 'get_plan_results',
     description:
       "Run the user's current plan and return its headline results: chance the money lasts (Monte Carlo), savings at " +
-      'retirement, the average-returns outcome, savings left at the end in typical and poor markets, lifetime federal tax ' +
+      'retirement, the average-returns outcome, savings left at the end in typical and poor markets, lifetime federal and state income tax ' +
       'and healthcare (today’s dollars), and milestone rows every 5 years. Call this before answering questions about ' +
       'how the plan is doing.',
     input_schema: { type: 'object', properties: {}, additionalProperties: false },
@@ -91,7 +91,8 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     savingsAtRetirement: round(e.savingsAtRetirement),
     averageReturnsOutcome: e.depletionAge === null ? `lasts past ${plan.lifeExpectancy}` : `runs out at ${e.depletionAge}`,
     savingsLeftAtEnd: { typicalMarkets: round(e.leftTypical), poorMarkets10thPercentile: round(e.leftPoor) },
-    lifetimeFederalTax: round(e.lifetimeTax),
+    lifetimeFederalTax: round(e.lifetimeFederalTax),
+    lifetimeStateTax: round(e.lifetimeStateTax),
     lifetimeHealthcare: round(e.lifetimeHealthcare),
     socialSecurityMonthlyAtClaimAge: round(benefitAtClaimAge(plan.socialSecurityAtFRA, plan.socialSecurityClaimAge)),
     milestones: det.years
@@ -101,7 +102,8 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
         savings: round(y.startBalanceReal),
         spendingInclHealthcare: round(y.spending / y.priceLevel),
         income: round(y.income / y.priceLevel),
-        federalTax: round(y.tax / y.priceLevel),
+        federalTax: round(y.federalTax / y.priceLevel),
+        stateTax: round(y.stateTax / y.priceLevel),
         rmd: round(y.rmd / y.priceLevel),
       })),
     note: 'Money amounts are in today’s dollars.',

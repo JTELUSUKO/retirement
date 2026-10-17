@@ -25,9 +25,14 @@ describe('incomeAtAge', () => {
     expect(incomeAtAge([stream({ inflationAdjusted: true })], 70, 1.5).amount).toBe(18_000)
   })
 
+  it('counts only pensions and annuities as retirement income', () => {
+    const r = incomeAtAge([stream({ kind: 'work', annualAmount: 5_000 }), stream({ kind: 'pension', annualAmount: 1_000 })], 70, 1)
+    expect(r).toEqual({ amount: 6_000, taxable: 6_000, taxableRetirement: 1_000 })
+  })
+
   it('splits out the taxable share', () => {
     const r = incomeAtAge([stream({ taxableShare: 0.25 }), stream({ annualAmount: 1_000 })], 70, 1)
-    expect(r).toEqual({ amount: 13_000, taxable: 4_000 })
+    expect(r).toEqual({ amount: 13_000, taxable: 4_000, taxableRetirement: 4_000 })
   })
 })
 

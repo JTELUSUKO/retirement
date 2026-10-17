@@ -56,6 +56,7 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     ...plan.incomeStreams.map((i) => i.annualAmount),
     plan.healthcare.preMedicareAnnual,
     plan.healthcare.medicareAnnual,
+    plan.stateRetirementExclusion,
     ...plan.accounts.flatMap((a) => [a.balance, a.annualContribution, a.employerMatch]),
   ]
   const annuity = plan.annuityPurchase

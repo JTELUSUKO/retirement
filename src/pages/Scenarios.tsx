@@ -261,7 +261,7 @@ export function Scenarios() {
             {resultRow(`Left at ${plan.lifeExpectancy}, poor markets (10th)`, (r, i) =>
               emphasize(formatUSDCompact(r.leftPoor), poorValues[i] === bestOf(poorValues) && poorValues[i] > 0 && results.length > 1),
             )}
-            {resultRow('Federal tax over retirement', (r) => formatUSDCompact(r.lifetimeTax))}
+            {resultRow('Income tax over retirement', (r) => formatUSDCompact(r.lifetimeTax))}
             {results.some((r) => r.issues.length > 0) && (
               <tr className="border-t border-slate-100 dark:border-slate-800">
                 <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>Problems</th>
