@@ -186,7 +186,9 @@ One row per year; the age is your age at the **start** of that year.
   **claiming age** (`spouseClaimAge`). The timeline runs on your age; tables show "you / spouse". You retire
   together at your retirement age, and the plan runs until the **younger** spouse reaches the plan-to age
   (`planEndAge`).
-- Each benefit starts when that spouse reaches their claiming age. Healthcare (pre-Medicare vs. Medicare) and the
+- Each benefit starts when that spouse reaches their claiming age. **Spousal top-up:** if one spouse's full
+  benefit is under half of the other's, they get the difference once both have claimed, reduced if started
+  before 67 (25/36% per month for 36 months, 5/12% beyond: 65% at 62); no delayed credits on the top-up. Healthcare (pre-Medicare vs. Medicare) and the
   65+ federal deductions follow each living person's own age.
 - Optional **survivor modeling**: `survivor.whoDies` dies at `survivor.firstDeathAge` (their own age). The
   survivor gets the larger of their own benefit and an SSA-style **survivor benefit** (`survivor.ts`):
@@ -199,7 +201,7 @@ One row per year; the age is your age at the **start** of that year.
 - The dashboard compares both living vs. the early death; scenarios (`overrides.survivorDeathAge`, 0 = both live)
   and Ask Claude (`run_what_if.survivorDeathAge`) can test other ages.
 - Simplified: one household retirement date; income-stream, annuity and RMD ages use your age; full retirement age
-  is 67 for both; spousal benefits aren't computed (enter each spouse's ssa.gov estimate).
+  is 67 for both.
 
 ## Healthcare
 

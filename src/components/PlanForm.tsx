@@ -173,7 +173,10 @@ export function PlanForm() {
           </div>
         )}
         <p className="text-xs text-slate-500">
-          {plan.filingStatus === 'married' ? 'Each spouse’s monthly benefit at 67. ' : ''}Find your estimate at{' '}
+          {plan.filingStatus === 'married'
+            ? 'Each spouse’s own monthly benefit at 67. If one is under half of the other’s, a spousal top-up is added automatically once both have claimed. '
+            : ''}
+          Find your estimate at{' '}
           <a className="underline" href="https://www.ssa.gov/myaccount/" target="_blank" rel="noreferrer">ssa.gov/myaccount</a>.
         </p>
         {plan.retirementAge > 0 && plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
