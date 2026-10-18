@@ -71,22 +71,28 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label={`Savings at ${plan.retirementAge}`}
+          info="All your accounts combined when you retire, with typical returns, in today’s dollars (what that money would buy now)."
+
           value={formatUSDCompact(result.balanceAtRetirementReal)}
           detail={`${formatUSDCompact(result.balanceAtRetirement)} in future dollars`}
         />
         <StatCard
           label={`Chance money lasts to ${endLabel(plan)}`}
+          info="Your plan is run through 1,000 simulated futures with random market returns and inflation. This is the share in which your savings cover your spending every year. 85%+ is generally considered strong."
+
           value={`${success}%`}
           detail={sims.pending ? 'Updating…' : `${successNote} · ${mc.runs.toLocaleString()} simulated markets`}
           tone={successTone}
         />
         <StatCard
           label="With typical returns"
+          info="One path where investments earn the typical (median) return every year. About half of the simulated futures do better and half do worse."
           value={lasts ? `Lasts past ${planEndAge(plan)}` : `Runs out at ${result.depletionAge}`}
           detail={`${spouseOffset(plan) !== 0 ? `Your age (spouse ${(lasts ? planEndAge(plan) : result.depletionAge!) + spouseOffset(plan)}) · ` : ''}Median return every year`}
         />
         <StatCard
           label={plan.filingStatus === 'married' ? 'Social Security, both claimed' : `Social Security at ${plan.socialSecurityClaimAge}`}
+          info="Monthly benefit once claimed, in today’s dollars. Social Security rises with inflation each year."
           value={`${formatUSD(ssMonthly)}/mo`}
           detail={plan.filingStatus === 'married' ? "Both of you, today's dollars" : "Today's dollars"}
         />

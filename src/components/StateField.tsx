@@ -38,14 +38,10 @@ export function StateField() {
             label="Retirement income your state exempts, per person / yr"
             prefix="$"
             min={0}
-            step={1000}
+            info="Many states exempt part of pension or IRA income for older residents (for example a fixed amount per person). Check your state’s rules; leave empty if unsure, which assumes no exemption."
             value={plan.stateRetirementExclusion}
             onChange={(v) => update({ stateRetirementExclusion: v })}
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Many states exempt part of pension or IRA income for older residents (for example a fixed amount per person).
-            Leave empty if unsure; that assumes no exemption.
-          </p>
         </div>
       )}
     </div>

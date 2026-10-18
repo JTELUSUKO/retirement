@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { InfoTip } from './InfoTip'
 
 interface Props {
   label: string
@@ -15,6 +16,8 @@ interface Props {
   hideLabel?: boolean
   /** Shown when the field is empty. Zero is displayed as an empty field. */
   placeholder?: string
+  /** Explanation shown in an ⓘ tip next to the label */
+  info?: ReactNode
 }
 
 /**
@@ -22,7 +25,7 @@ interface Props {
  * once the text is a valid number within [min, max]. On blur it shows the
  * last valid value again, so a cleared field never feeds 0 into the plan.
  */
-export function NumberField({ label, value, onChange, prefix, suffix, step = 1, min, max, error, hideLabel, placeholder = '0' }: Props) {
+export function NumberField({ label, value, onChange, prefix, suffix, min, max, error, hideLabel, placeholder = '0', info }: Props) {
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(false)
 
@@ -30,7 +33,8 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
   const parse = (raw: string) => {
     // An emptied field means 0 where 0 is allowed (e.g. dollar amounts)
     if (raw.trim() === '') return zeroAllowed ? 0 : null
-    const n = Number(raw)
+    // Accept "450,000", "$450000" or " 450000 "
+    const n = Number(raw.replace(/[$,\s]/g, ''))
     const valid = Number.isFinite(n) && (min === undefined || n >= min) && (max === undefined || n <= max)
     return valid ? n : null
   }
@@ -41,7 +45,10 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
 
   return (
     <label className="block text-sm">
-      <span className={hideLabel ? 'sr-only' : 'text-slate-600 dark:text-slate-400'}>{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'text-slate-600 dark:text-slate-400'}>
+        {label}
+        {info && !hideLabel && <InfoTip label={label}>{info}</InfoTip>}
+      </span>
       <div
         className={`${hideLabel ? '' : 'mt-1 '}flex items-center rounded-md border bg-white focus-within:ring-2 dark:bg-slate-900 ${
           invalid
@@ -51,14 +58,13 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
       >
         {prefix && <span className="pl-3 text-slate-500">{prefix}</span>}
         <input
-          type="number"
+          type="text"
           inputMode="decimal"
+          autoComplete="off"
           className="w-full bg-transparent px-3 py-2 outline-none"
-          value={editing ? text : value === 0 ? '' : String(value)}
+          // Money shows thousands separators ("450,000"); while typing, the raw text is kept
+          value={editing ? text : value === 0 ? '' : prefix === '$' ? value.toLocaleString('en-US', { maximumFractionDigits: 2 }) : String(value)}
           placeholder={placeholder}
-          step={step}
-          min={min}
-          max={max}
           aria-invalid={invalid}
           onFocus={() => {
             setText(value === 0 ? '' : String(value))
@@ -83,15 +89,15 @@ export function NumberField({ label, value, onChange, prefix, suffix, step = 1, 
 }
 
 /** Same as NumberField but shows a fraction (0.07) as a percent (7). */
-export function PercentField({ label, value, onChange, min, max }: Omit<Props, 'prefix' | 'suffix' | 'step' | 'placeholder'>) {
+export function PercentField({ label, value, onChange, min, max, info }: Omit<Props, 'prefix' | 'suffix' | 'step' | 'placeholder'>) {
   return (
     <NumberField
       label={label}
+      info={info}
       value={Math.round(value * 1000) / 10}
       onChange={(v) => onChange(v / 100)}
       placeholder="0"
       suffix="%"
-      step={0.1}
       min={min}
       max={max}
     />

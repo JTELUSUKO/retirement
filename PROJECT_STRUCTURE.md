@@ -75,6 +75,7 @@ retirement/
 │   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/import/undo
 │   │   ├── planStore.test.ts
 │   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
+│   │   ├── uiPrefs.ts           # View preferences (Basic/Advanced, open sections), saved apart from the plan
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
@@ -90,7 +91,9 @@ retirement/
 │   │   ├── ScenarioChart.tsx    # Median savings by age per scenario, de-collided end labels (wide screens)
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
-│   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; commits only valid numbers)
+│   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; money shows "450,000"; optional ⓘ)
+│   │   ├── InfoTip.tsx          # ⓘ explanation: hover, focus or tap; Esc closes; kept inside the screen
+│   │   ├── Footer.tsx           # Disclaimer, privacy statement, data sources
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
 │   │   ├── PlanToolbar.tsx      # Clear / Load example / Export / Import, Undo bar, import errors
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
@@ -106,7 +109,8 @@ retirement/
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell: header + tabs (#plan / #compare / #summary / #ask)
+│   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / #summary) + footer;
+│   │                            #   Ask Claude is hidden from the menu but still opens at #ask
 │   ├── main.tsx                 # React entry point
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
@@ -128,12 +132,16 @@ retirement/
    0 is shown as an empty field. Model assumptions, healthcare estimates and claiming at 67 stay filled in.
    Pages show a getting-started checklist (`missingEssentials`) until age, retirement age, plan-to age and
    spending are entered. **Load example** fills a sample plan; **Clear all** returns to blank.
-5. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
-   The one exception is **Ask Claude**: with the visitor's own API key, the plan is sent to api.anthropic.com
-   (directly from the browser) when they ask a question.
+5. **Public-ready form.** Basic mode (default) shows you, accounts, and spending & Social Security; Advanced adds
+   the rest. Sections collapse to a one-line summary; Basic mode lists advanced settings that are still in effect.
+   Explanations live in ⓘ tips rather than paragraphs. New accounts are named after their type ("401(k) 2") and
+   renamed when the type changes, unless you typed a name. "Reset" returns to a blank plan (with Undo).
+6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
+   The one exception is **Ask Claude**, which is hidden from the menu (it opens only at `#ask`, marked
+   experimental): with the visitor's own API key, the plan is sent to api.anthropic.com when they ask a question.
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
-6. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
+7. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
    Both saved browser data and backup files go through the same migration.
 
 ## Timing rules

@@ -1,5 +1,6 @@
 import { AGE_LIMITS } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { InfoTip } from './InfoTip'
 import { NumberField } from './NumberField'
 
 const checkbox = 'h-4 w-4 accent-teal-700 dark:accent-teal-400'
@@ -15,6 +16,12 @@ export function RothConversionSection() {
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className={checkbox} checked={c.enabled} onChange={(e) => updateRothConversion({ enabled: e.target.checked })} />
         Convert pre-tax savings to Roth in low-income years
+              <InfoTip label="Roth conversions">
+            Each year in this window, pre-tax money is moved to Roth until your taxable income reaches the top of the
+            chosen federal bracket. You pay tax on it now (from savings) at a known, lower rate, and later RMDs and
+            taxes shrink. Defaults: from retirement through the year before RMDs start. Income at 63 and later sets
+            Medicare premiums two years later, so the IRMAA option caps conversions there.
+        </InfoTip>
       </label>
       {c.enabled && (
         <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -38,12 +45,6 @@ export function RothConversionSection() {
             <input type="checkbox" className={checkbox} checked={c.stayUnderIrmaa} onChange={(e) => updateRothConversion({ stayUnderIrmaa: e.target.checked })} />
             Stay under the Medicare surcharge (IRMAA) threshold from age 63
           </label>
-          <p className="text-xs text-slate-500">
-            Each year in this window, pre-tax money is moved to Roth until your taxable income reaches the top of the
-            chosen federal bracket. You pay tax on it now (from savings) at a known, lower rate, and later RMDs and
-            taxes shrink. Defaults: from retirement through the year before RMDs start. Income at 63 and later sets
-            Medicare premiums two years later, so the IRMAA option caps conversions there.
-          </p>
         </div>
       )}
     </div>

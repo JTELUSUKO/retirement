@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
 import { Scenarios } from './pages/Scenarios'
+import { Footer } from './components/Footer'
 import { Summary } from './pages/Summary'
 
 // Loaded on first visit to the tab, so the Anthropic SDK isn't in the main bundle
@@ -39,13 +40,17 @@ export default function App() {
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold">Retirement Planner</h1>
-          <p className="text-sm text-slate-500">A planning aid, not financial advice. Your data stays in this browser unless you use Ask Claude.</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Educational tool only. Not financial, tax or legal advice.
+          </p>
+          <p className="text-sm text-slate-500">Everything you enter stays in this browser.</p>
         </div>
         <nav className="flex flex-wrap gap-1">
           {tab('plan', 'My plan', '#plan')}
           {tab('compare', 'Compare scenarios', '#compare')}
           {tab('summary', 'Print summary', '#summary')}
-          {tab('ask', 'Ask Claude', '#ask')}
+          {/* Ask Claude is hidden from the menu; it still opens at #ask */}
+          {page === 'ask' && tab('ask', 'Ask Claude', '#ask')}
         </nav>
       </header>
       {page === 'plan' && <Dashboard />}
@@ -56,6 +61,7 @@ export default function App() {
           <Ask />
         </Suspense>
       )}
+      <Footer />
     </div>
   )
 }

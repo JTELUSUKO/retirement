@@ -32,3 +32,28 @@ describe('age labels for couples', () => {
     expect(ageLabel({ ...couple, spouseCurrentAge: 60 }, 70)).toBe('70')
   })
 })
+
+import { activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from './labels'
+
+describe('account names', () => {
+  it('names new accounts after their type, numbering repeats', () => {
+    expect(defaultAccountName('401k', [])).toBe('401(k)')
+    expect(defaultAccountName('401k', ['401(k)', '401(k) 2'])).toBe('401(k) 3')
+    expect(defaultAccountName('taxable', ['401(k)'])).toBe('Brokerage')
+  })
+  it('recognizes automatic names but not ones the user typed', () => {
+    expect(isAutoAccountName('401(k) 2', '401k')).toBe(true)
+    expect(isAutoAccountName('New account', 'cash')).toBe(true)
+    expect(isAutoAccountName('My old job 401k', '401k')).toBe(false)
+  })
+})
+
+describe('section summaries', () => {
+  it('summarize collapsed sections and list advanced settings in effect', () => {
+    const plan = { ...basePlan, annuityPurchase: { ...basePlan.annuityPurchase, enabled: true, amount: 150_000, purchaseAge: 65 } }
+    const s = sectionSummaries(plan)
+    expect(s.accounts).toBe('1 account · $100,000')
+    expect(s.annuity).toBe('$150K at 65')
+    expect(activeAdvancedSettings(plan)).toEqual(['an annuity purchase'])
+  })
+})

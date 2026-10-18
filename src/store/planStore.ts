@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Account, IncomeStream, Plan, Scenario } from '../engine'
+import { defaultAccountName } from '../utils/labels'
 
 /** Sample plan behind “Load example”. */
 export const examplePlan: Plan = {
@@ -236,7 +237,15 @@ export const usePlanStore = create<PlanState>()(
             ...p,
             accounts: [
               ...p.accounts,
-              { id: crypto.randomUUID(), name: 'New account', type: 'taxable', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: null },
+              {
+                id: crypto.randomUUID(),
+                name: defaultAccountName('401k', p.accounts.map((a) => a.name)),
+                type: '401k',
+                balance: 0,
+                annualContribution: 0,
+                employerMatch: 0,
+                costBasis: null,
+              },
             ],
           })),
         removeAccount: (id) => edit((p) => ({ ...p, accounts: p.accounts.filter((a) => a.id !== id) })),

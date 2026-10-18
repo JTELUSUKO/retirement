@@ -136,8 +136,8 @@ export function Summary() {
             <h1 className="text-xl font-semibold">Retirement plan summary</h1>
             <p className="text-sm text-slate-600">Prepared {today}</p>
           </div>
-          <p className="max-w-64 text-right text-xs text-slate-500">
-            An educational planning aid, not financial, tax or investment advice.
+          <p className="max-w-64 text-right text-xs font-semibold text-slate-700">
+            Educational tool only. Not financial, tax or legal advice.
           </p>
         </header>
 
@@ -393,6 +393,11 @@ export function Summary() {
             )}
           </ul>
         </Section>
+        <p className="border-t border-slate-200 pt-3 text-xs text-slate-600">
+          <strong>Important:</strong> These results are estimates based on the inputs above and simplified assumptions about
+          markets, inflation, taxes and Social Security. They are not guarantees and not a recommendation to buy, sell or do
+          anything. Consult a qualified professional before making financial decisions.
+        </p>
       </article>
     </div>
   )

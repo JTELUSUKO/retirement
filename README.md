@@ -21,8 +21,8 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 
 Your data stays in your browser. Use **Export** to save a backup file and **Import** to restore it.
 
-**Ask Claude** (optional): paste your own Anthropic API key to chat about your plan. Claude runs what-ifs with the
-app's own calculations. Your plan is sent to Anthropic only when you ask a question, and usage is billed to your key.
+**Ask Claude** (experimental, hidden from the menu; open `#ask` directly): paste your own Anthropic API key to chat
+about your plan. Unlike the rest of the app, it sends your plan to Anthropic when you ask a question.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
 > Projections use simplified assumptions (a fixed withdrawal order, approximate state rules, no capital gains).

@@ -5,7 +5,7 @@ import { usePlanStore } from '../store/planStore'
 const button =
   'rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
 
-const undoMessage = { cleared: 'Plan cleared.', example: 'Example plan loaded.', imported: 'Plan imported.' }
+const undoMessage = { cleared: 'Plan reset to blank.', example: 'Example plan loaded.', imported: 'Plan imported.' }
 
 /** Clear / Load example / Export / Import, with an Undo bar and import errors. */
 export function PlanToolbar() {
@@ -37,7 +37,9 @@ export function PlanToolbar() {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={clear} className={button}>Clear all</button>
+        <button type="button" onClick={clear} className={button} title="Start over with a blank plan (you can undo)">
+          Reset
+        </button>
         <button type="button" onClick={loadExample} className={button}>Load example</button>
         <button type="button" onClick={exportPlan} className={button}>Export</button>
         <button type="button" onClick={() => fileInput.current?.click()} className={button}>Import</button>
@@ -52,7 +54,9 @@ export function PlanToolbar() {
           }}
         />
       </div>
-      <p className="text-xs text-slate-500">Your plan is saved in this browser only. Export a backup to keep it safe or move it to another device.</p>
+      <p className="text-xs text-slate-500">
+        Your plan is saved only in this browser. Use Export to keep a backup or move it to another device.
+      </p>
       {undo && (
         <div role="status" className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900">
           <span>{undoMessage[undo.action]}</span>

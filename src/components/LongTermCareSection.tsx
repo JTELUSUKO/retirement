@@ -1,5 +1,6 @@
 import { AGE_LIMITS } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { InfoTip } from './InfoTip'
 import { NumberField } from './NumberField'
 
 const checkbox = 'h-4 w-4 accent-teal-700 dark:accent-teal-400'
@@ -15,6 +16,11 @@ export function LongTermCareSection() {
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className={checkbox} checked={l.enabled} onChange={(e) => updateLongTermCare({ enabled: e.target.checked })} />
         Plan for a period of long-term care
+              <InfoTip label="Long-term care">
+            In today’s dollars, rising with healthcare costs, on top of regular healthcare (your HSA can pay it). Costs
+            vary widely by type of care and location, roughly $60,000 for some home care to well over $100,000 a year
+            for a private nursing-home room. Long-term care insurance premiums can be entered as part of spending instead.
+        </InfoTip>
       </label>
       {l.enabled && (
         <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -36,11 +42,6 @@ export function LongTermCareSection() {
             <NumberField label="Years" min={1} max={20} value={l.years} onChange={(v) => updateLongTermCare({ years: v })} />
             <NumberField label="Cost / yr" prefix="$" min={0} step={5000} value={l.annualCost} onChange={(v) => updateLongTermCare({ annualCost: v })} />
           </div>
-          <p className="text-xs text-slate-500">
-            In today’s dollars, rising with healthcare costs, on top of regular healthcare (your HSA can pay it). Costs
-            vary widely by type of care and location, roughly $60,000 for some home care to well over $100,000 a year
-            for a private nursing-home room. Long-term care insurance premiums can be entered as part of spending instead.
-          </p>
         </div>
       )}
     </div>

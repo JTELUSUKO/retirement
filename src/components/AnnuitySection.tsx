@@ -1,6 +1,7 @@
 import { AGE_LIMITS, estimatePayoutRate, payoutRate } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
+import { InfoTip } from './InfoTip'
 import { NumberField, PercentField } from './NumberField'
 
 const checkbox = 'h-4 w-4 accent-teal-700 dark:accent-teal-400'
@@ -29,6 +30,11 @@ export function AnnuitySection() {
           }
         />
         Buy an annuity with part of my savings
+              <InfoTip label="Buying an annuity">
+            The money leaves your savings for good: payments stop at death and nothing is left to heirs (no
+            cash-refund or period-certain options modeled). Payouts vary by insurer, sex, health and interest rates; get
+            real quotes before deciding.
+        </InfoTip>
       </label>
 
       {a.enabled && (
@@ -88,11 +94,6 @@ export function AnnuitySection() {
               {a.inflationAdjusted ? ', keeping its buying power.' : '. The payment is fixed, so its buying power shrinks with inflation.'}
             </p>
           )}
-          <p className="text-xs text-slate-500">
-            The money leaves your savings for good: payments stop at death and nothing is left to heirs (no
-            cash-refund or period-certain options modeled). Payouts vary by insurer, sex, health and interest rates; get
-            real quotes before deciding.
-          </p>
         </div>
       )}
     </div>
