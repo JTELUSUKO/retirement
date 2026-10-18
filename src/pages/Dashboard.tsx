@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
@@ -9,36 +9,52 @@ import { PlanForm } from '../components/PlanForm'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
-import { projectPlan, runMonteCarlo, householdSocialSecurityMonthly, planEndAge, spouseOffset, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
+import { projectPlan, householdSocialSecurityMonthly, type MonteCarloResult, planEndAge, spouseOffset, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import type { SimTask } from '../sim/tasks'
+import { useSimulations } from '../sim/useSimulation'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { endLabel } from '../utils/labels'
 
 const Results = memo(function Results({ plan }: { plan: Plan }) {
   const result = useMemo(() => projectPlan(plan), [plan])
-  const mc = useMemo(() => runMonteCarlo(plan), [plan])
-  // With an annuity, also run the plan without it so the trade-off is visible
-  const withoutAnnuity = useMemo(() => {
-    if (!plan.annuityPurchase.enabled) return null
-    return runMonteCarlo({ ...plan, annuityPurchase: { ...plan.annuityPurchase, enabled: false } })
+  // Simulations run in background workers: the plan, plus "without" versions for the comparison panels
+  const tasks = useMemo(() => {
+    const mc = (p: Plan): SimTask => ({ kind: 'monteCarlo', plan: p })
+    return [
+      mc(plan),
+      plan.annuityPurchase.enabled ? mc({ ...plan, annuityPurchase: { ...plan.annuityPurchase, enabled: false } }) : null,
+      plan.rothConversion.enabled ? mc({ ...plan, rothConversion: { ...plan.rothConversion, enabled: false } }) : null,
+      survivorFromAge(plan) !== Infinity ? mc({ ...plan, survivor: { ...plan.survivor, enabled: false } }) : null,
+    ]
   }, [plan])
+  const sims = useSimulations(tasks)
+  const [mcResult, withoutAnnuityResult, noConversionsResult, bothLiveResult] = (sims.data ?? []) as (MonteCarloResult | null)[]
+  const noConversionsProjection = useMemo(
+    () => (plan.rothConversion.enabled ? projectPlan({ ...plan, rothConversion: { ...plan.rothConversion, enabled: false } }) : null),
+    [plan],
+  )
+  if (!mcResult) {
+    return (
+      <section className="h-fit rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+        {sims.error ? `✕ The simulation failed: ${sims.error}` : 'Running 1,000 simulated markets…'}
+      </section>
+    )
+  }
+  const mc = mcResult
+  // Comparison results only when the plan still has that feature on (results may lag a moment behind edits)
+  const withoutAnnuity = plan.annuityPurchase.enabled ? withoutAnnuityResult : null
+  const noConversions =
+    plan.rothConversion.enabled && noConversionsResult && noConversionsProjection
+      ? { mc: noConversionsResult, projection: noConversionsProjection }
+      : null
+  const bothLive = survivorFromAge(plan) !== Infinity ? bothLiveResult : null
+  // Household benefit while both are alive
+  const ssMonthly = householdSocialSecurityMonthly(plan)
   const lasts = result.depletionAge === null
   const success = Math.round(mc.successRate * 100)
   const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
-  // With Roth conversions on, also run the plan without them
-  const noConversions = useMemo(() => {
-    if (!plan.rothConversion.enabled) return null
-    const off = { ...plan, rothConversion: { ...plan.rothConversion, enabled: false } }
-    return { mc: runMonteCarlo(off), projection: projectPlan(off) }
-  }, [plan])
-  // Household benefit while both are alive
-  const ssMonthly = householdSocialSecurityMonthly(plan)
-  // Couples who model an early death: also run the plan with both living
-  const bothLive = useMemo(() => {
-    if (survivorFromAge(plan) === Infinity) return null
-    return runMonteCarlo({ ...plan, survivor: { ...plan.survivor, enabled: false } })
-  }, [plan])
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
@@ -61,7 +77,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         <StatCard
           label={`Chance money lasts to ${endLabel(plan)}`}
           value={`${success}%`}
-          detail={`${successNote} · ${mc.runs.toLocaleString()} simulated markets`}
+          detail={sims.pending ? 'Updating…' : `${successNote} · ${mc.runs.toLocaleString()} simulated markets`}
           tone={successTone}
         />
         <StatCard
@@ -141,8 +157,6 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
 export function Dashboard() {
   const plan = usePlanStore((s) => s.plan)
-  // Inputs update immediately; the (slower) simulation catches up right after.
-  const deferredPlan = useDeferredValue(plan)
   const issues = validatePlan(plan)
 
   return (
@@ -166,7 +180,7 @@ export function Dashboard() {
           </ul>
         </section>
       ) : (
-        <Results plan={deferredPlan} />
+        <Results plan={plan} />
       )}
     </div>
   )

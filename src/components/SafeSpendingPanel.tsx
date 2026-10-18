@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { findSafeSpending, type Plan } from '../engine'
+import { useId, useState } from 'react'
+import type { Plan } from '../engine'
+import { runSimulation } from '../sim/pool'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
 
@@ -12,9 +13,12 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
   const [state, setState] = useState<{ status: 'idle' | 'running' } | { status: 'done'; spending: number; target: number; forPlan: Plan }>({ status: 'idle' })
   const stale = state.status === 'done' && state.forPlan !== plan
 
+  const group = useId()
+
+  // Runs in a background worker (about 14 simulations), so the page stays responsive
   const run = async () => {
     setState({ status: 'running' })
-    const spending = await findSafeSpending(plan, target)
+    const spending = await runSimulation({ kind: 'safeSpending', plan, target }, group)
     setState({ status: 'done', spending, target, forPlan: plan })
   }
 

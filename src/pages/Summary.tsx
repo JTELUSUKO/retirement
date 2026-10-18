@@ -6,15 +6,17 @@ import {
   householdSocialSecurityMonthly,
   spouseOffset,
   survivorFromAge,
-  evaluatePlan,
   missingEssentials,
   NO_INCOME_TAX_STATES,
   stateRule,
   payoutRate,
   STRESS_LABEL,
   type Plan,
+  type PlanEvaluation,
   type YearResult,
 } from '../engine'
+import type { SimTask } from '../sim/tasks'
+import { useSimulations } from '../sim/useSimulation'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
@@ -56,11 +58,17 @@ function milestoneYears(plan: Plan, years: YearResult[]): YearResult[] {
 
 export function Summary() {
   const plan = usePlanStore((s) => s.plan)
-  const base = useMemo(() => evaluatePlan(plan), [plan])
-  const scenarios = useMemo(
-    () => plan.scenarios.map((s) => ({ scenario: s, result: evaluatePlan(applyScenario(plan, s), s.stress) })),
+  // The plan and every scenario are evaluated in background workers
+  const tasks = useMemo(
+    (): SimTask[] => [
+      { kind: 'evaluate', plan, stress: 'none' },
+      ...plan.scenarios.map((s): SimTask => ({ kind: 'evaluate', plan: applyScenario(plan, s), stress: s.stress })),
+    ],
     [plan],
   )
+  const sims = useSimulations(tasks)
+  const ready = !sims.pending && sims.data !== null && sims.data.length === tasks.length
+  const evaluations = (ready ? sims.data : null) as PlanEvaluation[] | null
   // Captured once when the page opens
   const [today] = useState(() => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))
 
@@ -69,9 +77,10 @@ export function Summary() {
       <button
         type="button"
         onClick={() => window.print()}
-        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900"
+        disabled={!ready}
+        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
       >
-        Print / Save as PDF
+        {ready ? 'Print / Save as PDF' : 'Preparing…'}
       </button>
       <a href="#plan" className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
         Back to plan
@@ -87,6 +96,18 @@ export function Summary() {
       </div>
     )
   }
+  if (!evaluations) {
+    return (
+      <div>
+        {toolbar}
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          {sims.error ? `✕ The simulation failed: ${sims.error}` : 'Running the simulations for your summary…'}
+        </p>
+      </div>
+    )
+  }
+  const [base, ...scenarioResults] = evaluations
+  const scenarios = plan.scenarios.map((scenario, i) => ({ scenario, result: scenarioResults[i] }))
   if (base.issues.length > 0) {
     return (
       <div>

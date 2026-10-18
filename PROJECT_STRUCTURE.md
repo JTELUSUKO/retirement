@@ -56,6 +56,12 @@ retirement/
 │   │   ├── socialSecurity.ts    # Benefit adjustment for claiming at ages 62–70
 │   │   ├── socialSecurity.test.ts
 │   │   └── index.ts             # Public exports of the engine
+│   ├── sim/                     # Simulations in background Web Workers
+│   │   ├── tasks.ts             # Task types + runTask (Monte Carlo, evaluatePlan, safe spending)
+│   │   ├── simulation.worker.ts # Worker entry: runs one task at a time
+│   │   ├── pool.ts              # Up to 4 workers; queued tasks superseded per group; main-thread fallback
+│   │   ├── useSimulation.ts     # React hooks: run tasks when inputs change, keep last result while updating
+│   │   └── sim.test.ts
 │   ├── ai/                      # "Ask Claude" assistant (Claude API, called from the browser)
 │   │   ├── chat.ts              # Streaming tool-use loop: append-only history, fallbacks, caching, errors
 │   │   ├── chat.test.ts         # Loop tested with a fake fetch replaying streamed responses
@@ -290,6 +296,17 @@ One row per year; the age is your age at the **start** of that year.
 - **Investment-mix presets** (100/0 … 20/80 stocks/bonds) fill return and volatility from illustrative long-run
   assumptions in `returns.ts` (stocks 8.5% / 17%, bonds 4.5% / 6%, correlation 0.1); users can override.
 - Contribution limits are checked against 2026 IRS limits (warnings only; the plan uses what you enter).
+
+## Background simulations
+
+- Monte Carlo runs, plan evaluations (Compare, Summary) and the safe-spending search run in a pool of Web Workers
+  (up to 4, one fewer than the CPU cores), so typing and clicking never wait for them. Scenario columns run in
+  parallel. A newer task for the same chart replaces its queued older one; the hooks keep showing the last
+  result ("Updating…") until the new one arrives.
+- The typical-returns projection (about a millisecond) stays on the main thread. Ask Claude's tools also run
+  on the main thread. Without Worker support (tests), tasks run directly.
+- Measured in Chrome: editing spending went from a 147 ms main-thread freeze to none; opening Compare with four
+  columns from 584 ms to none.
 
 ## How the Monte Carlo works
 

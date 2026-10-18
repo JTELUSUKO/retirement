@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { NumberField } from '../components/NumberField'
 import { ScenarioChart, type ScenarioSeries } from '../components/ScenarioChart'
@@ -7,7 +7,6 @@ import {
   AGE_LIMITS,
   applyScenario,
   CONFIG_2026,
-  evaluatePlan,
   missingEssentials,
   survivorDeathAgeOf,
   type PlanEvaluation,
@@ -15,6 +14,8 @@ import {
   type ScenarioOverrides,
   type StressTest,
 } from '../engine'
+import type { SimTask } from '../sim/tasks'
+import { useSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { ageLabel, endLabel } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
@@ -26,28 +27,32 @@ const select =
 
 export function Scenarios() {
   const { plan, addScenario, updateScenario, removeScenario } = usePlanStore()
-  const deferredPlan = useDeferredValue(plan)
 
-  const results = useMemo(
-    () => [
-      evaluatePlan(deferredPlan),
-      ...deferredPlan.scenarios.map((s) => evaluatePlan(applyScenario(deferredPlan, s), s.stress)),
+  // Every column is evaluated in parallel in background workers
+  const tasks = useMemo(
+    (): SimTask[] => [
+      { kind: 'evaluate', plan, stress: 'none' },
+      ...plan.scenarios.map((s): SimTask => ({ kind: 'evaluate', plan: applyScenario(plan, s), stress: s.stress })),
     ],
-    [deferredPlan],
+    [plan],
   )
+  const sims = useSimulations(tasks)
+  // Use results only when they match the current columns (they can lag a moment behind edits)
+  const ready = sims.data !== null && sims.data.length === tasks.length
+  const results = (ready ? sims.data : tasks.map(() => null)) as (PlanEvaluation | null)[]
 
   // Valid columns only; color slot 0 = your plan, scenarios keep their own slot
   const columns = [
     { key: 'base', name: 'Your plan', slot: 0 },
-    ...deferredPlan.scenarios.map((sc) => ({ key: sc.id, name: sc.name, slot: sc.slot })),
+    ...plan.scenarios.map((sc) => ({ key: sc.id, name: sc.name, slot: sc.slot })),
   ]
   const chartSeries: ScenarioSeries[] = columns.flatMap((c, i) => {
     const mc = results[i]?.monteCarlo
     return mc ? [{ ...c, values: mc.years.map((y) => ({ age: y.age, value: y.p50 })) }] : []
   })
   const retirementAges = [
-    deferredPlan.retirementAge,
-    ...deferredPlan.scenarios.map((sc) => applyScenario(deferredPlan, sc).retirementAge),
+    plan.retirementAge,
+    ...plan.scenarios.map((sc) => applyScenario(plan, sc).retirementAge),
   ]
 
   if (missingEssentials(plan).length > 0) return <GettingStarted plan={plan} onPlanTab={false} />
@@ -63,16 +68,16 @@ export function Scenarios() {
   const mark = (on: boolean) => (on ? 'border-l-2 border-l-teal-600 pl-2 dark:border-l-teal-400' : '')
 
   const bestOf = (values: number[]) => Math.max(...values)
-  const successValues = results.map((r) => (r.issues.length ? -1 : r.successRate))
-  const typicalValues = results.map((r) => (r.issues.length ? -Infinity : r.leftTypical))
-  const poorValues = results.map((r) => (r.issues.length ? -Infinity : r.leftPoor))
+  const successValues = results.map((r) => (!r || r.issues.length ? -1 : r.successRate))
+  const typicalValues = results.map((r) => (!r || r.issues.length ? -Infinity : r.leftTypical))
+  const poorValues = results.map((r) => (!r || r.issues.length ? -Infinity : r.leftPoor))
 
   const resultRow = (label: string, render: (r: PlanEvaluation, i: number) => ReactNode) => (
     <tr className="border-t border-slate-100 dark:border-slate-800">
       <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>{label}</th>
       {results.map((r, i) => (
         <td key={i} className={`${cell} text-right tabular-nums`}>
-          {r.issues.length ? <span className="text-slate-400">—</span> : render(r, i)}
+          {!r ? <span className="text-slate-400">…</span> : r.issues.length ? <span className="text-slate-400">—</span> : render(r, i)}
         </td>
       ))}
     </tr>
@@ -287,12 +292,12 @@ export function Scenarios() {
               emphasize(formatUSDCompact(r.leftPoor), poorValues[i] === bestOf(poorValues) && poorValues[i] > 0 && results.length > 1),
             )}
             {resultRow('Income tax over retirement', (r) => formatUSDCompact(r.lifetimeTax))}
-            {results.some((r) => r.issues.length > 0) && (
+            {results.some((r) => r && r.issues.length > 0) && (
               <tr className="border-t border-slate-100 dark:border-slate-800">
                 <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>Problems</th>
                 {results.map((r, i) => (
                   <td key={i} className={`${cell} text-right text-xs text-red-600 dark:text-red-400`}>
-                    {r.issues.join(' ')}
+                    {r?.issues.join(' ')}
                   </td>
                 ))}
               </tr>
