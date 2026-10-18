@@ -4,6 +4,8 @@ A private, browser-only retirement planner for US pre-retirees (ages 50–65).
 
 Enter your accounts, savings, expected spending and Social Security estimate to see:
 
+- A guided setup for first-time visitors (five short steps), or the full form
+- A plain-language verdict, plus which changes would help most (retire later, spend less, claim later, guardrails)
 - Projected savings at retirement (in today's dollars and future dollars)
 - Your chance of the money lasting, from 1,000 simulated market histories (Monte Carlo)
 - The range of outcomes, from poor markets to good ones

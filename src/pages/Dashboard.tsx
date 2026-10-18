@@ -2,10 +2,14 @@ import { memo, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
+import { VerdictPanel } from '../components/VerdictPanel'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
 import { PlanForm } from '../components/PlanForm'
+import { QuickStart } from '../components/QuickStart'
+import { useUiPrefs } from '../store/uiPrefs'
+import { isBlankPlan } from '../utils/quickStart'
 import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
@@ -98,6 +102,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
+      <VerdictPanel plan={plan} mc={mc} />
+
       {mc.guardrails && (
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Guardrails: spending gets cut at some point in{' '}
@@ -163,7 +169,10 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
 export function Dashboard() {
   const plan = usePlanStore((s) => s.plan)
+  const guide = useUiPrefs((s) => s.guide)
   const issues = validatePlan(plan)
+
+  if (guide === 'open' || (guide === 'auto' && isBlankPlan(plan))) return <QuickStart />
 
   return (
     <div className="grid gap-8 lg:grid-cols-[400px_1fr]">

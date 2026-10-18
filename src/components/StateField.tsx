@@ -1,11 +1,7 @@
-import { describeStateRule, NO_INCOME_TAX_STATES, STATE_TAX_2026, stateRule } from '../engine'
+import { describeStateRule, NO_INCOME_TAX_STATES, stateRule } from '../engine'
+import { ALL_STATES } from '../utils/states'
 import { usePlanStore } from '../store/planStore'
 import { NumberField } from './NumberField'
-
-const ALL_STATES = Object.entries({
-  ...Object.fromEntries(Object.entries(STATE_TAX_2026).map(([code, r]) => [code, r.name])),
-  ...NO_INCOME_TAX_STATES,
-}).sort((a, b) => a[1].localeCompare(b[1]))
 
 /** State of residence in retirement, with a one-line summary of how it taxes retirees. */
 export function StateField() {

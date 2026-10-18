@@ -104,6 +104,7 @@ export function sectionSummaries(plan: Plan): Record<string, string> {
 /** Advanced settings that are switched on (so Basic mode can say they still apply). */
 export function activeAdvancedSettings(plan: Plan): string[] {
   const active: string[] = []
+  if (plan.spendingRule.type === 'guardrails') active.push('guardrails spending')
   if (plan.filingStatus === 'married' && plan.survivor.enabled) active.push('a spouse dying first')
   if (plan.incomeStreams.length) active.push('other income')
   if (plan.annuityPurchase.enabled) active.push('an annuity purchase')

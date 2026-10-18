@@ -75,7 +75,7 @@ retirement/
 │   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/import/undo
 │   │   ├── planStore.test.ts
 │   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
-│   │   ├── uiPrefs.ts           # View preferences (Basic/Advanced, open sections), saved apart from the plan
+│   │   ├── uiPrefs.ts           # View preferences (Basic/Advanced, open sections, guided setup), saved apart from the plan
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
 │   │   ├── AnnuitySection.tsx   # Annuity purchase inputs + estimated payout
@@ -94,6 +94,8 @@ retirement/
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; money shows "450,000"; optional ⓘ)
 │   │   ├── InfoTip.tsx          # ⓘ explanation: hover, focus or tap; Esc closes; kept inside the screen
 │   │   ├── Footer.tsx           # Disclaimer, privacy statement, data sources
+│   │   ├── QuickStart.tsx       # Guided setup: 5 steps for a first visit (edits a draft, saves on finish)
+│   │   ├── VerdictPanel.tsx     # Plain-language verdict + "what would help most" (each change simulated)
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
 │   │   ├── PlanToolbar.tsx      # Clear / Load example / Export / Import, Undo bar, import errors
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
@@ -136,6 +138,9 @@ retirement/
    the rest. Sections collapse to a one-line summary; Basic mode lists advanced settings that are still in effect.
    Explanations live in ⓘ tips rather than paragraphs. New accounts are named after their type ("401(k) 2") and
    renamed when the type changes, unless you typed a name. "Reset" returns to a blank plan (with Undo).
+   A blank plan opens the guided setup (age, state, savings, spending, Social Security) unless skipped.
+   Results open with a verdict and up to four tested levers (`utils/levers.ts`): retire 2 years later, spend
+   10% less, claim at 70, guardrails. Each runs its own simulation in the workers; gains under 2 points are hidden.
 6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
    The one exception is **Ask Claude**, which is hidden from the menu (it opens only at `#ask`, marked
    experimental): with the visitor's own API key, the plan is sent to api.anthropic.com when they ask a question.
