@@ -43,6 +43,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
   const lifetimeStateTaxReal = retiredYears.reduce((sum, y) => sum + y.stateTax / y.priceLevel, 0)
   const lifetimeIrmaaReal = retiredYears.reduce((sum, y) => sum + y.irmaa / y.priceLevel, 0)
+  const lifetimeLtcReal = retiredYears.reduce((sum, y) => sum + y.longTermCare / y.priceLevel, 0)
   const lifetimeHealthReal = retiredYears.reduce((sum, y) => sum + y.healthcare / y.priceLevel, 0)
   const avgTaxRate =
     retiredYears.reduce((sum, y) => sum + y.tax, 0) /
@@ -83,7 +84,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         <br />
         Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
         today's dollars, including medical costs rising faster than inflation
-        {lifetimeIrmaaReal > 0 ? ` and ${formatUSDCompact(lifetimeIrmaaReal)} of Medicare income surcharges (IRMAA)` : ''}.
+        {lifetimeIrmaaReal > 0 ? `, ${formatUSDCompact(lifetimeIrmaaReal)} of Medicare income surcharges (IRMAA)` : ''}
+        {lifetimeLtcReal > 0 ? `, and ${formatUSDCompact(lifetimeLtcReal)} of long-term care` : ''}.
       </p>
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}

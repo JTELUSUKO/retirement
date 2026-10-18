@@ -3,6 +3,7 @@ import { usePlanStore } from '../store/planStore'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
+import { LongTermCareSection } from './LongTermCareSection'
 import { NumberField, PercentField } from './NumberField'
 import { PlanToolbar } from './PlanToolbar'
 import { RothConversionSection } from './RothConversionSection'
@@ -201,6 +202,10 @@ export function PlanForm() {
 
       <Section title="Annuity">
         <AnnuitySection />
+      </Section>
+
+      <Section title="Long-term care">
+        <LongTermCareSection />
       </Section>
 
       <Section title="Tax strategy">

@@ -34,6 +34,7 @@ export const examplePlan: Plan = {
   },
   scenarios: [],
   rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
+  longTermCare: { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -165,6 +166,13 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 14) {
     state.plan = { ...state.plan, assumptions: { ...state.plan.assumptions, annualFee: state.plan.assumptions.annualFee ?? 0 } }
   }
+  // v14 → v15: optional long-term care need (off)
+  if (version < 15) {
+    state.plan = {
+      ...state.plan,
+      longTermCare: state.plan.longTermCare ?? { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
+    }
+  }
   return state
 }
 
@@ -172,7 +180,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 14
+export const PLAN_VERSION = 15
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -185,6 +193,7 @@ interface PlanState {
   updateHealthcare: (patch: Partial<Plan['healthcare']>) => void
   updateAnnuity: (patch: Partial<Plan['annuityPurchase']>) => void
   updateRothConversion: (patch: Partial<Plan['rothConversion']>) => void
+  updateLongTermCare: (patch: Partial<Plan['longTermCare']>) => void
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
@@ -214,6 +223,7 @@ export const usePlanStore = create<PlanState>()(
         updateHealthcare: (patch) => edit((p) => ({ ...p, healthcare: { ...p.healthcare, ...patch } })),
         updateAnnuity: (patch) => edit((p) => ({ ...p, annuityPurchase: { ...p.annuityPurchase, ...patch } })),
         updateRothConversion: (patch) => edit((p) => ({ ...p, rothConversion: { ...p.rothConversion, ...patch } })),
+        updateLongTermCare: (patch) => edit((p) => ({ ...p, longTermCare: { ...p.longTermCare, ...patch } })),
         updateAccount: (id, patch) =>
           edit((p) => ({ ...p, accounts: p.accounts.map((a) => (a.id === id ? { ...a, ...patch } : a)) })),
         addAccount: () =>

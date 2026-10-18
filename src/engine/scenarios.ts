@@ -1,3 +1,4 @@
+import { DEFAULT_LONG_TERM_CARE } from './longTermCare'
 import type { MarketFn, YearMarket } from './projection'
 import type { Plan } from './types'
 
@@ -11,7 +12,7 @@ export interface ScenarioOverrides {
   survivorDeathAge?: number
 }
 
-export type StressTest = 'none' | 'crash' | 'high-inflation'
+export type StressTest = 'none' | 'crash' | 'high-inflation' | 'long-term-care'
 
 export interface Scenario {
   id: string
@@ -32,6 +33,7 @@ export const STRESS_LABEL: Record<StressTest, string> = {
   none: 'None',
   crash: `${Math.abs(CRASH_RETURN * 100)}% crash in first retirement year`,
   'high-inflation': `Inflation +${HIGH_INFLATION_EXTRA * 100} pts for ${HIGH_INFLATION_YEARS} years from retirement`,
+  'long-term-care': `Long-term care need (your settings, or $${DEFAULT_LONG_TERM_CARE.annualCost / 1000}K/yr for ${DEFAULT_LONG_TERM_CARE.years} years from ${DEFAULT_LONG_TERM_CARE.startAge})`,
 }
 
 /** Adjusts each year's market conditions (used for stress tests). */
@@ -44,6 +46,13 @@ export function applyScenario(plan: Plan, scenario: Scenario): Plan {
   const deathAge = o.survivorDeathAge
   return {
     ...plan,
+    // The long-term care stress test turns on the plan's care settings (or the defaults)
+    longTermCare:
+      scenario.stress === 'long-term-care'
+        ? plan.longTermCare.enabled
+          ? plan.longTermCare
+          : { ...DEFAULT_LONG_TERM_CARE, who: plan.longTermCare.who }
+        : plan.longTermCare,
     survivor:
       deathAge === undefined
         ? plan.survivor

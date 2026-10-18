@@ -105,6 +105,13 @@ export function validatePlan(plan: Plan): PlanIssue[] {
       issues.push({ field: 'rothConversion', message: 'Roth conversions must end after they start.' })
     }
   }
+  const ltc = plan.longTermCare
+  if (ltc.enabled) {
+    if (ltc.startAge < AGE_LIMITS.min || ltc.years < 1 || ltc.years > 20) {
+      issues.push({ field: 'longTermCare', message: 'Long-term care needs a starting age and 1–20 years.' })
+    }
+    if (ltc.annualCost < 0) issues.push({ field: 'longTermCare', message: 'Long-term care cost can’t be negative.' })
+  }
   const annuity = plan.annuityPurchase
   if (annuity.enabled) {
     if (annuity.purchaseAge < retirementAge || annuity.purchaseAge > lifeExpectancy) {

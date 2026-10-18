@@ -206,6 +206,15 @@ export function Summary() {
                   ? `${formatUSD(plan.socialSecurityAtFRA)}/mo (you, claiming at ${plan.socialSecurityClaimAge}) + ${formatUSD(plan.spouseSocialSecurityAtFRA)}/mo (spouse, claiming at ${plan.spouseClaimAge}), at 67 amounts`
                   : `${formatUSD(plan.socialSecurityAtFRA)}/mo at 67, claiming at ${plan.socialSecurityClaimAge}`,
               ],
+              ...(plan.longTermCare.enabled
+                ? ([
+                    [
+                      'Long-term care',
+                      `${formatUSD(plan.longTermCare.annualCost)}/yr for ${plan.longTermCare.years} years from ${plan.filingStatus === 'married' && plan.longTermCare.who === 'spouse' ? 'your spouse’s' : 'your'} age ${plan.longTermCare.startAge}`,
+                    ],
+                  ] as [string, string][])
+                : []),
+              ['Investment fees', pct(plan.assumptions.annualFee, 2)],
               ...(plan.rothConversion.enabled
                 ? ([
                     [
@@ -348,7 +357,7 @@ export function Summary() {
               earlier. Optional Roth conversions fill a chosen federal bracket.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies, long-term care. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>

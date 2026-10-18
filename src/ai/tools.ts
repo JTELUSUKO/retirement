@@ -56,8 +56,8 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
         },
         stress: {
           type: 'string',
-          enum: ['none', 'crash', 'high-inflation'],
-          description: `Stress test: "crash" = ${STRESS_LABEL.crash}; "high-inflation" = ${STRESS_LABEL['high-inflation']}.`,
+          enum: ['none', 'crash', 'high-inflation', 'long-term-care'],
+          description: `Stress test: "crash" = ${STRESS_LABEL.crash}; "high-inflation" = ${STRESS_LABEL['high-inflation']}; "long-term-care" = ${STRESS_LABEL['long-term-care']}.`,
         },
       },
       additionalProperties: false,
@@ -90,8 +90,8 @@ export function parseWhatIf(input: unknown): { ok: true; value: WhatIfInput } | 
     }
   }
   if (obj.annuityEnabled !== undefined && typeof obj.annuityEnabled !== 'boolean') return { ok: false, error: '"annuityEnabled" must be true or false' }
-  if (obj.stress !== undefined && !['none', 'crash', 'high-inflation'].includes(obj.stress as string)) {
-    return { ok: false, error: '"stress" must be none, crash or high-inflation' }
+  if (obj.stress !== undefined && !['none', 'crash', 'high-inflation', 'long-term-care'].includes(obj.stress as string)) {
+    return { ok: false, error: '"stress" must be none, crash, high-inflation or long-term-care' }
   }
   return { ok: true, value: obj as WhatIfInput }
 }

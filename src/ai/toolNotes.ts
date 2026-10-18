@@ -17,6 +17,7 @@ export function describeToolCall(name: string, input: unknown, isError: boolean)
     }
     if (i.stress === 'crash') parts.push('market crash at retirement')
     if (i.stress === 'high-inflation') parts.push('high inflation')
+    if (i.stress === 'long-term-care') parts.push('long-term care need')
     return `Ran a what-if: ${parts.join(', ') || 'no changes'}`
   }
   return `Ran ${name}`

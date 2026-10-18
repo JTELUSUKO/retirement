@@ -62,6 +62,8 @@ export interface Plan {
   survivor: SurvivorSettings
   /** Optional Roth conversions in low-income years ("fill the bracket"). */
   rothConversion: RothConversionSettings
+  /** Optional long-term care need (a cost shock). */
+  longTermCare: LongTermCareSettings
   socialSecurityClaimAge: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
@@ -138,6 +140,18 @@ export interface RothConversionSettings {
   stayUnderIrmaa: boolean
 }
 
+/** A period of long-term care for one person, paid like healthcare (HSA first), rising with healthcare costs. */
+export interface LongTermCareSettings {
+  enabled: boolean
+  /** Couples: who needs care */
+  who: 'you' | 'spouse'
+  /** That person's age when care starts */
+  startAge: number
+  years: number
+  /** Yearly cost in today's dollars */
+  annualCost: number
+}
+
 /** Healthcare costs in retirement, per person per year in today's dollars. */
 export interface HealthcareCosts {
   /** Premiums + out-of-pocket before Medicare (only if you retire before 65). */
@@ -201,6 +215,8 @@ export interface YearResult {
   rothConversion: number
   /** Medicare income surcharges this year (nominal; included in healthcare) */
   irmaa: number
+  /** Long-term care costs this year (nominal; included in healthcare) */
+  longTermCare: number
   /** Modified AGI this year (nominal), used for IRMAA two years later */
   magi: number
   stateTax: number

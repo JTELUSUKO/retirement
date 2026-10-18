@@ -26,6 +26,8 @@ retirement/
 │   │   ├── taxes.test.ts
 │   │   ├── returns.ts           # Median (typical) return from average return + volatility
 │   │   ├── irmaa.ts             # Medicare income surcharges (CMS 2026 tiers)
+│   │   ├── longTermCare.ts      # Optional long-term care cost period (and stress-test defaults)
+│   │   ├── phaseC.test.ts       # Fees/mix, spousal benefits, long-term care, safe spending
 │   │   ├── phaseB.test.ts       # IRMAA and Roth conversion tests
 │   │   ├── contributions.ts     # 2026 IRS contribution-limit warnings (401(k), IRA, HSA; age catch-ups)
 │   │   ├── phaseA.test.ts       # Typical returns, early-withdrawal penalty, capital gains/NIIT, limits
@@ -202,6 +204,14 @@ One row per year; the age is your age at the **start** of that year.
   and Ask Claude (`run_what_if.survivorDeathAge`) can test other ages.
 - Simplified: one household retirement date; income-stream, annuity and RMD ages use your age; full retirement age
   is 67 for both.
+
+## Long-term care
+
+- Optional: one person (couples choose who) needs care for `years` from their `startAge`, at `annualCost` per
+  year in today's dollars, growing with healthcare costs and added to healthcare (HSA pays first). No cost after
+  that person's death in the survivor scenario.
+- The **long-term care stress test** (scenarios, Ask Claude) turns it on with the plan's settings, or $100K/yr for
+  3 years from 85.
 
 ## Healthcare
 

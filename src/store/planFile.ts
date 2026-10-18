@@ -69,6 +69,18 @@ function shapeProblem(plan: unknown): string | null {
     return 'the survivor settings are incomplete'
   }
 
+  const ltc = plan.longTermCare
+  if (
+    !isObj(ltc) ||
+    typeof ltc.enabled !== 'boolean' ||
+    (ltc.who !== 'you' && ltc.who !== 'spouse') ||
+    !isNum(ltc.startAge) ||
+    !isNum(ltc.years) ||
+    !isNum(ltc.annualCost)
+  ) {
+    return 'the long-term care settings are incomplete'
+  }
+
   const conv = plan.rothConversion
   if (
     !isObj(conv) ||
@@ -93,7 +105,7 @@ function shapeProblem(plan: unknown): string | null {
     if (!isObj(sc) || typeof sc.id !== 'string' || typeof sc.name !== 'string' || !isObj(sc.overrides)) {
       return `scenario ${i + 1} is incomplete`
     }
-    if (!['none', 'crash', 'high-inflation'].includes(sc.stress as string)) return `scenario “${sc.name}” has an unknown stress test`
+    if (!['none', 'crash', 'high-inflation', 'long-term-care'].includes(sc.stress as string)) return `scenario “${sc.name}” has an unknown stress test`
     if (![1, 2, 3].includes(sc.slot as number)) return `scenario “${sc.name}” has an invalid color slot`
     for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge']) {
       if (sc.overrides[key] !== undefined && !isNum(sc.overrides[key])) return `scenario “${sc.name}”: “${key}” must be a number`

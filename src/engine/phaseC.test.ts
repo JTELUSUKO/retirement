@@ -73,3 +73,43 @@ describe('spousal benefits', () => {
     expect(socialSecurityAt(p, 75)).toBeCloseTo(3_000 * 12)
   })
 })
+
+import { longTermCareAt } from './longTermCare'
+import { applyScenario } from './scenarios'
+import { runMonteCarlo } from './monteCarlo'
+
+describe('long-term care', () => {
+  // Single, retired at 80, $1M Roth, no inflation
+  const ltcPlan = (extra: Partial<Plan['longTermCare']> = {}, plan: Partial<Plan> = {}): Plan => ({
+    ...basePlan,
+    currentAge: 80, retirementAge: 80, lifeExpectancy: 95, annualSpending: 40_000,
+    accounts: [{ ...basePlan.accounts[0], type: 'roth', balance: 1_000_000 }],
+    healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
+    longTermCare: { enabled: true, who: 'you', startAge: 85, years: 3, annualCost: 100_000, ...extra },
+    ...plan,
+  })
+
+  it('adds the cost for the chosen years only', () => {
+    const years = projectPlan(ltcPlan(), 2026).years
+    expect(years.filter((y) => y.longTermCare > 0).map((y) => y.age)).toEqual([85, 86, 87])
+    expect(years.find((y) => y.age === 86)!.healthcare).toBe(100_000)
+  })
+
+  it('stops if that person has already died (survivor modeling)', () => {
+    const couple = ltcPlan({}, {
+      filingStatus: 'married', spouseCurrentAge: 80, spouseClaimAge: 67,
+      survivor: { enabled: true, whoDies: 'you', firstDeathAge: 84, spendingShare: 0.75 },
+    })
+    expect(longTermCareAt(couple, 86)).toBe(0)
+  })
+
+  it('the stress test turns it on with default settings and lowers the odds of a tight plan', () => {
+    const tight = ltcPlan({ enabled: false }, {
+      accounts: [{ ...basePlan.accounts[0], type: 'roth', balance: 550_000 }],
+      assumptions: { ...basePlan.assumptions, returnPostRetirement: 0.05, volatilityPostRetirement: 0.1 },
+    })
+    const stressed = applyScenario(tight, { id: 's', name: 'LTC', overrides: {}, stress: 'long-term-care', slot: 1 })
+    expect(stressed.longTermCare).toMatchObject({ enabled: true, startAge: 85, years: 3 })
+    expect(runMonteCarlo(stressed).successRate).toBeLessThan(runMonteCarlo(tight).successRate)
+  })
+})

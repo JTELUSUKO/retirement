@@ -61,6 +61,11 @@ export const SCENARIO_PRESETS: Preset[] = [
   },
   { key: 'crash', label: 'Market crash at retirement', make: () => ({ name: 'Crash at retirement', overrides: {}, stress: 'crash' }) },
   {
+    key: 'ltc',
+    label: 'Long-term care need',
+    make: () => ({ name: 'Long-term care', overrides: {}, stress: 'long-term-care' }),
+  },
+  {
     key: 'inflation',
     label: 'High inflation',
     make: () => ({ name: 'High inflation', overrides: {}, stress: 'high-inflation' }),

@@ -29,6 +29,7 @@ export const basePlan: Plan = {
   },
   scenarios: [],
   rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
+  longTermCare: { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
   healthcare: { preMedicareAnnual: 0, medicareAnnual: 0, excessInflation: 0 },
   assumptions: {
     returnPreRetirement: 0,

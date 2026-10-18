@@ -5,6 +5,7 @@ import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { householdAt, planEndAge, socialSecurityAt } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcarePerPerson } from './healthcare'
+import { longTermCareAt } from './longTermCare'
 import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
@@ -53,7 +54,8 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   rates (plus NIIT), and as ordinary income by states. Pre-tax withdrawals before 59½ owe a 10% penalty
  *   (401(k)s are exempt under the Rule of 55 if you retire at 55+). Taxes during working years are not modeled.
  * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
- * - Healthcare costs (retired years) are added to spending; the HSA pays them first.
+ * - Healthcare costs (retired years) are added to spending, including Medicare surcharges (IRMAA) and any
+ *   long-term care period; the HSA pays them first.
  * - Married couples can model one spouse dying first (see survivor.ts): from that age the survivor keeps
  *   the larger Social Security benefit, spends less, pays healthcare for one, and files single the next year.
  * - Income beyond spending and tax is reinvested in a taxable account.
@@ -258,6 +260,7 @@ export function simulatePath(
     let spending = 0
     let healthcare = 0
     let irmaa = 0
+    let longTermCare = 0
     let ssIncome = 0
     let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
@@ -269,7 +272,8 @@ export function simulatePath(
       if (lookback && lookback.magi > 0 && onMedicare > 0) {
         irmaa = irmaaPerPersonYearly(lookback.magi, magiStatus[t - 2], priceLevel * taxIndexAtStart) * onMedicare * healthLevel
       }
-      healthcare = healthcareToday * healthLevel + irmaa
+      longTermCare = longTermCareAt(plan, age) * healthLevel
+      healthcare = healthcareToday * healthLevel + irmaa + longTermCare
       const baseSpending = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1)
       spending = baseSpending * priceLevel + healthcare
       other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
@@ -415,6 +419,7 @@ export function simulatePath(
       earlyWithdrawalPenalty,
       rothConversion: draw.converted,
       irmaa,
+      longTermCare,
       magi: retired ? magi : 0,
       stateTax,
       taxableIncome,
