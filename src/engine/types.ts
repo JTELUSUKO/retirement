@@ -33,6 +33,8 @@ export interface Assumptions {
   /** Standard deviation of yearly returns after retirement, e.g. 0.10 */
   volatilityPostRetirement: number
   inflation: number
+  /** Yearly investment fees (advisory + fund expenses), e.g. 0.005; charged on invested accounts, not cash */
+  annualFee: number
 }
 
 export interface Plan {

@@ -91,6 +91,7 @@ export function simulatePath(
   const total = () => balances.reduce((sum, b) => sum + b, 0)
 
   const isTaxable = bucketOf.map((b) => b === 'taxable')
+  const fee = plan.assumptions.annualFee ?? 0
   const rothTarget = bucketOf.indexOf('roth')
   const { penalty: EARLY_PENALTY, ruleOf55Age } = CONFIG_2026.federalTax.earlyWithdrawal
   // Rule of 55: 401(k)s can be withdrawn without the 10% penalty if you leave work at 55 or later
@@ -372,7 +373,7 @@ export function simulatePath(
     // Growth, then year-end contributions while working (HSA contributions stop at Medicare age)
     let contributions = 0
     accounts.forEach((acc, i) => {
-      balances[i] *= 1 + (bucketOf[i] === 'cash' ? market.inflation : market.return)
+      balances[i] *= bucketOf[i] === 'cash' ? 1 + market.inflation : (1 + market.return) * (1 - fee)
       const hsaClosed = bucketOf[i] === 'hsa' && age >= CONFIG_2026.medicare.eligibilityAge
       if (!retired && !hsaClosed) {
         const added = (acc.annualContribution + acc.employerMatch) * priceLevel

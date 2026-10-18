@@ -36,5 +36,6 @@ export const basePlan: Plan = {
     volatilityPreRetirement: 0,
     volatilityPostRetirement: 0,
     inflation: 0,
+    annualFee: 0,
   },
 }

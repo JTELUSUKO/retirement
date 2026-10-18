@@ -18,6 +18,7 @@ const volatilePlan: Plan = {
     volatilityPreRetirement: 0.15,
     volatilityPostRetirement: 0.1,
     inflation: 0.025,
+    annualFee: 0,
   },
 }
 

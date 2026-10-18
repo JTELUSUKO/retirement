@@ -1,4 +1,4 @@
-import { AGE_LIMITS, CONFIG_2026, contributionWarnings, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
+import { AGE_LIMITS, CONFIG_2026, contributionWarnings, MIX_PRESETS, mixReturns, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { AnnuitySection } from './AnnuitySection'
@@ -9,6 +9,36 @@ import { RothConversionSection } from './RothConversionSection'
 import { StateField } from './StateField'
 import { SurvivorSection } from './SurvivorSection'
 
+
+/** Stock/bond mix picker that fills in return and volatility ("Custom" when they don't match a preset). */
+function MixSelect({ label, mean, volatility, onPick }: {
+  label: string
+  mean: number
+  volatility: number
+  onPick: (m: { mean: number; volatility: number }) => void
+}) {
+  const current = MIX_PRESETS.find((w) => {
+    const m = mixReturns(w)
+    return Math.abs(m.mean - mean) < 5e-4 && Math.abs(m.volatility - volatility) < 5e-4
+  })
+  return (
+    <label className="block text-sm">
+      <span className="text-slate-600 dark:text-slate-400">{label}</span>
+      <select
+        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+        value={current === undefined ? 'custom' : String(current)}
+        onChange={(e) => e.target.value !== 'custom' && onPick(mixReturns(Number(e.target.value)))}
+      >
+        {MIX_PRESETS.map((w) => (
+          <option key={w} value={w}>
+            {Math.round(w * 100)}% stocks / {Math.round((1 - w) * 100)}% bonds
+          </option>
+        ))}
+        <option value="custom">Custom</option>
+      </select>
+    </label>
+  )
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -208,6 +238,20 @@ export function PlanForm() {
       </Section>
 
       <Section title="Assumptions">
+        <div className="grid grid-cols-2 gap-3">
+          <MixSelect
+            label="Investment mix before"
+            mean={plan.assumptions.returnPreRetirement}
+            volatility={plan.assumptions.volatilityPreRetirement}
+            onPick={(m) => updateAssumptions({ returnPreRetirement: m.mean, volatilityPreRetirement: m.volatility })}
+          />
+          <MixSelect
+            label="Investment mix after"
+            mean={plan.assumptions.returnPostRetirement}
+            volatility={plan.assumptions.volatilityPostRetirement}
+            onPick={(m) => updateAssumptions({ returnPostRetirement: m.mean, volatilityPostRetirement: m.volatility })}
+          />
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <PercentField label="Avg return before" min={-50} max={50} value={plan.assumptions.returnPreRetirement} onChange={(v) => updateAssumptions({ returnPreRetirement: v })} />
           <PercentField label="Avg return after" min={-50} max={50} value={plan.assumptions.returnPostRetirement} onChange={(v) => updateAssumptions({ returnPostRetirement: v })} />
@@ -216,11 +260,14 @@ export function PlanForm() {
         <div className="grid grid-cols-3 gap-3">
           <PercentField label="Volatility before" min={0} max={60} value={plan.assumptions.volatilityPreRetirement} onChange={(v) => updateAssumptions({ volatilityPreRetirement: v })} />
           <PercentField label="Volatility after" min={0} max={60} value={plan.assumptions.volatilityPostRetirement} onChange={(v) => updateAssumptions({ volatilityPostRetirement: v })} />
+          <PercentField label="Fees / yr" min={0} max={3} value={plan.assumptions.annualFee} onChange={(v) => updateAssumptions({ annualFee: v })} />
         </div>
         <p className="text-xs text-slate-500">
-          Average (not compounded) yearly returns, before fees. Volatility is how much returns swing year to year:
-          roughly 15% for a stock-heavy mix, 10% for a balanced one. Money grows at the typical (median) rate, which is
-          lower than the average when returns swing (about 1 point lower at 15%).
+          Pick a stock/bond mix to fill in return and volatility, or type your own. Returns are average (not
+          compounded) yearly returns before fees; money grows at the typical (median) rate, about 1 point lower when
+          returns swing 15%. Fees are advisory plus fund expenses (an index-fund portfolio is often 0.05–0.2%; an
+          advisor often adds about 1%). Mix presets use illustrative long-run assumptions: stocks 8.5% average with 17%
+          volatility, bonds 4.5% with 6%.
         </p>
       </Section>
 

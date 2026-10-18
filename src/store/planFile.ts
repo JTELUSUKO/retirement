@@ -40,7 +40,7 @@ function shapeProblem(plan: unknown): string | null {
   if (!isNum(plan.stateRetirementExclusion)) return '“stateRetirementExclusion” must be a number'
 
   for (const [group, keys] of [
-    ['assumptions', ['returnPreRetirement', 'returnPostRetirement', 'volatilityPreRetirement', 'volatilityPostRetirement', 'inflation']],
+    ['assumptions', ['returnPreRetirement', 'returnPostRetirement', 'volatilityPreRetirement', 'volatilityPostRetirement', 'inflation', 'annualFee']],
     ['healthcare', ['preMedicareAnnual', 'medicareAnnual', 'excessInflation']],
   ] as const) {
     const obj = plan[group]

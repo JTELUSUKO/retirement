@@ -32,7 +32,7 @@ export {
   spouseOffset,
   survivorFromAge,
 } from './survivor'
-export { medianReturn } from './returns'
+export { CAPITAL_MARKETS, medianReturn, MIX_PRESETS, mixReturns } from './returns'
 export { contributionWarnings, k401Limit } from './contributions'
 export type { ContributionWarning } from './contributions'
 export { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'

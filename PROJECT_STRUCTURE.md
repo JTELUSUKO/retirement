@@ -259,6 +259,9 @@ One row per year; the age is your age at the **start** of that year.
 - Return inputs are **average** (arithmetic) yearly returns. The Monte Carlo draws lognormal returns with that
   average. The "typical returns" projection uses the **median** return, (1 + mean) / √(1 + σ² / (1 + mean)²) − 1,
   so it tracks the middle of the simulation instead of beating it.
+- **Fees:** `annualFee` comes off invested accounts every year ((1 + return) × (1 − fee)); cash isn't charged.
+- **Investment-mix presets** (100/0 … 20/80 stocks/bonds) fill return and volatility from illustrative long-run
+  assumptions in `returns.ts` (stocks 8.5% / 17%, bonds 4.5% / 6%, correlation 0.1); users can override.
 - Contribution limits are checked against 2026 IRS limits (warnings only; the plan uses what you enter).
 
 ## How the Monte Carlo works

@@ -104,6 +104,11 @@ describe('plan store: scenarios', () => {
     expect(state().plan.scenarios.map((s) => s.slot)).toEqual([2, 3, 1])
   })
 
+  it('upgrades a v13 plan with no investment fee', () => {
+    const { annualFee: _f, ...assumptions } = examplePlan.assumptions
+    expect(migratePlanState({ plan: { ...examplePlan, assumptions } }, 13).plan.assumptions.annualFee).toBe(0)
+  })
+
   it('upgrades a v12 plan with Roth conversions off', () => {
     const { rothConversion: _r, ...v12 } = examplePlan
     expect(migratePlanState({ plan: v12 }, 12).plan.rothConversion.enabled).toBe(false)

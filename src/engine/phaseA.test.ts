@@ -22,7 +22,7 @@ describe('typical (median) returns for the deterministic projection', () => {
       ...basePlan,
       currentAge: 55, retirementAge: 65, lifeExpectancy: 95, annualSpending: 50_000,
       accounts: [account('roth', 800_000, { annualContribution: 20_000 })],
-      assumptions: { returnPreRetirement: 0.07, returnPostRetirement: 0.05, volatilityPreRetirement: 0.15, volatilityPostRetirement: 0.1, inflation: 0.025 },
+      assumptions: { returnPreRetirement: 0.07, returnPostRetirement: 0.05, volatilityPreRetirement: 0.15, volatilityPostRetirement: 0.1, inflation: 0.025, annualFee: 0 },
     }
     const det = projectPlan(plan, 2026).years.at(-1)!.startBalanceReal
     const median = runMonteCarlo(plan, { randomInflation: false }).years.at(-1)!.p50

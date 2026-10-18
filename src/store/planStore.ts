@@ -41,6 +41,7 @@ export const examplePlan: Plan = {
     volatilityPreRetirement: 0.15,
     volatilityPostRetirement: 0.1,
     inflation: 0.025,
+    annualFee: 0.002,
   },
 }
 
@@ -160,6 +161,10 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       rothConversion: state.plan.rothConversion ?? { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
     }
   }
+  // v13 → v14: investment fees (none assumed for existing plans, so results don't change)
+  if (version < 14) {
+    state.plan = { ...state.plan, assumptions: { ...state.plan.assumptions, annualFee: state.plan.assumptions.annualFee ?? 0 } }
+  }
   return state
 }
 
@@ -167,7 +172,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 13
+export const PLAN_VERSION = 14
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
