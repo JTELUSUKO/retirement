@@ -1,6 +1,7 @@
 import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
+import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
@@ -75,6 +76,16 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
+      {mc.guardrails && (
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Guardrails: spending gets cut at some point in{' '}
+          <strong className="tabular-nums">{Math.round(mc.guardrails.cutChance * 100)}%</strong> of simulated markets. In
+          poor markets (10th percentile) it bottoms out at{' '}
+          <strong className="tabular-nums">{Math.round(mc.guardrails.lowestP10 * 100)}%</strong> of your plan (
+          {formatUSD(plan.annualSpending * mc.guardrails.lowestP10)}/yr in today’s dollars).
+        </p>
+      )}
+
       <p className="text-sm text-slate-600 dark:text-slate-400">
         Income tax over retirement (typical returns):{' '}
         <strong className="tabular-nums">{formatUSDCompact(lifetimeTaxReal)}</strong> in today's dollars (
@@ -87,6 +98,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         {lifetimeIrmaaReal > 0 ? `, ${formatUSDCompact(lifetimeIrmaaReal)} of Medicare income surcharges (IRMAA)` : ''}
         {lifetimeLtcReal > 0 ? `, and ${formatUSDCompact(lifetimeLtcReal)} of long-term care` : ''}.
       </p>
+
+      <SafeSpendingPanel plan={plan} />
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
       {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}

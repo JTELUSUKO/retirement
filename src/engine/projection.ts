@@ -2,7 +2,7 @@ import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets } from './accounts'
 import { CONFIG_2026 } from './config/2026'
 import { medianReturn } from './returns'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
-import { householdAt, planEndAge, socialSecurityAt } from './survivor'
+import { householdAt, planEndAge, socialSecurityAt, spouseOffset } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcarePerPerson } from './healthcare'
 import { longTermCareAt } from './longTermCare'
@@ -12,6 +12,11 @@ import { stateIncomeTax } from './stateTax'
 import { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'
 import { bracketTop, federalIncomeTax, taxableSocialSecurity } from './taxes'
 import type { FilingStatus, Plan, ProjectionResult, TaxBucket, YearResult } from './types'
+
+/** Guardrail raises only restore earlier cuts: spending never goes above the plan. */
+export const GUARDRAIL_CEILING = 1
+/** Guardrails make no cuts in this many final years of the plan. */
+export const GUARDRAIL_NO_CUT_YEARS = 15
 
 /** Id of the hidden Roth account that receives conversions when the plan has none. */
 export const CONVERTED_ROTH_ID = 'converted-roth'
@@ -56,6 +61,8 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
  * - Healthcare costs (retired years) are added to spending, including Medicare surcharges (IRMAA) and any
  *   long-term care period; the HSA pays them first.
+ * - Optional spending guardrails cut spending (excluding healthcare) after bad markets and restore it after good
+ *   ones, measured from the year Social Security is flowing.
  * - Married couples can model one spouse dying first (see survivor.ts): from that age the survivor keeps
  *   the larger Social Security benefit, spends less, pays healthcare for one, and files single the next year.
  * - Income beyond spending and tax is reinvested in a taxable account.
@@ -214,6 +221,15 @@ export function simulatePath(
   const magiStatus: FilingStatus[] = []
   // Roth conversion window (your ages); 0 = retirement age / the year before RMDs start
   const conv = plan.rothConversion
+  // Spending guardrails state
+  const rule = plan.spendingRule
+  let spendingFactor = 1
+  let initialRate: number | null = null
+  const guardrailStart = Math.max(
+    plan.retirementAge,
+    plan.socialSecurityAtFRA > 0 ? plan.socialSecurityClaimAge : 0,
+    plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0 ? plan.spouseClaimAge - spouseOffset(plan) : 0,
+  )
   const convFrom = conv.fromAge || plan.retirementAge
   const convTo = conv.toAge || rmdStartAge(startYear - plan.currentAge) - 1
   let depletionAge: number | null = null
@@ -274,10 +290,24 @@ export function simulatePath(
       }
       longTermCare = longTermCareAt(plan, age) * healthLevel
       healthcare = healthcareToday * healthLevel + irmaa + longTermCare
-      const baseSpending = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1)
-      spending = baseSpending * priceLevel + healthcare
       other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
       ssIncome = socialSecurityAt(plan, age) * priceLevel
+      const planned = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1) * priceLevel
+      if (rule.type === 'guardrails') {
+        // Withdrawal rate this year at the current spending level (healthcare is never cut)
+        const fromSavings = Math.max(planned * spendingFactor + healthcare - (other.amount + ssIncome + annuityIncome), 0)
+        const rate = startBalance > 0 ? fromSavings / startBalance : 0
+        // The starting rate is set once Social Security is flowing (a benefit starting would look like a windfall)
+        if (age < guardrailStart) initialRate = null
+        else if (initialRate === null) initialRate = rate
+        // Like Guyton–Klinger, no cuts in the last 15 years of the plan (the balance is meant to run down)
+        else if (initialRate > 0 && rate > initialRate * (1 + rule.band) && endAge - age >= GUARDRAIL_NO_CUT_YEARS) {
+          spendingFactor = Math.max(spendingFactor * (1 - rule.adjustment), rule.floor)
+        } else if (initialRate > 0 && rate < initialRate * (1 - rule.band)) {
+          spendingFactor = Math.min(spendingFactor * (1 + rule.adjustment), GUARDRAIL_CEILING)
+        }
+      }
+      spending = planned * spendingFactor + healthcare
     }
     const income = other.amount + ssIncome + annuityIncome
     // Negative when income exceeds spending; the surplus (after tax) is reinvested below
@@ -420,6 +450,7 @@ export function simulatePath(
       rothConversion: draw.converted,
       irmaa,
       longTermCare,
+      spendingFactor: retired ? spendingFactor : 1,
       magi: retired ? magi : 0,
       stateTax,
       taxableIncome,

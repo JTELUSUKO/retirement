@@ -160,6 +160,30 @@ export function PlanForm() {
 
       <Section title="Spending & Social Security">
         <NumberField label="Yearly spending, excluding healthcare (today's $)" prefix="$" min={0} step={1000} value={plan.annualSpending} onChange={(v) => update({ annualSpending: v })} />
+        <div className="grid grid-cols-3 items-end gap-3">
+          <label className="col-span-2 block text-sm">
+            <span className="text-slate-600 dark:text-slate-400">Spending rule</span>
+            <select
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+              value={plan.spendingRule.type}
+              onChange={(e) => update({ spendingRule: { ...plan.spendingRule, type: e.target.value as Plan['spendingRule']['type'] } })}
+            >
+              <option value="fixed">Fixed: same every year (plus inflation)</option>
+              <option value="guardrails">Guardrails: cut 10% after bad markets, restore after good</option>
+            </select>
+          </label>
+          {plan.spendingRule.type === 'guardrails' && (
+            <PercentField label="Never below" min={30} max={100} value={plan.spendingRule.floor} onChange={(v) => update({ spendingRule: { ...plan.spendingRule, floor: v } })} />
+          )}
+        </div>
+        {plan.spendingRule.type === 'guardrails' && (
+          <p className="text-xs text-slate-500">
+            Your starting withdrawal rate is set once Social Security is flowing. If markets push it more than 20%
+            higher, spending (not healthcare) is cut 10%, never below this floor and not in the plan’s last 15 years; if
+            it falls more than 20% lower, cuts are restored 10% at a time (never above your plan). Being willing to cut
+            raises the chance your money lasts.
+          </p>
+        )}
         {plan.filingStatus === 'married' ? (
           <div className="grid grid-cols-2 gap-3">
             <NumberField label="Yours / mo" prefix="$" min={0} step={50} value={plan.socialSecurityAtFRA} onChange={(v) => update({ socialSecurityAtFRA: v })} />

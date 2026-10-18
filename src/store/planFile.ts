@@ -69,6 +69,11 @@ function shapeProblem(plan: unknown): string | null {
     return 'the survivor settings are incomplete'
   }
 
+  const rule = plan.spendingRule
+  if (!isObj(rule) || (rule.type !== 'fixed' && rule.type !== 'guardrails') || !isNum(rule.band) || !isNum(rule.adjustment) || !isNum(rule.floor)) {
+    return 'the spending rule is incomplete'
+  }
+
   const ltc = plan.longTermCare
   if (
     !isObj(ltc) ||

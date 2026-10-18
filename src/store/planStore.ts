@@ -35,6 +35,7 @@ export const examplePlan: Plan = {
   scenarios: [],
   rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
   longTermCare: { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
+  spendingRule: { type: 'fixed', band: 0.2, adjustment: 0.1, floor: 0.75 },
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
     returnPreRetirement: 0.07,
@@ -173,6 +174,10 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
       longTermCare: state.plan.longTermCare ?? { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
     }
   }
+  // v15 → v16: spending rule (fixed, as before)
+  if (version < 16) {
+    state.plan = { ...state.plan, spendingRule: state.plan.spendingRule ?? { type: 'fixed', band: 0.2, adjustment: 0.1, floor: 0.75 } }
+  }
   return state
 }
 
@@ -180,7 +185,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 15
+export const PLAN_VERSION = 16
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 

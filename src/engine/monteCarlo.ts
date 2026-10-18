@@ -50,6 +50,7 @@ export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): Mont
   // balancesByYear[t] collects every run's start-of-year real balance for year t
   const balancesByYear: number[][] = Array.from({ length: yearCount }, () => [])
   let successes = 0
+  const lowestFactors: number[] = []
 
   for (let run = 0; run < runs; run++) {
     let inflation = a.inflation
@@ -68,12 +69,24 @@ export function runMonteCarlo(plan: Plan, options: MonteCarloOptions = {}): Mont
       startYear,
     )
     if (result.depletionAge === null) successes++
+    if (plan.spendingRule.type === 'guardrails') {
+      lowestFactors.push(result.years.reduce((min, y) => Math.min(min, y.spendingFactor), 1))
+    }
     result.years.forEach((y, t) => balancesByYear[t].push(y.startBalanceReal))
   }
 
+  const sortedLowest = lowestFactors.sort((x, y) => x - y)
   return {
     runs,
     successRate: runs > 0 ? successes / runs : 0,
+    guardrails:
+      sortedLowest.length > 0
+        ? {
+            cutChance: sortedLowest.filter((f) => f < 1 - 1e-9).length / sortedLowest.length,
+            lowestP10: percentile(sortedLowest, 0.1),
+            lowestMedian: percentile(sortedLowest, 0.5),
+          }
+        : undefined,
     years: balancesByYear.map((balances, t) => {
       const sorted = balances.sort((x, y) => x - y)
       return {

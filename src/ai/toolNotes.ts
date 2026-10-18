@@ -4,6 +4,10 @@ import { formatUSD } from '../utils/format'
 export function describeToolCall(name: string, input: unknown, isError: boolean): string {
   if (isError) return 'A calculation request was invalid; Claude retried.'
   if (name === 'get_plan_results') return 'Checked your plan’s results'
+  if (name === 'find_safe_spending' && typeof input === 'object' && input) {
+    const t = (input as { targetChance?: unknown }).targetChance
+    return `Found safe spending for a ${typeof t === 'number' ? Math.round(t * 100) : '?'}% chance`
+  }
   if (name === 'run_what_if' && typeof input === 'object' && input) {
     const i = input as Record<string, unknown>
     const parts: string[] = []
@@ -12,6 +16,7 @@ export function describeToolCall(name: string, input: unknown, isError: boolean)
     if (typeof i.socialSecurityClaimAge === 'number') parts.push(`Social Security at ${i.socialSecurityClaimAge}`)
     if (typeof i.annuityEnabled === 'boolean') parts.push(i.annuityEnabled ? 'with the annuity' : 'without the annuity')
     if (typeof i.survivorDeathAge === 'number') parts.push(i.survivorDeathAge > 0 ? `one spouse dies at ${i.survivorDeathAge}` : 'both live')
+    if (typeof i.guardrails === 'boolean') parts.push(i.guardrails ? 'spending guardrails' : 'fixed spending')
     if (typeof i.rothConversionRate === 'number') {
       parts.push(i.rothConversionRate > 0 ? `Roth conversions to the ${Math.round(i.rothConversionRate * 100)}% bracket` : 'no Roth conversions')
     }

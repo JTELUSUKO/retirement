@@ -215,6 +215,12 @@ export function Summary() {
                   ] as [string, string][])
                 : []),
               ['Investment fees', pct(plan.assumptions.annualFee, 2)],
+              [
+                'Spending rule',
+                plan.spendingRule.type === 'guardrails'
+                  ? `Guardrails: cut 10% when the withdrawal rate rises 20% above its start (never below ${Math.round(plan.spendingRule.floor * 100)}%), restore when it falls 20% below${mc.guardrails ? `; cuts in ${Math.round(mc.guardrails.cutChance * 100)}% of markets, poor-market low ${Math.round(mc.guardrails.lowestP10 * 100)}% of plan` : ''}`
+                  : 'Fixed (same every year, plus inflation)',
+              ],
               ...(plan.rothConversion.enabled
                 ? ([
                     [

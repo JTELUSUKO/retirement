@@ -105,6 +105,9 @@ export function validatePlan(plan: Plan): PlanIssue[] {
       issues.push({ field: 'rothConversion', message: 'Roth conversions must end after they start.' })
     }
   }
+  if (plan.spendingRule.type === 'guardrails' && (plan.spendingRule.floor < 0.3 || plan.spendingRule.floor > 1)) {
+    issues.push({ field: 'spendingRule', message: 'The spending floor should be between 30% and 100% of your plan.' })
+  }
   const ltc = plan.longTermCare
   if (ltc.enabled) {
     if (ltc.startAge < AGE_LIMITS.min || ltc.years < 1 || ltc.years > 20) {

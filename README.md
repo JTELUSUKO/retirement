@@ -16,6 +16,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - What buying an annuity with part of your savings would do to your odds and what you leave behind
 - A year-by-year table
 - A printable one-document summary (save as PDF)
+- "How much can I safely spend?", spending guardrails, Roth conversions, Medicare surcharges (IRMAA), long-term care and investment fees
 - Side-by-side what-if scenarios (retire earlier, spend less, claim Social Security later) and stress tests (market crash, high inflation)
 
 Your data stays in your browser. Use **Export** to save a backup file and **Import** to restore it.

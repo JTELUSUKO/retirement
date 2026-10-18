@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 import { ageLabel, endLabel } from '../utils/labels'
 import {
   applyScenario,
+  findSafeSpendingSync,
   householdSocialSecurityMonthly,
   survivorFromAge,
   evaluatePlan,
@@ -40,6 +41,7 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
         annualSpending: { type: 'number', description: 'Yearly spending in retirement, today’s dollars, excluding healthcare.' },
         socialSecurityClaimAge: { type: 'integer', description: 'Age to claim Social Security, 62–70.' },
         annuityEnabled: { type: 'boolean', description: 'Turn the plan’s configured annuity purchase on or off.' },
+        guardrails: { type: 'boolean', description: 'Use spending guardrails (true) or fixed spending (false).' },
         rothConversionRate: {
           type: 'number',
           enum: [0, 0.1, 0.12, 0.22, 0.24, 0.32],
@@ -64,9 +66,23 @@ export const ASSISTANT_TOOLS: Anthropic.Beta.BetaTool[] = [
     },
     eager_input_streaming: true,
   },
+  {
+    name: 'find_safe_spending',
+    description:
+      'Find the highest yearly spending (today’s dollars, excluding healthcare) that keeps the chance the money lasts at ' +
+      'or above a target, keeping everything else in the plan the same (including guardrails if the plan uses them). ' +
+      'Use for “how much can I spend?” questions. Takes a few seconds.',
+    input_schema: {
+      type: 'object',
+      properties: { targetChance: { type: 'number', description: 'Target chance of success, 0.5–0.99 (e.g. 0.9).' } },
+      required: ['targetChance'],
+      additionalProperties: false,
+    },
+    eager_input_streaming: true,
+  },
 ]
 
-export type ToolName = 'get_plan_results' | 'run_what_if'
+export type ToolName = 'get_plan_results' | 'run_what_if' | 'find_safe_spending'
 
 export interface WhatIfInput {
   retirementAge?: number
@@ -75,13 +91,14 @@ export interface WhatIfInput {
   annuityEnabled?: boolean
   survivorDeathAge?: number
   rothConversionRate?: number
+  guardrails?: boolean
   stress?: StressTest
 }
 
 /** Validate a run_what_if input; returns an error message or the typed input. */
 export function parseWhatIf(input: unknown): { ok: true; value: WhatIfInput } | { ok: false; error: string } {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return { ok: false, error: 'input must be an object' }
-  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'survivorDeathAge', 'rothConversionRate', 'stress']
+  const allowed = ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'annuityEnabled', 'survivorDeathAge', 'rothConversionRate', 'guardrails', 'stress']
   const obj = input as Record<string, unknown>
   for (const key of Object.keys(obj)) if (!allowed.includes(key)) return { ok: false, error: `unknown field "${key}"` }
   for (const key of ['retirementAge', 'annualSpending', 'socialSecurityClaimAge', 'survivorDeathAge', 'rothConversionRate']) {
@@ -90,6 +107,7 @@ export function parseWhatIf(input: unknown): { ok: true; value: WhatIfInput } | 
     }
   }
   if (obj.annuityEnabled !== undefined && typeof obj.annuityEnabled !== 'boolean') return { ok: false, error: '"annuityEnabled" must be true or false' }
+  if (obj.guardrails !== undefined && typeof obj.guardrails !== 'boolean') return { ok: false, error: '"guardrails" must be true or false' }
   if (obj.stress !== undefined && !['none', 'crash', 'high-inflation', 'long-term-care'].includes(obj.stress as string)) {
     return { ok: false, error: '"stress" must be none, crash, high-inflation or long-term-care' }
   }
@@ -109,6 +127,14 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     savingsAtRetirement: round(e.savingsAtRetirement),
     typicalReturnsOutcome: e.depletionAge === null ? `lasts past ${endLabel(plan)}` : `runs out at ${ageLabel(plan, e.depletionAge)}`,
     savingsLeftAtEnd: { typicalMarkets: round(e.leftTypical), poorMarkets10thPercentile: round(e.leftPoor) },
+    ...(e.monteCarlo?.guardrails
+      ? {
+          guardrails: {
+            chanceOfACut: `${Math.round(e.monteCarlo.guardrails.cutChance * 100)}%`,
+            lowestSpendingPoorMarkets: `${Math.round(e.monteCarlo.guardrails.lowestP10 * 100)}% of plan`,
+          },
+        }
+      : {}),
     lifetimeFederalTax: round(e.lifetimeFederalTax),
     lifetimeMedicareSurcharges: round(e.projection!.years.reduce((sum, y) => sum + y.irmaa / y.priceLevel, 0)),
     lifetimeRothConversions: round(e.projection!.years.reduce((sum, y) => sum + y.rothConversion / y.priceLevel, 0)),
@@ -145,14 +171,16 @@ export function executeTool(plan: Plan, name: string, input: unknown): { content
     if (parsed.value.survivorDeathAge !== undefined && plan.filingStatus !== 'married') {
       return { content: JSON.stringify({ error: 'survivorDeathAge only applies to married couples (filing jointly).' }), isError: true }
     }
-    const { stress = 'none', rothConversionRate, ...overrides } = parsed.value
+    const { stress = 'none', rothConversionRate, guardrails, ...overrides } = parsed.value
     const scenario: Scenario = { id: 'what-if', name: 'What-if', overrides, stress, slot: 1 }
     const base = applyScenario(plan, scenario)
+    const withRule: Plan =
+      guardrails === undefined ? base : { ...base, spendingRule: { ...base.spendingRule, type: guardrails ? 'guardrails' : 'fixed' } }
     const changed: Plan =
       rothConversionRate === undefined
-        ? base
+        ? withRule
         : {
-            ...base,
+            ...withRule,
             rothConversion: {
               ...base.rothConversion,
               enabled: rothConversionRate > 0,
@@ -165,10 +193,27 @@ export function executeTool(plan: Plan, name: string, input: unknown): { content
         changes: {
           ...overrides,
           ...(rothConversionRate !== undefined ? { rothConversionRate } : {}),
+          ...(guardrails !== undefined ? { guardrails } : {}),
           ...(stress !== 'none' ? { stress: STRESS_LABEL[stress] } : {}),
         },
         withChanges: summarize(changed, evaluatePlan(changed, stress)),
         currentPlan: summarize(plan, evaluatePlan(plan)),
+      }),
+      isError: false,
+    }
+  }
+  if (name === 'find_safe_spending') {
+    const target = (input as { targetChance?: unknown } | null)?.targetChance
+    if (typeof target !== 'number' || target < 0.5 || target > 0.99) {
+      return { content: JSON.stringify({ error: '"targetChance" must be a number from 0.5 to 0.99' }), isError: true }
+    }
+    const spending = findSafeSpendingSync(plan, target)
+    return {
+      content: JSON.stringify({
+        targetChance: `${Math.round(target * 100)}%`,
+        safeYearlySpending: spending,
+        currentYearlySpending: plan.annualSpending,
+        note: 'Today’s dollars, excluding healthcare. Searched with 500 simulated markets, so it can differ slightly from the 1,000-market results.',
       }),
       isError: false,
     }

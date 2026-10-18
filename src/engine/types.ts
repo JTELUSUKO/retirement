@@ -64,6 +64,8 @@ export interface Plan {
   rothConversion: RothConversionSettings
   /** Optional long-term care need (a cost shock). */
   longTermCare: LongTermCareSettings
+  /** Fixed spending, or guardrails that cut/raise spending after bad/good markets. */
+  spendingRule: SpendingRule
   socialSecurityClaimAge: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
@@ -138,6 +140,19 @@ export interface RothConversionSettings {
   fromAge: number
   toAge: number
   stayUnderIrmaa: boolean
+}
+
+/**
+ * Guardrails (simplified Guyton–Klinger): the starting withdrawal rate (spending not covered by income ÷ savings)
+ * is set in the first retired year in which Social Security is flowing. Later, if the rate is more than `band`
+ * above it, spending (excluding healthcare) is cut by `adjustment`, never below `floor` of the plan and not in the
+ * plan's last 15 years; if more than `band` below, earlier cuts are restored by `adjustment` (never above the plan).
+ */
+export interface SpendingRule {
+  type: 'fixed' | 'guardrails'
+  band: number
+  adjustment: number
+  floor: number
 }
 
 /** A period of long-term care for one person, paid like healthcare (HSA first), rising with healthcare costs. */
@@ -217,6 +232,8 @@ export interface YearResult {
   irmaa: number
   /** Long-term care costs this year (nominal; included in healthcare) */
   longTermCare: number
+  /** Spending as a share of the plan this year (1 unless guardrails adjusted it) */
+  spendingFactor: number
   /** Modified AGI this year (nominal), used for IRMAA two years later */
   magi: number
   stateTax: number
@@ -249,6 +266,15 @@ export interface MonteCarloResult {
   /** Share of runs where the money lasted to the planning age (0–1). */
   successRate: number
   years: PercentileYear[]
+  /** With guardrails: how often and how far spending was cut */
+  guardrails?: {
+    /** Share of runs with at least one cut */
+    cutChance: number
+    /** Lowest spending (share of plan) in poor markets (10th percentile of each run's lowest) */
+    lowestP10: number
+    /** Typical lowest spending (median of each run's lowest) */
+    lowestMedian: number
+  }
 }
 
 export interface PlanIssue {

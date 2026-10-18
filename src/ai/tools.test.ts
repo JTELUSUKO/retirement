@@ -42,6 +42,16 @@ describe('assistant tools', () => {
     expect(data.withChanges).toHaveProperty('lifetimeMedicareSurcharges')
   })
 
+  it('finds safe spending and runs guardrail what-ifs', () => {
+    const r = executeTool(examplePlan, 'find_safe_spending', { targetChance: 0.9 })
+    const data = JSON.parse(r.content)
+    expect(r.isError).toBe(false)
+    expect(data.safeYearlySpending % 500).toBe(0)
+    expect(executeTool(examplePlan, 'find_safe_spending', { targetChance: 2 }).isError).toBe(true)
+    const g = JSON.parse(executeTool(examplePlan, 'run_what_if', { guardrails: true }).content)
+    expect(g.withChanges.guardrails.chanceOfACut).toMatch(/%$/)
+  })
+
   it('rejects unknown fields and wrong types', () => {
     expect(parseWhatIf({ retireAge: 60 }).ok).toBe(false)
     expect(parseWhatIf({ annualSpending: '50k' }).ok).toBe(false)

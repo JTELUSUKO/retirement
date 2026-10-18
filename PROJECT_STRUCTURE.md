@@ -27,6 +27,7 @@ retirement/
 │   │   ├── returns.ts           # Median (typical) return from average return + volatility
 │   │   ├── irmaa.ts             # Medicare income surcharges (CMS 2026 tiers)
 │   │   ├── longTermCare.ts      # Optional long-term care cost period (and stress-test defaults)
+│   │   ├── safeSpending.ts      # "How much can I safely spend?" (bisection over the Monte Carlo)
 │   │   ├── phaseC.test.ts       # Fees/mix, spousal benefits, long-term care, safe spending
 │   │   ├── phaseB.test.ts       # IRMAA and Roth conversion tests
 │   │   ├── contributions.ts     # 2026 IRS contribution-limit warnings (401(k), IRA, HSA; age catch-ups)
@@ -74,6 +75,8 @@ retirement/
 │   │   ├── GettingStarted.tsx   # Checklist shown until the essentials are filled in
 │   │   ├── OutcomeComparison.tsx# Two simulations side by side (annuity, survivor, Roth conversion panels)
 │   │   ├── RothConversionSection.tsx    # "Tax strategy": Roth conversion settings
+│   │   ├── LongTermCareSection.tsx      # Optional long-term care need
+│   │   ├── SafeSpendingPanel.tsx        # Safe spending for a target chance, with "Use this" 
 │   │   ├── RothConversionComparison.tsx # With vs. without conversions, incl. lifetime tax + IRMAA, after-tax left
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── SurvivorComparison.tsx# Both live vs. one dies at the chosen age
@@ -205,6 +208,18 @@ One row per year; the age is your age at the **start** of that year.
 - Simplified: one household retirement date; income-stream, annuity and RMD ages use your age; full retirement age
   is 67 for both.
 
+## Spending rules and safe spending
+
+- **Fixed** (default): spending rises with inflation only.
+- **Guardrails** (simplified Guyton–Klinger): the starting withdrawal rate (spending not covered by income ÷
+  savings) is set in the first retired year with Social Security flowing. If the rate rises more than 20% above
+  it, spending (not healthcare) is cut 10%, never below the floor (default 75%) and not in the plan's last 15
+  years; if it falls more than 20% below, cuts are restored 10% at a time, never above the plan. Because spending
+  never exceeds the plan, guardrails can only help the chance of success. The Monte Carlo reports how often a cut
+  happens and the lowest spending in poor markets.
+- **Safe spending:** bisection over the same seeded simulations finds the highest spending (to $500) with at
+  least the target chance; "Use this" applies it. Ask Claude has the same as the `find_safe_spending` tool.
+
 ## Long-term care
 
 - Optional: one person (couples choose who) needs care for `years` from their `startAge`, at `annualCost` per
@@ -305,6 +320,9 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 |---|---|
 | 2: Realism | ✅ Monte Carlo · ✅ per-account tracking, withdrawal order, RMDs · ✅ federal tax · ✅ healthcare + HSA · ✅ other income · ✅ annuity purchase with comparison |
 | 3: Scenarios | ✅ export/import · ✅ scenario comparison + stress tests · ✅ printable summary |
+| Review A | ✅ typical (median) returns · ✅ early-withdrawal penalty · ✅ capital gains/NIIT · ✅ contribution limits |
+| Review B | ✅ Roth conversions (fill the bracket) · ✅ IRMAA |
+| Review C | ✅ fees + investment mix · ✅ spousal benefits · ✅ long-term care · ✅ guardrails + safe spending |
 | 4: AI assistant | ✅ `src/ai/` + `pages/Ask.tsx` (bring-your-own-key, no server) |
 
 ## Scripts
