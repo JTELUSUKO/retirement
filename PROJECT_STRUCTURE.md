@@ -138,9 +138,13 @@ retirement/
    the rest. Sections collapse to a one-line summary; Basic mode lists advanced settings that are still in effect.
    Explanations live in ⓘ tips rather than paragraphs. New accounts are named after their type ("401(k) 2") and
    renamed when the type changes, unless you typed a name. "Reset" returns to a blank plan (with Undo).
-   A blank plan opens the guided setup (age, state, savings, spending, Social Security) unless skipped.
+   A blank plan (including after Reset) opens the guided setup (age, state, savings, spending, Social
+   Security); the toolbar's "Guided setup" reopens it anytime. Savings show combined totals per account type;
+   a changed type is merged into one account (match and cost basis combined), so nothing is counted twice.
    Results open with a verdict and up to four tested levers (`utils/levers.ts`): retire 2 years later, spend
-   10% less, claim at 70, guardrails. Each runs its own simulation in the workers; gains under 2 points are hidden.
+   10% less, claim at 70, guardrails. They're built from the Compare presets, start once the main result is
+   ready, and each result carries its own label and baseline, so a late result can't show under the wrong
+   label. Gains under 2 points are hidden.
 6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
    The one exception is **Ask Claude**, which is hidden from the menu (it opens only at `#ask`, marked
    experimental): with the visitor's own API key, the plan is sent to api.anthropic.com when they ask a question.

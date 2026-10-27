@@ -1,6 +1,9 @@
 import { planEndAge, spouseOffset, STRESS_LABEL, type Plan, type Scenario } from '../engine'
 import { formatUSDCompact } from './format'
 
+/** Spending what-ifs are rounded to the nearest $1,000. */
+export const roundSpending = (n: number) => Math.round(n / 1000) * 1000
+
 type Preset = {
   key: string
   label: string
@@ -25,7 +28,7 @@ export const SCENARIO_PRESETS: Preset[] = [
     key: 'spend-less',
     label: 'Spend 10% less',
     make: (p) => {
-      const spending = Math.round((p.annualSpending * 0.9) / 1000) * 1000
+      const spending = roundSpending(p.annualSpending * 0.9)
       return { name: `Spend ${formatUSDCompact(spending)}/yr`, overrides: { annualSpending: spending }, stress: 'none' }
     },
   },

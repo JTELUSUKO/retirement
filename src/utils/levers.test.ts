@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { examplePlan } from '../store/planStore'
-import { leverVariants, spendMoreVariant, verdictFor, withArticle } from './levers'
+import { applyScenario } from '../engine'
+import { articleFor, leverVariants, spendMoreVariant, verdictFor, withArticle } from './levers'
+import { SCENARIO_PRESETS } from './scenarioPresets'
 
 describe('levers', () => {
   it('offers retire later, spend less, claim at 70 and guardrails for the example plan', () => {
@@ -28,5 +30,18 @@ describe('levers', () => {
 
   it('uses "an" before percentages that start with a vowel sound', () => {
     expect([64, 85, 8, 11, 18, 100, 1].map(withArticle)).toEqual(['a 64%', 'an 85%', 'an 8%', 'an 11%', 'an 18%', 'a 100%', 'a 1%'])
+  })
+})
+
+describe('levers match the Compare presets', () => {
+  it('tests exactly the change that Compare adds', () => {
+    for (const lever of leverVariants(examplePlan).filter((l) => l.preset)) {
+      const change = SCENARIO_PRESETS.find((p) => p.key === lever.preset)!.make(examplePlan)
+      expect(lever.plan).toEqual(applyScenario(examplePlan, { ...change, id: 'lever', slot: 1 }))
+    }
+  })
+
+  it('picks the article on its own', () => {
+    expect([8, 64, 85].map(articleFor)).toEqual(['an', 'a', 'an'])
   })
 })

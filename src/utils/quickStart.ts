@@ -10,35 +10,55 @@ export type QuickSavings = Record<AccountType, { balance: number; annualContribu
 export const isBlankPlan = (plan: Plan) =>
   plan.currentAge === 0 && plan.retirementAge === 0 && plan.annualSpending === 0 && plan.accounts.length === 0
 
-/** One entry per type, from the first account of that type. */
+/** Combined balance and yearly contribution for each type (all accounts of that type added together). */
 export function savingsFromPlan(plan: Plan): QuickSavings {
   return Object.fromEntries(
     QUICK_ACCOUNT_TYPES.map((type) => {
-      const acc = plan.accounts.find((a) => a.type === type)
-      return [type, { balance: acc?.balance ?? 0, annualContribution: acc?.annualContribution ?? 0 }]
+      const ofType = plan.accounts.filter((a) => a.type === type)
+      return [
+        type,
+        {
+          balance: ofType.reduce((sum, a) => sum + a.balance, 0),
+          annualContribution: ofType.reduce((sum, a) => sum + a.annualContribution, 0),
+        },
+      ]
     }),
   ) as QuickSavings
 }
 
-/** Write the guided-setup savings into the accounts: update the first account of each type, or add one. */
+/**
+ * Write the guided-setup totals into the accounts. A type whose totals didn't change is left as it is. A changed
+ * type becomes one account holding the new totals (keeping the first account's name, plus the combined employer
+ * match and cost basis); a type set to zero is removed.
+ */
 export function applySavings(accounts: Account[], savings: QuickSavings): Account[] {
-  const result = [...accounts]
+  const before = savingsFromPlan({ accounts } as Plan)
+  let result = [...accounts]
   for (const type of QUICK_ACCOUNT_TYPES) {
     const { balance, annualContribution } = savings[type]
-    const i = result.findIndex((a) => a.type === type)
-    if (i >= 0) {
-      result[i] = { ...result[i], balance, annualContribution }
-    } else if (balance > 0 || annualContribution > 0) {
-      result.push({
-        id: crypto.randomUUID(),
-        name: defaultAccountName(type, result.map((a) => a.name)),
-        type,
-        balance,
-        annualContribution,
-        employerMatch: 0,
-        costBasis: null,
-      })
-    }
+    if (balance === before[type].balance && annualContribution === before[type].annualContribution) continue
+    const ofType = result.filter((a) => a.type === type)
+    const employerMatch = ofType.reduce((sum, a) => sum + a.employerMatch, 0)
+    const costBasis = ofType.some((a) => a.costBasis !== null) ? ofType.reduce((sum, a) => sum + (a.costBasis ?? a.balance), 0) : null
+    const keep = balance > 0 || annualContribution > 0 || employerMatch > 0
+    const merged: Account | null = !keep
+      ? null
+      : ofType[0]
+        ? { ...ofType[0], balance, annualContribution, employerMatch, costBasis }
+        : {
+            id: crypto.randomUUID(),
+            name: defaultAccountName(type, result.map((a) => a.name)),
+            type,
+            balance,
+            annualContribution,
+            employerMatch: 0,
+            costBasis: null,
+          }
+    // The merged account takes the place of the first one of its type
+    const at = ofType[0] ? result.indexOf(ofType[0]) : result.length
+    result = result.filter((a) => a.type !== type || a === ofType[0])
+    if (ofType[0]) result.splice(result.indexOf(ofType[0]), 1, ...(merged ? [merged] : []))
+    else if (merged) result.splice(at, 0, merged)
   }
   return result
 }

@@ -4,7 +4,7 @@ import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { ALL_STATES } from '../utils/states'
-import { applySavings, QUICK_ACCOUNT_TYPES, savingsFromPlan, type QuickSavings } from '../utils/quickStart'
+import { applySavings, isBlankPlan, QUICK_ACCOUNT_TYPES, savingsFromPlan, type QuickSavings } from '../utils/quickStart'
 import { NumberField } from './NumberField'
 
 const STEPS = ['About you', 'Where you’ll live', 'Your savings', 'Spending', 'Social Security'] as const
@@ -21,6 +21,8 @@ export function QuickStart() {
   const loadExample = usePlanStore((s) => s.loadExample)
   const setGuide = useUiPrefs((s) => s.setGuide)
   const [step, setStep] = useState(0)
+  // Opened on purpose for an existing plan: leaving just returns to it
+  const [startedBlank] = useState(() => isBlankPlan(plan))
   const [draft, setDraft] = useState<Plan>(plan)
   const [savings, setSavings] = useState<QuickSavings>(() => savingsFromPlan(plan))
   const set = (patch: Partial<Plan>) => setDraft((d) => ({ ...d, ...patch }))
@@ -86,8 +88,9 @@ export function QuickStart() {
     </>,
     <>
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        Today’s balances{married ? ' for both of you' : ''}, and what you add each year until you retire. Leave empty
-        what you don’t have. You can add employer matches and more detail later.
+        Today’s balances{married ? ' for both of you' : ''}, and what you add each year until you retire. If you have
+        more than one account of a type, enter the total (they’ll be combined into one). Leave empty what you don’t
+        have. You can add employer matches and more detail later.
       </p>
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 sm:grid-cols-[1fr_8rem_8rem]">
@@ -188,21 +191,26 @@ export function QuickStart() {
       </form>
 
       <p className="border-t border-slate-200 pt-4 text-sm text-slate-500 dark:border-slate-800">
-        Prefer the full form?{' '}
+        {startedBlank ? 'Prefer the full form?' : 'Changed your mind?'}{' '}
         <button type="button" className="font-medium text-teal-700 underline dark:text-teal-400" onClick={() => setGuide('skipped')}>
-          Skip setup
-        </button>{' '}
-        or{' '}
-        <button
-          type="button"
-          className="font-medium text-teal-700 underline dark:text-teal-400"
-          onClick={() => {
-            loadExample()
-            setGuide('auto')
-          }}
-        >
-          explore an example plan
+          {startedBlank ? 'Skip setup' : 'Close without saving'}
         </button>
+        {startedBlank && (
+          <>
+            {' '}
+            or{' '}
+            <button
+              type="button"
+              className="font-medium text-teal-700 underline dark:text-teal-400"
+              onClick={() => {
+                loadExample()
+                setGuide('auto')
+              }}
+            >
+              explore an example plan
+            </button>
+          </>
+        )}
         . Nothing you enter leaves this browser.
       </p>
     </section>

@@ -19,6 +19,45 @@ describe('guided setup', () => {
     ])
   })
 
+  it('shows combined totals and merges a changed type into one account', () => {
+    const accounts = [
+      { id: 'a', name: 'My 401(k)', type: '401k' as const, balance: 300_000, annualContribution: 20_000, employerMatch: 5_000, costBasis: null },
+      { id: 'r', name: 'Roth IRA', type: 'roth' as const, balance: 50_000, annualContribution: 0, employerMatch: 0, costBasis: null },
+      { id: 'b', name: 'Spouse 401(k)', type: '401k' as const, balance: 200_000, annualContribution: 10_000, employerMatch: 3_000, costBasis: null },
+    ]
+    const savings = savingsFromPlan({ ...blankPlan, accounts })
+    expect(savings['401k']).toEqual({ balance: 500_000, annualContribution: 30_000 })
+    savings['401k'] = { balance: 520_000, annualContribution: 30_000 }
+    const result = applySavings(accounts, savings)
+    // No double counting: one 401(k) with the new total, in the first one's place, matches combined
+    expect(result.map((a) => [a.name, a.balance, a.employerMatch])).toEqual([
+      ['My 401(k)', 520_000, 8_000],
+      ['Roth IRA', 50_000, 0],
+    ])
+  })
+
+  it('leaves unchanged types alone and removes a type set to zero', () => {
+    const accounts = [
+      { id: 'a', name: 'Old 401(k)', type: '401k' as const, balance: 100, annualContribution: 0, employerMatch: 0, costBasis: null },
+      { id: 'b', name: 'New 401(k)', type: '401k' as const, balance: 200, annualContribution: 0, employerMatch: 0, costBasis: null },
+      { id: 'c', name: 'Savings', type: 'cash' as const, balance: 900, annualContribution: 0, employerMatch: 0, costBasis: null },
+    ]
+    const savings = savingsFromPlan({ ...blankPlan, accounts })
+    expect(applySavings(accounts, savings)).toEqual(accounts)
+    savings.cash = { balance: 0, annualContribution: 0 }
+    expect(applySavings(accounts, savings).map((a) => a.id)).toEqual(['a', 'b'])
+  })
+
+  it('combines cost basis when merging brokerage accounts', () => {
+    const accounts = [
+      { id: 'x', name: 'Brokerage', type: 'taxable' as const, balance: 100, annualContribution: 0, employerMatch: 0, costBasis: 60 },
+      { id: 'y', name: 'Brokerage 2', type: 'taxable' as const, balance: 50, annualContribution: 0, employerMatch: 0, costBasis: null },
+    ]
+    const savings = savingsFromPlan({ ...blankPlan, accounts })
+    savings.taxable = { balance: 160, annualContribution: 0 }
+    expect(applySavings(accounts, savings)).toEqual([{ ...accounts[0], balance: 160, costBasis: 110 }])
+  })
+
   it('updates existing accounts instead of duplicating them', () => {
     const savings = savingsFromPlan(examplePlan)
     savings['401k'] = { ...savings['401k'], balance: 1 }

@@ -3,6 +3,7 @@ import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { VerdictPanel } from '../components/VerdictPanel'
+import { verdictFor } from '../utils/levers'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
@@ -34,6 +35,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   }, [plan])
   const sims = useSimulations(tasks)
   const [mcResult, withoutAnnuityResult, noConversionsResult, bothLiveResult] = (sims.data ?? []) as (MonteCarloResult | null)[]
+  // The plan the shown results were computed for (results lag edits while workers run)
+  const resultPlan = sims.dataTasks?.[0]?.plan ?? plan
   const noConversionsProjection = useMemo(
     () => (plan.rothConversion.enabled ? projectPlan({ ...plan, rothConversion: { ...plan.rothConversion, enabled: false } }) : null),
     [plan],
@@ -57,7 +60,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const ssMonthly = householdSocialSecurityMonthly(plan)
   const lasts = result.depletionAge === null
   const success = Math.round(mc.successRate * 100)
-  const successTone = success >= 85 ? 'good' : success >= 70 ? 'warn' : 'bad'
+  const successTone = ({ strong: 'good', borderline: 'warn', 'at-risk': 'bad' } as const)[verdictFor(mc.successRate)]
   const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
@@ -102,7 +105,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
-      <VerdictPanel plan={plan} mc={mc} />
+      <VerdictPanel plan={resultPlan} mc={mc} />
 
       {mc.guardrails && (
         <p className="text-sm text-slate-600 dark:text-slate-400">

@@ -1,5 +1,6 @@
-import { applyScenario, planEndAge, type Plan } from '../engine'
+import { applyScenario, planEndAge, type Plan, type Scenario } from '../engine'
 import { formatUSD } from './format'
+import { roundSpending, SCENARIO_PRESETS } from './scenarioPresets'
 
 export interface Lever {
   key: string
@@ -7,38 +8,31 @@ export interface Lever {
   label: string
   /** The plan with this change */
   plan: Plan
-  /** Scenario preset that reproduces it on the Compare page, if any */
+  /** Compare-page preset that makes the same change (the lever's plan is built from it) */
   preset?: string
 }
 
-// Same rounding as the Compare page presets, so a lever and its scenario match
-const round1000 = (n: number) => Math.round(n / 1000) * 1000
-const withOverrides = (plan: Plan, overrides: Parameters<typeof applyScenario>[1]['overrides']) =>
-  applyScenario(plan, { id: 'lever', name: 'lever', overrides, stress: 'none', slot: 1 })
+const apply = (plan: Plan, change: Omit<Scenario, 'id' | 'slot'>) => applyScenario(plan, { ...change, id: 'lever', slot: 1 })
+
+/** A lever built from a Compare-page preset, so "Compare" adds exactly the change that was tested. */
+function fromPreset(plan: Plan, key: string, label: (change: Omit<Scenario, 'id' | 'slot'>) => string): Lever {
+  const change = SCENARIO_PRESETS.find((p) => p.key === key)!.make(plan)
+  return { key, label: label(change), plan: apply(plan, change), preset: key }
+}
 
 /** Common, actionable changes to test against the plan ("what would help most"). */
 export function leverVariants(plan: Plan): Lever[] {
   const levers: Lever[] = []
   const r = plan.retirementAge
   if (r + 2 < planEndAge(plan)) {
-    levers.push({ key: 'later', label: `Retire at ${r + 2} instead of ${r}`, plan: withOverrides(plan, { retirementAge: r + 2 }), preset: 'later' })
+    levers.push(fromPreset(plan, 'later', (c) => `Retire at ${c.overrides.retirementAge} instead of ${r}`))
   }
-  const less = round1000(plan.annualSpending * 0.9)
+  const less = SCENARIO_PRESETS.find((p) => p.key === 'spend-less')!.make(plan).overrides.annualSpending!
   if (less > 0 && less < plan.annualSpending) {
-    levers.push({
-      key: 'spend-less',
-      label: `Spend ${formatUSD(less)} a year instead of ${formatUSD(plan.annualSpending)}`,
-      plan: withOverrides(plan, { annualSpending: less }),
-      preset: 'spend-less',
-    })
+    levers.push(fromPreset(plan, 'spend-less', () => `Spend ${formatUSD(less)} a year instead of ${formatUSD(plan.annualSpending)}`))
   }
   if (plan.socialSecurityAtFRA > 0 && plan.socialSecurityClaimAge < 70) {
-    levers.push({
-      key: 'ss70',
-      label: `Claim Social Security at 70 instead of ${plan.socialSecurityClaimAge}`,
-      plan: withOverrides(plan, { socialSecurityClaimAge: 70 }),
-      preset: 'ss70',
-    })
+    levers.push(fromPreset(plan, 'ss70', () => `Claim Social Security at 70 instead of ${plan.socialSecurityClaimAge}`))
   }
   if (plan.spendingRule.type === 'fixed') {
     levers.push({
@@ -52,11 +46,11 @@ export function leverVariants(plan: Plan): Lever[] {
 
 /** "Spend 10% more" check for plans that already look strong. */
 export function spendMoreVariant(plan: Plan): Lever {
-  const more = round1000(plan.annualSpending * 1.1)
+  const more = roundSpending(plan.annualSpending * 1.1)
   return {
     key: 'spend-more',
-    label: `Spend ${formatUSD(more)} a year instead of ${formatUSD(plan.annualSpending)}`,
-    plan: withOverrides(plan, { annualSpending: more }),
+    label: `Spending ${formatUSD(more)} a year instead of ${formatUSD(plan.annualSpending)}`,
+    plan: apply(plan, { name: 'Spend more', overrides: { annualSpending: more }, stress: 'none' }),
   }
 }
 
@@ -67,5 +61,8 @@ export function verdictFor(successRate: number): Verdict {
   return pct >= 85 ? 'strong' : pct >= 70 ? 'borderline' : 'at-risk'
 }
 
-/** "a 64%" / "an 85%" / "an 8%" / "an 11%" */
-export const withArticle = (pct: number) => `${/^(8|11|18)/.test(String(pct)) && ![1, 180].includes(pct) ? 'an' : 'a'} ${pct}%`
+/** "a" or "an" before a spoken percentage: an 8%, an 11%, an 18%, an 80–89%, but a 1%, a 100% */
+export const articleFor = (pct: number) => (/^(8|11|18)/.test(String(pct)) && ![1, 180].includes(pct) ? 'an' : 'a')
+
+/** "a 64%" / "an 85%" */
+export const withArticle = (pct: number) => `${articleFor(pct)} ${pct}%`
