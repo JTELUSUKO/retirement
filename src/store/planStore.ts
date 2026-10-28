@@ -190,6 +190,12 @@ export const PLAN_VERSION = 16
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
+/**
+ * The plan Undo should go back to. Right after a Reset (no edits since, or undo would be gone), that's the plan before
+ * the Reset, so Reset → Load example → Undo doesn't lose it to the blank plan.
+ */
+const undoTarget = (s: Pick<PlanState, 'plan' | 'undo'>) => (s.undo?.action === 'cleared' ? s.undo.plan : s.plan)
+
 interface PlanState {
   plan: Plan
   /** Plan before the last Clear / Load example, so it can be undone. Not saved to storage. */
@@ -281,8 +287,8 @@ export const usePlanStore = create<PlanState>()(
           edit((p) => ({ ...p, scenarios: p.scenarios.map((sc) => (sc.id === id ? { ...sc, ...patch } : sc)) })),
         removeScenario: (id) => edit((p) => ({ ...p, scenarios: p.scenarios.filter((sc) => sc.id !== id) })),
         clear: () => set((s) => ({ plan: clearedPlan(s.plan), undo: { plan: s.plan, action: 'cleared' } })),
-        loadExample: () => set((s) => ({ plan: examplePlan, undo: { plan: s.plan, action: 'example' } })),
-        importPlan: (plan) => set((s) => ({ plan, undo: { plan: s.plan, action: 'imported' } })),
+        loadExample: () => set((s) => ({ plan: examplePlan, undo: { plan: undoTarget(s), action: 'example' } })),
+        importPlan: (plan) => set((s) => ({ plan, undo: { plan: undoTarget(s), action: 'imported' } })),
         undoLast: () => set((s) => (s.undo ? { plan: s.undo.plan, undo: null } : s)),
       }
     },

@@ -8,31 +8,34 @@ export interface Lever {
   label: string
   /** The plan with this change */
   plan: Plan
-  /** Compare-page preset that makes the same change (the lever's plan is built from it) */
-  preset?: string
+  /** The Compare-page scenario this lever tested, so "Compare" adds exactly that change (even if the plan moved on) */
+  change?: Change
 }
 
-const apply = (plan: Plan, change: Omit<Scenario, 'id' | 'slot'>) => applyScenario(plan, { ...change, id: 'lever', slot: 1 })
+type Change = Omit<Scenario, 'id' | 'slot'>
 
-/** A lever built from a Compare-page preset, so "Compare" adds exactly the change that was tested. */
-function fromPreset(plan: Plan, key: string, label: (change: Omit<Scenario, 'id' | 'slot'>) => string): Lever {
-  const change = SCENARIO_PRESETS.find((p) => p.key === key)!.make(plan)
-  return { key, label: label(change), plan: apply(plan, change), preset: key }
-}
+const apply = (plan: Plan, change: Change) => applyScenario(plan, { ...change, id: 'lever', slot: 1 })
+
+const presetChange = (plan: Plan, key: string) => SCENARIO_PRESETS.find((p) => p.key === key)!.make(plan)
+
+/** A lever built from a Compare-page change, so "Compare" adds exactly the change that was tested. */
+const fromChange = (plan: Plan, key: string, change: Change, label: string): Lever => ({ key, label, plan: apply(plan, change), change })
 
 /** Common, actionable changes to test against the plan ("what would help most"). */
 export function leverVariants(plan: Plan): Lever[] {
   const levers: Lever[] = []
   const r = plan.retirementAge
   if (r + 2 < planEndAge(plan)) {
-    levers.push(fromPreset(plan, 'later', (c) => `Retire at ${c.overrides.retirementAge} instead of ${r}`))
+    const later = presetChange(plan, 'later')
+    levers.push(fromChange(plan, 'later', later, `Retire at ${later.overrides.retirementAge} instead of ${r}`))
   }
-  const less = SCENARIO_PRESETS.find((p) => p.key === 'spend-less')!.make(plan).overrides.annualSpending!
+  const spendLess = presetChange(plan, 'spend-less')
+  const less = spendLess.overrides.annualSpending!
   if (less > 0 && less < plan.annualSpending) {
-    levers.push(fromPreset(plan, 'spend-less', () => `Spend ${formatUSD(less)} a year instead of ${formatUSD(plan.annualSpending)}`))
+    levers.push(fromChange(plan, 'spend-less', spendLess, `Spend ${formatUSD(less)} a year instead of ${formatUSD(plan.annualSpending)}`))
   }
   if (plan.socialSecurityAtFRA > 0 && plan.socialSecurityClaimAge < 70) {
-    levers.push(fromPreset(plan, 'ss70', () => `Claim Social Security at 70 instead of ${plan.socialSecurityClaimAge}`))
+    levers.push(fromChange(plan, 'ss70', presetChange(plan, 'ss70'), `Claim Social Security at 70 instead of ${plan.socialSecurityClaimAge}`))
   }
   if (plan.spendingRule.type === 'fixed') {
     levers.push({

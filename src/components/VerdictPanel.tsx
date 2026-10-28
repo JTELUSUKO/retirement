@@ -5,7 +5,6 @@ import { useSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { endLabel } from '../utils/labels'
 import { articleFor, leverVariants, spendMoreVariant, verdictFor, withArticle, type Lever } from '../utils/levers'
-import { SCENARIO_PRESETS } from '../utils/scenarioPresets'
 import { InfoTip } from './InfoTip'
 
 /** Smallest gain (in percentage points) worth listing */
@@ -35,10 +34,13 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
 
   // Rows come from the tasks that produced the results, which may be an earlier version of the plan
   const done = sims.data && sims.dataTasks ? sims.dataTasks.map((t, i) => ({ ...t!, rate: pct(sims.data![i]!.successRate) })) : null
+  // Out of date while new results are on the way, or for good if the latest run failed
+  const stale = sims.pending || sims.error !== null
   const helpful = (done ?? [])
     .filter((r) => r.lever.key !== 'spend-more' && r.rate - r.baseline >= MIN_GAIN)
     .sort((a, b) => b.rate - a.rate)
-  const spendMore = done?.find((r) => r.lever.key === 'spend-more') ?? null
+  // Only offered while the current plan is strong, and only from results for the current plan
+  const spendMore = verdict === 'strong' && !stale ? (done?.find((r) => r.lever.key === 'spend-more') ?? null) : null
 
   const headline = {
     strong: `Your plan looks strong: ${withArticle(success)} chance your money lasts to ${endLabel(plan)}.`,
@@ -72,9 +74,9 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
           than {MIN_GAIN} points on its own.
         </p>
       ) : (
-        <ul className={`mt-2 space-y-2 ${sims.pending ? 'opacity-60' : ''}`}>
+        <ul className={`mt-2 space-y-2 ${stale ? 'opacity-60' : ''}`}>
           {helpful.map(({ lever, rate, baseline }) => {
-            const preset = SCENARIO_PRESETS.find((p) => p.key === lever.preset)
+            const { change } = lever
             return (
               <li key={lever.key} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
                 <span>
@@ -83,13 +85,13 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
                     {baseline}% → <strong className="text-slate-900 dark:text-slate-100">{rate}%</strong> (+{rate - baseline} points)
                   </span>
                 </span>
-                {preset ? (
+                {change ? (
                   <button
                     type="button"
                     disabled={full}
                     title={full ? `Compare holds up to ${MAX_SCENARIOS} scenarios; remove one first` : undefined}
                     onClick={() => {
-                      addScenario(preset.make(usePlanStore.getState().plan))
+                      addScenario(change)
                       window.location.hash = '#compare'
                     }}
                     className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
@@ -117,7 +119,11 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
           <strong className="tabular-nums text-slate-900 dark:text-slate-100">{spendMore.rate}%</strong> chance.
         </p>
       )}
-      {sims.pending && done && <p className="mt-2 text-xs text-slate-500">Updating…</p>}
+      {done && sims.error ? (
+        <p className="mt-2 text-xs text-red-600 dark:text-red-400">✕ Couldn’t update these for your latest changes: {sims.error}</p>
+      ) : (
+        sims.pending && done && <p className="mt-2 text-xs text-slate-500">Updating…</p>
+      )}
     </section>
   )
 }

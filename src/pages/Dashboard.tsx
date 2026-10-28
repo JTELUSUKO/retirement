@@ -9,6 +9,7 @@ import { BucketChart } from '../components/BucketChart'
 import { GettingStarted } from '../components/GettingStarted'
 import { PlanForm } from '../components/PlanForm'
 import { QuickStart } from '../components/QuickStart'
+import { UndoBar } from '../components/PlanToolbar'
 import { useUiPrefs } from '../store/uiPrefs'
 import { isBlankPlan } from '../utils/quickStart'
 import { ProbabilityChart } from '../components/ProbabilityChart'
@@ -175,7 +176,15 @@ export function Dashboard() {
   const guide = useUiPrefs((s) => s.guide)
   const issues = validatePlan(plan)
 
-  if (guide === 'open' || (guide === 'auto' && isBlankPlan(plan))) return <QuickStart />
+  // Keep Undo reachable after a Reset, which lands here because the plan is now blank
+  if (guide === 'open' || (guide === 'auto' && isBlankPlan(plan))) {
+    return (
+      <div className="mx-auto max-w-xl space-y-3">
+        <UndoBar />
+        <QuickStart />
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-8 lg:grid-cols-[400px_1fr]">

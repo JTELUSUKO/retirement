@@ -8,9 +8,21 @@ const button =
 
 const undoMessage = { cleared: 'Plan reset to blank.', example: 'Example plan loaded.', imported: 'Plan imported.' }
 
+/** "Plan reset to blank. Undo" after the last Reset / Load example / Import. Also shown above the guided setup. */
+export function UndoBar() {
+  const { undo, undoLast } = usePlanStore()
+  if (!undo) return null
+  return (
+    <div role="status" className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900">
+      <span>{undoMessage[undo.action]}</span>
+      <button type="button" onClick={undoLast} className="font-medium underline underline-offset-2">Undo</button>
+    </div>
+  )
+}
+
 /** Reset / Load example / Export / Import / Guided setup, with an Undo bar and import errors. */
 export function PlanToolbar() {
-  const { plan, undo, clear, loadExample, importPlan, undoLast } = usePlanStore()
+  const { plan, clear, loadExample, importPlan } = usePlanStore()
   const setGuide = useUiPrefs((s) => s.setGuide)
   const fileInput = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,12 +82,7 @@ export function PlanToolbar() {
       <p className="text-xs text-slate-500">
         Your plan is saved only in this browser. Use Export to keep a backup or move it to another device.
       </p>
-      {undo && (
-        <div role="status" className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-100 dark:text-slate-900">
-          <span>{undoMessage[undo.action]}</span>
-          <button type="button" onClick={undoLast} className="font-medium underline underline-offset-2">Undo</button>
-        </div>
-      )}
+      <UndoBar />
       {error && (
         <div role="alert" className="flex items-start justify-between gap-3 rounded-md border border-l-4 border-slate-200 border-l-red-600 px-3 py-2 text-sm dark:border-slate-800 dark:border-l-red-500">
           <span>✕ Couldn’t import: {error}</span>

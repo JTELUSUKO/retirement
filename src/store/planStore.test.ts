@@ -41,6 +41,15 @@ describe('plan store: clear, load example, undo', () => {
     expect(state().plan).toEqual(mine)
   })
 
+  it('Reset then Load example still undoes back to the plan from before the Reset', () => {
+    state().update({ annualSpending: 12_345 })
+    const mine = state().plan
+    state().clear()
+    state().loadExample()
+    state().undoLast()
+    expect(state().plan).toEqual(mine)
+  })
+
   it('editing after clear drops the undo point', () => {
     state().clear()
     state().update({ currentAge: 50 })

@@ -35,9 +35,12 @@ describe('levers', () => {
 
 describe('levers match the Compare presets', () => {
   it('tests exactly the change that Compare adds', () => {
-    for (const lever of leverVariants(examplePlan).filter((l) => l.preset)) {
-      const change = SCENARIO_PRESETS.find((p) => p.key === lever.preset)!.make(examplePlan)
-      expect(lever.plan).toEqual(applyScenario(examplePlan, { ...change, id: 'lever', slot: 1 }))
+    const levers = leverVariants(examplePlan).filter((l) => l.change)
+    expect(levers.map((l) => l.key)).toEqual(['later', 'spend-less', 'ss70'])
+    for (const lever of levers) {
+      const change = SCENARIO_PRESETS.find((p) => p.key === lever.key)!.make(examplePlan)
+      expect(lever.change).toEqual(change)
+      expect(lever.plan).toEqual(applyScenario(examplePlan, { ...lever.change!, id: 'lever', slot: 1 }))
     }
   })
 

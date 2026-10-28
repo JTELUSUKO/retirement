@@ -28,37 +28,48 @@ export function savingsFromPlan(plan: Plan): QuickSavings {
 
 /**
  * Write the guided-setup totals into the accounts. A type whose totals didn't change is left as it is. A changed
- * type becomes one account holding the new totals (keeping the first account's name, plus the combined employer
- * match and cost basis); a type set to zero is removed.
+ * type becomes one account holding the new totals (keeping the first account's name and the combined employer match;
+ * cost basis is scaled with the balance so the share that is gains stays the same). A type set to zero is removed.
  */
 export function applySavings(accounts: Account[], savings: QuickSavings): Account[] {
   const before = savingsFromPlan({ accounts } as Plan)
-  let result = [...accounts]
+  let result = accounts
   for (const type of QUICK_ACCOUNT_TYPES) {
     const { balance, annualContribution } = savings[type]
-    if (balance === before[type].balance && annualContribution === before[type].annualContribution) continue
+    const old = before[type]
+    if (balance === old.balance && annualContribution === old.annualContribution) continue
     const ofType = result.filter((a) => a.type === type)
-    const employerMatch = ofType.reduce((sum, a) => sum + a.employerMatch, 0)
-    const costBasis = ofType.some((a) => a.costBasis !== null) ? ofType.reduce((sum, a) => sum + (a.costBasis ?? a.balance), 0) : null
-    const keep = balance > 0 || annualContribution > 0 || employerMatch > 0
-    const merged: Account | null = !keep
-      ? null
-      : ofType[0]
-        ? { ...ofType[0], balance, annualContribution, employerMatch, costBasis }
-        : {
-            id: crypto.randomUUID(),
-            name: defaultAccountName(type, result.map((a) => a.name)),
-            type,
-            balance,
-            annualContribution,
-            employerMatch: 0,
-            costBasis: null,
-          }
-    // The merged account takes the place of the first one of its type
-    const at = ofType[0] ? result.indexOf(ofType[0]) : result.length
-    result = result.filter((a) => a.type !== type || a === ofType[0])
-    if (ofType[0]) result.splice(result.indexOf(ofType[0]), 1, ...(merged ? [merged] : []))
-    else if (merged) result.splice(at, 0, merged)
+    const first = ofType[0]
+    const merged: Account | null =
+      balance <= 0 && annualContribution <= 0
+        ? null
+        : first
+          ? {
+              ...first,
+              balance,
+              annualContribution,
+              employerMatch: ofType.reduce((sum, a) => sum + a.employerMatch, 0),
+              costBasis: scaledBasis(ofType, old.balance, balance),
+            }
+          : {
+              id: crypto.randomUUID(),
+              name: defaultAccountName(type, result.map((a) => a.name)),
+              type,
+              balance,
+              annualContribution,
+              employerMatch: 0,
+              costBasis: null,
+            }
+    // The merged account takes the place of the first one of its type (or goes at the end for a new type)
+    result = result.flatMap((a) => (a.type !== type ? [a] : a === first && merged ? [merged] : []))
+    if (!first && merged) result = [...result, merged]
   }
   return result
+}
+
+/** Combined cost basis (null if none of the accounts tracks one), scaled from the old total balance to the new. */
+function scaledBasis(ofType: Account[], oldBalance: number, newBalance: number): number | null {
+  if (!ofType.some((a) => a.costBasis !== null)) return null
+  const basis = ofType.reduce((sum, a) => sum + (a.costBasis ?? a.balance), 0)
+  return oldBalance > 0 ? Math.round((basis * newBalance) / oldBalance) : newBalance
 }

@@ -192,7 +192,7 @@ export function QuickStart() {
 
       <p className="border-t border-slate-200 pt-4 text-sm text-slate-500 dark:border-slate-800">
         {startedBlank ? 'Prefer the full form?' : 'Changed your mind?'}{' '}
-        <button type="button" className="font-medium text-teal-700 underline dark:text-teal-400" onClick={() => setGuide('skipped')}>
+        <button type="button" className="font-medium text-teal-700 underline dark:text-teal-400" onClick={() => setGuide(startedBlank ? 'skipped' : 'auto')}>
           {startedBlank ? 'Skip setup' : 'Close without saving'}
         </button>
         {startedBlank && (

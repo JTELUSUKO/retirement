@@ -54,8 +54,28 @@ describe('guided setup', () => {
       { id: 'y', name: 'Brokerage 2', type: 'taxable' as const, balance: 50, annualContribution: 0, employerMatch: 0, costBasis: null },
     ]
     const savings = savingsFromPlan({ ...blankPlan, accounts })
+    // Basis 60 + 50 (no basis tracked = all basis) = 110 of 150, scaled to the new 160 total
     savings.taxable = { balance: 160, annualContribution: 0 }
-    expect(applySavings(accounts, savings)).toEqual([{ ...accounts[0], balance: 160, costBasis: 110 }])
+    expect(applySavings(accounts, savings)).toEqual([{ ...accounts[0], balance: 160, costBasis: 117 }])
+  })
+
+  it('scales cost basis down with a smaller balance, so withdrawals are not all losses', () => {
+    const accounts = [
+      { id: 'x', name: 'Brokerage', type: 'taxable' as const, balance: 150_000, annualContribution: 0, employerMatch: 0, costBasis: 100_000 },
+    ]
+    const savings = savingsFromPlan({ ...blankPlan, accounts })
+    savings.taxable = { balance: 50_000, annualContribution: 0 }
+    expect(applySavings(accounts, savings)[0]!.costBasis).toBe(33_333)
+  })
+
+  it('removes a type set to zero even when it has an employer match', () => {
+    const accounts = [
+      { id: 'a', name: '401(k)', type: '401k' as const, balance: 100_000, annualContribution: 10_000, employerMatch: 5_000, costBasis: null },
+      { id: 'c', name: 'Savings', type: 'cash' as const, balance: 900, annualContribution: 0, employerMatch: 0, costBasis: null },
+    ]
+    const savings = savingsFromPlan({ ...blankPlan, accounts })
+    savings['401k'] = { balance: 0, annualContribution: 0 }
+    expect(applySavings(accounts, savings).map((a) => a.id)).toEqual(['c'])
   })
 
   it('updates existing accounts instead of duplicating them', () => {
