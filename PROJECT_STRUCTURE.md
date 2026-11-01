@@ -100,6 +100,7 @@ retirement/
 │   │   ├── PlanForm.tsx         # All plan inputs (age, accounts, income, assumptions)
 │   │   ├── PlanToolbar.tsx      # Clear / Load example / Export / Import, Undo bar, import errors
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
+│   │   ├── LazyCharts.tsx       # Loads ProbabilityChart and BucketChart after first paint (the charting library is the biggest download)
 │   │   ├── StatCard.tsx         # Headline number tiles
 │   │   ├── StateField.tsx       # State picker + how the state taxes retirees + partial exemption amount
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
@@ -114,7 +115,7 @@ retirement/
 │   │   └── format.ts            # Currency formatting
 │   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / #summary) + footer;
 │   │                            #   Ask Claude is hidden from the menu but still opens at #ask
-│   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app
+│   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app, reloads once after a deploy
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
@@ -373,8 +374,9 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 ## Deployment
 
 The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). Deploy it with
-`BASE_PATH=/ npm run build && npx wrangler deploy`. `public/_headers` sets its security headers (HSTS, a
-Content-Security-Policy that allows only this site plus api.anthropic.com for Ask Claude, no framing, nosniff).
+`BASE_PATH=/ npm run build && npx wrangler deploy`. `public/_headers` sets its security headers (HSTS, no framing, nosniff, and a
+Content-Security-Policy: scripts and styles from this site only, images also from `data:` URLs, network requests to
+this site and api.anthropic.com for Ask Claude). `npm run preview` serves the same headers.
 The build targets Vite's default "baseline widely available" browsers (Chrome/Edge 111+, Firefox 114+, Safari 16.4+).
 
 Pushing to `main` also runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to

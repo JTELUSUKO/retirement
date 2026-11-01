@@ -80,3 +80,12 @@ body {
     break-inside: avoid;
   }
 }
+
+/* iPhones zoom the page in when a text box under 16px is tapped, so touch screens get 16px form text */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

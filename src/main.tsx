@@ -16,6 +16,28 @@ if (window.location.hostname.endsWith('.github.io')) {
   }
   window.location.replace(movedUrl(saved, window.location.hash))
 } else {
+  // After a deploy, an open tab may ask for chart or page files that no longer exist. Reload once to get the new
+  // version (the plan is saved in the browser); the flag stops a reload loop if the files are really missing.
+  window.addEventListener('vite:preloadError', (event) => {
+    try {
+      if (sessionStorage.getItem('reloaded-for-update')) return
+      sessionStorage.setItem('reloaded-for-update', '1')
+    } catch {
+      return
+    }
+    event.preventDefault()
+    window.location.reload()
+  })
+  window.addEventListener('load', () =>
+    setTimeout(() => {
+      try {
+        sessionStorage.removeItem('reloaded-for-update')
+      } catch {
+        // Storage blocked: nothing to clear
+      }
+    }, 10_000),
+  )
+
   const moved = planFromMove(window.location.hash)
   if (moved) {
     // Only fill an empty planner, so an old bookmark never overwrites a plan made here

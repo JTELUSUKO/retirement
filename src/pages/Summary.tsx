@@ -1,7 +1,7 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
 import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
-import { ProbabilityChart } from '../components/ProbabilityChart'
+import { ProbabilityChart } from '../components/LazyCharts'
 import {
   applyScenario,
   householdSocialSecurityMonthly,
@@ -144,7 +144,7 @@ export function Summary() {
         <DisclaimerBanner printable />
 
         <Section title="Key results">
-          <div className="grid grid-cols-4 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4 print:grid-cols-4">
             {[
               [`Chance money lasts to ${endLabel(plan)}`, `${success}%`, `${verdict} · ${mc.runs.toLocaleString()} simulations`],
               [`Savings at ${plan.retirementAge}`, formatUSDCompact(base.savingsAtRetirement), "Today's dollars"],
@@ -173,41 +173,44 @@ export function Summary() {
 
         {scenarios.length > 0 && (
           <Section title="Scenarios">
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th className={th}>Scenario</th>
-                  <th className={th}>Changes</th>
-                  <th className={`${th} ${num}`}>Chance lasts</th>
-                  <th className={`${th} ${num}`}>Left, typical</th>
-                  <th className={`${th} ${num}`}>Left, poor</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className={`${td} font-medium`}>Your plan</td>
-                  <td className={`${td} text-slate-600`}>—</td>
-                  <td className={`${td} ${num}`}>{success}%</td>
-                  <td className={`${td} ${num}`}>{formatUSDCompact(base.leftTypical)}</td>
-                  <td className={`${td} ${num}`}>{formatUSDCompact(base.leftPoor)}</td>
-                </tr>
-                {scenarios.map(({ scenario, result }) => (
-                  <tr key={scenario.id}>
-                    <td className={`${td} font-medium`}>{scenario.name}</td>
-                    <td className={`${td} text-slate-600`}>{describeScenario(plan, scenario)}</td>
-                    {result.issues.length > 0 ? (
-                      <td colSpan={3} className={`${td} text-right text-red-700`}>{result.issues.join(' ')}</td>
-                    ) : (
-                      <>
-                        <td className={`${td} ${num}`}>{Math.round(result.successRate * 100)}%</td>
-                        <td className={`${td} ${num}`}>{formatUSDCompact(result.leftTypical)}</td>
-                        <td className={`${td} ${num}`}>{formatUSDCompact(result.leftPoor)}</td>
-                      </>
-                    )}
+            {/* Wide tables scroll sideways on phones instead of widening the page */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className={th}>Scenario</th>
+                    <th className={th}>Changes</th>
+                    <th className={`${th} ${num}`}>Chance lasts</th>
+                    <th className={`${th} ${num}`}>Left, typical</th>
+                    <th className={`${th} ${num}`}>Left, poor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className={`${td} font-medium`}>Your plan</td>
+                    <td className={`${td} text-slate-600`}>—</td>
+                    <td className={`${td} ${num}`}>{success}%</td>
+                    <td className={`${td} ${num}`}>{formatUSDCompact(base.leftTypical)}</td>
+                    <td className={`${td} ${num}`}>{formatUSDCompact(base.leftPoor)}</td>
+                  </tr>
+                  {scenarios.map(({ scenario, result }) => (
+                    <tr key={scenario.id}>
+                      <td className={`${td} font-medium`}>{scenario.name}</td>
+                      <td className={`${td} text-slate-600`}>{describeScenario(plan, scenario)}</td>
+                      {result.issues.length > 0 ? (
+                        <td colSpan={3} className={`${td} text-right text-red-700`}>{result.issues.join(' ')}</td>
+                      ) : (
+                        <>
+                          <td className={`${td} ${num}`}>{Math.round(result.successRate * 100)}%</td>
+                          <td className={`${td} ${num}`}>{formatUSDCompact(result.leftTypical)}</td>
+                          <td className={`${td} ${num}`}>{formatUSDCompact(result.leftPoor)}</td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Section>
         )}
 
@@ -270,35 +273,37 @@ export function Summary() {
           {plan.accounts.length === 0 ? (
             <p className="text-sm text-slate-600">None</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th className={th}>Account</th>
-                  <th className={th}>Type</th>
-                  <th className={`${th} ${num}`}>Balance</th>
-                  <th className={`${th} ${num}`}>You add / yr</th>
-                  <th className={`${th} ${num}`}>Match / yr</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plan.accounts.map((acc) => (
-                  <tr key={acc.id}>
-                    <td className={td}>{acc.name}</td>
-                    <td className={`${td} text-slate-600`}>{ACCOUNT_TYPE_LABEL[acc.type]}</td>
-                    <td className={`${td} ${num}`}>{formatUSD(acc.balance)}</td>
-                    <td className={`${td} ${num}`}>{formatUSD(acc.annualContribution)}</td>
-                    <td className={`${td} ${num}`}>{formatUSD(acc.employerMatch)}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className={th}>Account</th>
+                    <th className={th}>Type</th>
+                    <th className={`${th} ${num}`}>Balance</th>
+                    <th className={`${th} ${num}`}>You add / yr</th>
+                    <th className={`${th} ${num}`}>Match / yr</th>
                   </tr>
-                ))}
-                <tr>
-                  <td className="py-1 pr-3 font-medium">Total</td>
-                  <td />
-                  <td className={`py-1 pr-3 font-medium ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.balance, 0))}</td>
-                  <td className={`py-1 pr-3 ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.annualContribution, 0))}</td>
-                  <td className={`py-1 pr-3 ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.employerMatch, 0))}</td>
-                </tr>
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {plan.accounts.map((acc) => (
+                    <tr key={acc.id}>
+                      <td className={td}>{acc.name}</td>
+                      <td className={`${td} text-slate-600`}>{ACCOUNT_TYPE_LABEL[acc.type]}</td>
+                      <td className={`${td} ${num}`}>{formatUSD(acc.balance)}</td>
+                      <td className={`${td} ${num}`}>{formatUSD(acc.annualContribution)}</td>
+                      <td className={`${td} ${num}`}>{formatUSD(acc.employerMatch)}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="py-1 pr-3 font-medium">Total</td>
+                    <td />
+                    <td className={`py-1 pr-3 font-medium ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.balance, 0))}</td>
+                    <td className={`py-1 pr-3 ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.annualContribution, 0))}</td>
+                    <td className={`py-1 pr-3 ${num}`}>{formatUSD(plan.accounts.reduce((s, x) => s + x.employerMatch, 0))}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           )}
 
           {(plan.incomeStreams.length > 0 || a.enabled) && (
@@ -326,39 +331,41 @@ export function Summary() {
         </Section>
 
         <Section title="Milestones (typical returns, today's dollars)">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className={th}>{people === 2 && spouseOffset(plan) !== 0 ? 'Age (you / spouse)' : 'Age'}</th>
-                <th className={`${th} ${num}`}>Savings</th>
-                <th className={`${th} ${num}`}>Spending incl. healthcare</th>
-                <th className={`${th} ${num}`}>Income</th>
-                <th className={`${th} ${num}`}>Income tax</th>
-                <th className={`${th} ${num}`}>Required min. distribution</th>
-              </tr>
-            </thead>
-            <tbody>
-              {milestoneYears(plan, det.years).map((y) => (
-                <tr key={y.age}>
-                  <td className={td}>
-                    {ageCell(plan, y.age)}
-                    {y.age === plan.retirementAge && <span className="text-slate-500"> · retire</span>}
-                  </td>
-                  <td className={`${td} ${num}`}>{formatUSD(y.startBalanceReal)}</td>
-                  {y.age < plan.retirementAge ? (
-                    <td colSpan={3} className={`${td} text-center text-slate-500`}>Working and saving</td>
-                  ) : (
-                    <>
-                      <td className={`${td} ${num}`}>{formatUSD(y.spending / y.priceLevel)}</td>
-                      <td className={`${td} ${num}`}>{formatUSD(y.income / y.priceLevel)}</td>
-                      <td className={`${td} ${num}`}>{formatUSD(y.tax / y.priceLevel)}</td>
-                    </>
-                  )}
-                  <td className={`${td} ${num}`}>{formatUSD(y.rmd / y.priceLevel)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  <th className={th}>{people === 2 && spouseOffset(plan) !== 0 ? 'Age (you / spouse)' : 'Age'}</th>
+                  <th className={`${th} ${num}`}>Savings</th>
+                  <th className={`${th} ${num}`}>Spending incl. healthcare</th>
+                  <th className={`${th} ${num}`}>Income</th>
+                  <th className={`${th} ${num}`}>Income tax</th>
+                  <th className={`${th} ${num}`}>Required min. distribution</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {milestoneYears(plan, det.years).map((y) => (
+                  <tr key={y.age}>
+                    <td className={td}>
+                      {ageCell(plan, y.age)}
+                      {y.age === plan.retirementAge && <span className="text-slate-500"> · retire</span>}
+                    </td>
+                    <td className={`${td} ${num}`}>{formatUSD(y.startBalanceReal)}</td>
+                    {y.age < plan.retirementAge ? (
+                      <td colSpan={3} className={`${td} text-center text-slate-500`}>Working and saving</td>
+                    ) : (
+                      <>
+                        <td className={`${td} ${num}`}>{formatUSD(y.spending / y.priceLevel)}</td>
+                        <td className={`${td} ${num}`}>{formatUSD(y.income / y.priceLevel)}</td>
+                        <td className={`${td} ${num}`}>{formatUSD(y.tax / y.priceLevel)}</td>
+                      </>
+                    )}
+                    <td className={`${td} ${num}`}>{formatUSD(y.rmd / y.priceLevel)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Section>
 
         <Section title="How this was calculated">

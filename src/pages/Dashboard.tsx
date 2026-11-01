@@ -1,18 +1,17 @@
-import { memo, useMemo } from 'react'
+import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { VerdictPanel } from '../components/VerdictPanel'
 import { verdictFor } from '../utils/levers'
 import { SurvivorComparison } from '../components/SurvivorComparison'
-import { BucketChart } from '../components/BucketChart'
+import { BucketChart, ProbabilityChart } from '../components/LazyCharts'
 import { GettingStarted } from '../components/GettingStarted'
 import { PlanForm } from '../components/PlanForm'
 import { QuickStart } from '../components/QuickStart'
 import { UndoBar } from '../components/PlanToolbar'
 import { useUiPrefs } from '../store/uiPrefs'
 import { isBlankPlan } from '../utils/quickStart'
-import { ProbabilityChart } from '../components/ProbabilityChart'
 import { StatCard } from '../components/StatCard'
 import { YearTable } from '../components/YearTable'
 import { projectPlan, householdSocialSecurityMonthly, type MonteCarloResult, planEndAge, spouseOffset, survivorFromAge, validatePlan, missingEssentials, type Plan } from '../engine'
@@ -173,6 +172,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
 export function Dashboard() {
   const plan = usePlanStore((s) => s.plan)
+  // Typing updates the form right away; results re-render at lower priority and skip keystrokes they fall behind on
+  const resultsPlan = useDeferredValue(plan)
   const guide = useUiPrefs((s) => s.guide)
   const issues = validatePlan(plan)
 
@@ -207,7 +208,7 @@ export function Dashboard() {
           </ul>
         </section>
       ) : (
-        <Results plan={plan} />
+        <Results plan={resultsPlan} />
       )}
     </div>
   )

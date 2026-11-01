@@ -1,8 +1,12 @@
 # Security headers for willitlast.app (Cloudflare Workers static assets). GitHub Pages ignores this file.
+# vite.config.ts applies the same headers to `npm run preview`, so test there before deploying.
+# HSTS is long-lived: every .app domain is already HTTPS-only in browsers (HSTS preload list).
+# If you enable Cloudflare Web Analytics, Zaraz or Rocket Loader, add their script and connect hosts to the CSP.
+# X-Frame-Options repeats frame-ancestors for older scanners and browsers; change both together.
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.anthropic.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
-  Referrer-Policy: strict-origin-when-cross-origin
+  Referrer-Policy: same-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

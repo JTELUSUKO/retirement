@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
-import { Scenarios } from './pages/Scenarios'
 import { Footer } from './components/Footer'
-import { Summary } from './pages/Summary'
-import { Terms } from './pages/Terms'
 import { DisclaimerBanner } from './components/Disclaimer'
 
-// Loaded on first visit to the tab, so the Anthropic SDK isn't in the main bundle
+// Pages other than "My plan" load on first visit, keeping the first download small (Ask holds the Anthropic SDK)
+const Scenarios = lazy(() => import('./pages/Scenarios').then((m) => ({ default: m.Scenarios })))
+const Summary = lazy(() => import('./pages/Summary').then((m) => ({ default: m.Summary })))
+const Terms = lazy(() => import('./pages/Terms').then((m) => ({ default: m.Terms })))
 const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 
 type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
@@ -56,14 +56,12 @@ export default function App() {
         <DisclaimerBanner />
       </div>
       {page === 'plan' && <Dashboard />}
-      {page === 'compare' && <Scenarios />}
-      {page === 'summary' && <Summary />}
-      {page === 'terms' && <Terms />}
-      {page === 'ask' && (
-        <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-          <Ask />
-        </Suspense>
-      )}
+      <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
+        {page === 'compare' && <Scenarios />}
+        {page === 'summary' && <Summary />}
+        {page === 'terms' && <Terms />}
+        {page === 'ask' && <Ask />}
+      </Suspense>
       <Footer />
     </div>
   )
