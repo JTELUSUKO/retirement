@@ -1,0 +1,9 @@
+// Cloudflare Workers static site for https://willitlast.app (build with BASE_PATH=/ first).
+{
+  "name": "willitlast",
+  "compatibility_date": "2026-10-23",
+  "assets": {
+    "directory": "./dist",
+  },
+  "routes": [{ "pattern": "willitlast.app", "custom_domain": true }],
+}
