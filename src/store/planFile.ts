@@ -1,7 +1,7 @@
 import { NO_INCOME_TAX_STATES, STATE_TAX_2026, type Plan } from '../engine'
 import { PLAN_VERSION, migratePlanState } from './planStore'
 
-const APP_ID = 'retirement-planner'
+export const APP_ID = 'retirement-planner'
 export const MAX_FILE_BYTES = 1_000_000
 
 const ACCOUNT_TYPES = ['401k', 'traditional-ira', 'roth', 'hsa', 'taxable', 'cash']

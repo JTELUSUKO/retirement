@@ -75,6 +75,7 @@ retirement/
 │   │   ├── planStore.ts         # Zustand store: plan, localStorage persistence + migrations, clear/example/import/undo
 │   │   ├── planStore.test.ts
 │   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
+│   │   ├── move.ts              # Carries a saved plan from the old github.io address to willitlast.app
 │   │   ├── uiPrefs.ts           # View preferences (Basic/Advanced, open sections, guided setup), saved apart from the plan
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
@@ -113,7 +114,7 @@ retirement/
 │   │   └── format.ts            # Currency formatting
 │   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / #summary) + footer;
 │   │                            #   Ask Claude is hidden from the menu but still opens at #ask
-│   ├── main.tsx                 # React entry point
+│   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
@@ -371,6 +372,11 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 ## Deployment
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to GitHub Pages.
-The site is served at `https://<github-username>.github.io/retirement/`.
-If the repo is renamed, update the default `base` in `vite.config.ts` to match. To serve from a custom domain at the root, set the repo variable `BASE_PATH` to `/` (the workflow passes it to the build).
+The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). Deploy it with
+`BASE_PATH=/ npm run build && npx wrangler deploy`.
+
+Pushing to `main` also runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to
+GitHub Pages at `https://<github-username>.github.io/retirement/`. That old address now only redirects:
+`main.tsx` sends any `*.github.io` visitor to willitlast.app, carrying their saved plan in a `#moved=…` fragment
+(`store/move.ts`), which willitlast.app imports once if its own planner is still blank.
+If the repo is renamed, update the default `base` in `vite.config.ts` to match.
