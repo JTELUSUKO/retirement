@@ -33,7 +33,7 @@ about your plan. Unlike the rest of the app, it sends your plan to Anthropic whe
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173/retirement/
+npm run dev     # http://localhost:5173/retirement/ (or BASE_PATH=/ npm run dev)
 npm test
 ```
 

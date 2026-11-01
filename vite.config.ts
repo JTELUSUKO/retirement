@@ -3,10 +3,13 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
-// `base` must match the GitHub repo name so assets load from
-// https://<user>.github.io/retirement/
+// `base` is the path the site is served from: '/retirement/' (the repo name) for
+// https://<user>.github.io/retirement/, or BASE_PATH=/ for its own domain (willitlast.app).
+// An unset or empty BASE_PATH falls back to '/retirement/'; a trailing slash is added if missing.
+const basePath = process.env.BASE_PATH || '/retirement/'
+
 export default defineConfig({
-  base: '/retirement/',
+  base: basePath.endsWith('/') ? basePath : `${basePath}/`,
   plugins: [react(), tailwindcss()],
   test: {
     include: ['src/**/*.test.ts'],

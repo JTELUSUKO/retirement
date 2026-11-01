@@ -116,7 +116,7 @@ retirement/
 │   ├── main.tsx                 # React entry point
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry used by Vite
-├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages.
+├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
 ├── package.json                 # Scripts: dev, build, test, lint, preview
 ├── PROJECT_STRUCTURE.md         # This file
 └── README.md                    # What the app does + how to run it
@@ -373,4 +373,4 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 
 Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to GitHub Pages.
 The site is served at `https://<github-username>.github.io/retirement/`.
-If the repo is renamed, update `base` in `vite.config.ts` to match.
+If the repo is renamed, update the default `base` in `vite.config.ts` to match. To serve from a custom domain at the root, set the repo variable `BASE_PATH` to `/` (the workflow passes it to the build).

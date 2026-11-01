@@ -27,6 +27,9 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+        env:
+          # Set the repo variable BASE_PATH to "/" when serving from a custom domain
+          BASE_PATH: ${{ vars.BASE_PATH }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
