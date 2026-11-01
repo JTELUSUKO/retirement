@@ -373,7 +373,9 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 ## Deployment
 
 The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). Deploy it with
-`BASE_PATH=/ npm run build && npx wrangler deploy`.
+`BASE_PATH=/ npm run build && npx wrangler deploy`. `public/_headers` sets its security headers (HSTS, a
+Content-Security-Policy that allows only this site plus api.anthropic.com for Ask Claude, no framing, nosniff).
+The build targets Vite's default "baseline widely available" browsers (Chrome/Edge 111+, Firefox 114+, Safari 16.4+).
 
 Pushing to `main` also runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to
 GitHub Pages at `https://<github-username>.github.io/retirement/`. That old address now only redirects:
