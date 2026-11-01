@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { InfoTip } from './InfoTip'
 
 interface Props {
@@ -28,6 +28,7 @@ interface Props {
 export function NumberField({ label, value, onChange, prefix, suffix, min, max, error, hideLabel, placeholder = '0', info }: Props) {
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(false)
+  const id = useId()
 
   const zeroAllowed = min === undefined || min <= 0
   const parse = (raw: string) => {
@@ -44,9 +45,10 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
     min !== undefined && max !== undefined ? `Enter ${min}–${max}` : min !== undefined ? `Minimum ${min}` : 'Enter a number'
 
   return (
-    <label className="block text-sm">
+    // A div rather than a wrapping <label>: a label wrapping the ⓘ button would label the button, not the input
+    <div className="block text-sm">
       <span className={hideLabel ? 'sr-only' : 'text-slate-600 dark:text-slate-400'}>
-        {label}
+        <label htmlFor={id}>{label}</label>
         {info && !hideLabel && <InfoTip label={label}>{info}</InfoTip>}
       </span>
       <div
@@ -58,6 +60,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
       >
         {prefix && <span className="pl-3 text-slate-500">{prefix}</span>}
         <input
+          id={id}
           type="text"
           inputMode="decimal"
           autoComplete="off"
@@ -84,7 +87,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
       ) : (
         error && <span className="mt-1 block text-xs text-red-600 dark:text-red-400">{error}</span>
       )}
-    </label>
+    </div>
   )
 }
 

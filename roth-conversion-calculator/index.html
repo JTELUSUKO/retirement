@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roth Conversion Calculator (2026): Tax Cost, Bracket Room and Break-Even</title>
+    <meta
+      name="description"
+      content="Free 2026 Roth conversion calculator: see the extra federal and state tax, how much you can convert before the next bracket, Medicare IRMAA surcharges and when converting pays off."
+    />
+    <link rel="canonical" href="https://willitlast.app/roth-conversion-calculator/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Will It Last?" />
+    <meta property="og:title" content="Roth Conversion Calculator (2026)" />
+    <meta property="og:description" content="How much tax does a Roth conversion cost this year, and does it pay off? Free, private, no sign-up." />
+    <meta property="og:url" content="https://willitlast.app/roth-conversion-calculator/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Roth Conversion Calculator (2026)",
+        "url": "https://willitlast.app/roth-conversion-calculator/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Estimate the extra federal and state income tax from a Roth conversion in 2026, the room left in your tax bracket, Medicare IRMAA surcharges and the break-even future tax rate."
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <a href="../" class="text-lg font-semibold">Will It Last?</a>
+        <nav class="text-sm">
+          <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Free retirement planner</a>
+        </nav>
+      </header>
+
+      <div role="note" aria-label="Disclaimer" class="mb-8 rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">
+        <p class="font-bold">⚠ For educational purposes only. This is NOT financial, investment, tax or legal advice.</p>
+        <p class="mt-1 font-semibold">
+          Results are estimates based on your inputs and simplified assumptions, not guarantees. Calculations may contain
+          errors or differ from other tools and official figures, and we accept no responsibility for them or for any
+          decision you make. Talk to a qualified, licensed professional before making any financial decision.
+          <a href="../#terms" class="underline underline-offset-2">Read the full disclaimer and terms</a>.
+        </p>
+      </div>
+
+      <main class="space-y-10">
+        <section class="space-y-3">
+          <h1 class="text-3xl font-semibold">Roth conversion calculator (2026)</h1>
+          <p class="max-w-3xl text-slate-700 dark:text-slate-300">
+            See how much extra tax a Roth conversion adds this year, how much more you can convert before the next tax
+            bracket, whether it could raise your Medicare premiums, and the future tax rate at which converting pays off.
+            It uses the 2026 federal brackets, the new senior deduction, Social Security taxation and state income tax.
+            Free, no sign-up, and nothing you enter leaves your browser.
+          </p>
+        </section>
+
+        <div id="calculator">
+          <noscript><p class="rounded-md border border-slate-300 p-4">The calculator needs JavaScript. The guide below works without it.</p></noscript>
+        </div>
+
+        <article class="max-w-3xl space-y-8 leading-relaxed text-slate-700 dark:text-slate-300">
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">What is a Roth conversion?</h2>
+            <p>
+              A Roth conversion moves money from a traditional IRA or pre-tax 401(k) into a Roth IRA. The amount you convert
+              is added to your taxable income for the year, so you pay income tax on it now. In return, the money then grows
+              tax-free, qualified withdrawals later are tax-free, and Roth IRAs have no required minimum distributions
+              (RMDs) for the original owner.
+            </p>
+            <p>
+              Put simply, a conversion pays tax at today’s rate to avoid tax at a future rate. It tends to pay off when
+              your rate now is lower than the rate you’d pay on the same money later.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">How the tax on a conversion is figured</h2>
+            <p>
+              The converted amount is stacked on top of your other income for the year, so it is taxed at your highest
+              (marginal) rates, not your average rate. A large conversion can span more than one bracket. On top of the
+              bracket rate, a conversion can also:
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Make more of your Social Security taxable.</strong> Up to 85% of benefits can be taxed as income rises, so each converted dollar can add more than a dollar of taxable income.</li>
+              <li><strong>Shrink the senior deduction.</strong> For 2025–2028, people 65 and older get an extra deduction of up to $6,000 each, reduced by 6% of income above $75,000 (single) or $150,000 (married filing jointly).</li>
+              <li><strong>Add state income tax</strong>, unless your state has no income tax or exempts retirement income at your age.</li>
+            </ul>
+            <p>The calculator above includes all of these.</p>
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">2026 federal income tax brackets</h3>
+            <!--BRACKETS_2026-->
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">When converting can make sense</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Low-income years</strong>, often between retiring and starting Social Security or RMDs, when your bracket may be lower than it will ever be again.</li>
+              <li><strong>You expect a higher rate later</strong>, for example from large RMDs, a surviving spouse moving to single brackets, or tax rates rising.</li>
+              <li><strong>You can pay the tax from other savings</strong>, so the full amount goes into the Roth.</li>
+              <li><strong>You want to leave money to heirs</strong>, who generally must empty an inherited IRA within 10 years and may be in high brackets themselves.</li>
+            </ul>
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">When it may not</h3>
+            <ul class="list-disc space-y-1 pl-6">
+              <li>You expect a <strong>lower tax rate later</strong> than today.</li>
+              <li>You would pay the tax out of the conversion while <strong>under 59½</strong>: the withheld part counts as an early withdrawal and can owe a 10% penalty.</li>
+              <li>The extra income would push you into <strong>Medicare IRMAA surcharges</strong> or reduce <strong>health insurance marketplace (ACA) premium credits</strong> if you’re under 65.</li>
+              <li>You plan to leave the IRA to <strong>charity</strong>, which pays no income tax on it.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Medicare surcharges (IRMAA) and the two-year lookback</h2>
+            <p>
+              Medicare Part B and Part D premiums go up when your modified adjusted gross income (MAGI) crosses certain
+              levels, and they use your income from <strong>two years earlier</strong>. A conversion at 63 can raise your
+              premiums at 65. Crossing a tier by even one dollar triggers the full surcharge for that tier, so it pays to
+              know where the lines are.
+            </p>
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">2026 IRMAA income tiers (per person)</h3>
+            <!--IRMAA_2026-->
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Rules to know before converting</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>No income or amount limit.</strong> Anyone can convert any amount.</li>
+              <li><strong>You can’t undo it.</strong> Conversions can no longer be recharacterized (reversed) since 2018.</li>
+              <li><strong>It counts in the calendar year you convert.</strong> There is no April deadline as with contributions; a conversion on December 31 counts for that year.</li>
+              <li><strong>Each conversion has its own five-year clock.</strong> If you are under 59½, withdrawing converted money within five years can owe the 10% penalty.</li>
+              <li><strong>Plan for the tax bill.</strong> You may need to raise withholding or make estimated tax payments to avoid an underpayment penalty.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How much should I convert each year?</h3>
+            <p>
+              A common approach is to “fill” a bracket: convert just enough to reach the top of your current bracket (often
+              12%, 22% or 24%) without spilling into the next one. The “Fill a bracket” table above shows those amounts for
+              your numbers. Whether that’s right for you depends on your whole plan, so check it with a tax professional.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Is the tax rate on a conversion my bracket rate?</h3>
+            <p>
+              Not always. If you receive Social Security or are 65 or older, a conversion can also make more benefits taxable
+              or shrink the senior deduction, so the real rate can be higher than your bracket. The calculator shows the
+              actual extra tax.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Should I pay the tax from the conversion or from other money?</h3>
+            <p>
+              Paying from other savings usually works out better: the full converted amount keeps growing tax-free. Paying
+              from the conversion shrinks what goes into the Roth, and before 59½ the withheld part can owe a 10% penalty.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What doesn’t this calculator include?</h3>
+            <p>
+              It estimates one year of federal and state income tax. It does not model tax credits, the alternative minimum
+              tax, the net investment income tax on your other investments, ACA premium credits, local taxes, state-specific
+              partial retirement exclusions, or how conversions over many years change your future RMDs. For a year-by-year
+              plan, use the <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">free retirement planner</a>.
+            </p>
+          </section>
+        </article>
+      </main>
+
+      <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500 dark:border-slate-800">
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial,
+          tax, investment or legal advice. Figures use 2026 federal rules (IRS Rev. Proc. 2025-32, the One Big Beautiful
+          Bill Act senior deduction, CMS 2026 IRMAA tiers) and 2026 state income tax rules, simplified. Calculations may
+          contain errors or differ from official figures; we accept no responsibility or liability for them. Consult a
+          qualified tax professional before converting. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
+        </p>
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, cookies, tracking or analytics.
+          What you enter stays in your browser.
+        </p>
+        <p>Not affiliated with the IRS, SSA, CMS or any government agency. © willitlast.app. All rights reserved.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/seo/roth.tsx"></script>
+  </body>
+</html>

@@ -9,8 +9,11 @@ retirement/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml           # CI: install → test → build → publish to GitHub Pages
-├── public/
-│   └── favicon.svg              # Static files copied as-is into the build
+├── public/                      # Static files copied as-is into the build
+│   ├── favicon.svg
+│   ├── _headers                 # Security headers for willitlast.app (Cloudflare)
+│   ├── robots.txt               # Allows all crawlers, points to the sitemap
+│   └── sitemap.xml              # Every public page; add new calculator pages here
 ├── src/
 │   ├── engine/                  # Pure calculation code. No React, no browser APIs.
 │   │   ├── config/
@@ -108,6 +111,11 @@ retirement/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
 │   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
 │   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
+│   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
+│   │   ├── rothConversion.ts    # Roth conversion math on the engine: extra tax, bracket room, IRMAA, break-even
+│   │   ├── rothConversion.test.ts
+│   │   ├── RothCalculator.tsx   # The interactive calculator
+│   │   └── roth.tsx             # Entry for roth-conversion-calculator/index.html
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
@@ -117,8 +125,12 @@ retirement/
 │   │                            #   Ask Claude is hidden from the menu but still opens at #ask
 │   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app, reloads once after a deploy
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
-├── index.html                   # HTML entry used by Vite
+├── index.html                   # HTML entry for the planner
+├── roth-conversion-calculator/
+│   └── index.html               # Calculator page: guide text in plain HTML (crawlable), calculator mounts in #calculator.
+│                                #   <!--BRACKETS_2026--> and <!--IRMAA_2026--> are filled from engine/config at build time
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
+│                                #   Lists each HTML page under build.rolldownOptions.input; fills the tax tables
 ├── package.json                 # Scripts: dev, build, test, lint, preview
 ├── PROJECT_STRUCTURE.md         # This file
 └── README.md                    # What the app does + how to run it
@@ -370,6 +382,16 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run lint` | Lint with oxlint |
+
+## Calculator pages (SEO)
+
+Each calculator is its own page at `willitlast.app/<name>/` so search engines can index it. The explanation, FAQ and
+tax tables are plain HTML in `<name>/index.html`; only the calculator itself is React. To add one:
+1. Put the math in `src/seo/<name>.ts` on top of the engine, with tests.
+2. Add `<name>/index.html` (title, meta description, canonical URL, the disclaimer banner, the guide text) and an entry
+   script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator.
+3. Add the page to `build.rolldownOptions.input` in `vite.config.ts`, to `public/sitemap.xml`, and link it from the
+   planner's footer (`Footer.tsx`).
 
 ## Deployment
 

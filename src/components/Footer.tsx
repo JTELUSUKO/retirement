@@ -27,6 +27,10 @@ export function Footer() {
         are illustrative long-run averages. Not affiliated with or endorsed by the IRS, SSA, CMS or any government
         agency.
       </p>
+      <p>
+        <strong className="text-slate-700 dark:text-slate-300">Free calculators:</strong>{' '}
+        <a href="roth-conversion-calculator/" className="underline underline-offset-2">Roth conversion calculator</a>
+      </p>
       <p>© {YEAR} willitlast.app. All rights reserved.</p>
     </footer>
   )

@@ -287,6 +287,8 @@ export function PlanForm() {
                 </InfoTip>
               </span>
               <select
+                // The wrapping label also holds the ⓘ button, which would otherwise take the label
+                aria-label="Spending rule"
                 className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
                 value={plan.spendingRule.type}
                 onChange={(e) => update({ spendingRule: { ...plan.spendingRule, type: e.target.value as Plan['spendingRule']['type'] } })}
