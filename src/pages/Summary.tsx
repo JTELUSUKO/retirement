@@ -1,3 +1,4 @@
+import { DisclaimerBanner } from '../components/Disclaimer'
 import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/ProbabilityChart'
@@ -136,10 +137,11 @@ export function Summary() {
             <h1 className="text-xl font-semibold">Retirement plan summary</h1>
             <p className="text-sm text-slate-600">Prepared {today}</p>
           </div>
-          <p className="max-w-64 text-right text-xs font-semibold text-slate-700">
+          <p className="max-w-64 text-right text-xs font-bold text-amber-800">
             Educational tool only. Not financial, tax or legal advice.
           </p>
         </header>
+        <DisclaimerBanner printable />
 
         <Section title="Key results">
           <div className="grid grid-cols-4 gap-3 text-sm">

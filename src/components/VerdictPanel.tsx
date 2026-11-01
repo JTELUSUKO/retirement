@@ -55,9 +55,10 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
       <h2 id="verdict-heading" className="font-medium">
         {headline}
       </h2>
-      {verdict !== 'strong' && (
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Many planners aim for 85% or more.</p>
-      )}
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+        {verdict !== 'strong' && 'Many planners aim for 85% or more. '}
+        <strong className="text-slate-800 dark:text-slate-200">An estimate from simulated markets, not a guarantee or advice.</strong>
+      </p>
 
       <h3 className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-300">
         {verdict === 'strong' ? 'What would make it even safer' : 'What would help most'}

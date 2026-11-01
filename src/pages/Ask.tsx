@@ -120,7 +120,8 @@ export function Ask() {
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-slate-500">
-          Claude sees your plan and runs calculations with this app. Educational only, not financial advice.
+          Claude sees your plan and runs calculations with this app. <strong>AI answers can be wrong.</strong> Educational only, not financial,
+          tax or legal advice; check anything important with a professional.
         </p>
         <div className="flex gap-2">
           <button type="button" className={button} disabled={chat.busy || chat.turns.length === 0} onClick={chat.reset}>

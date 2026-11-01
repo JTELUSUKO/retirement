@@ -3,13 +3,15 @@ import { Dashboard } from './pages/Dashboard'
 import { Scenarios } from './pages/Scenarios'
 import { Footer } from './components/Footer'
 import { Summary } from './pages/Summary'
+import { Terms } from './pages/Terms'
+import { DisclaimerBanner } from './components/Disclaimer'
 
 // Loaded on first visit to the tab, so the Anthropic SDK isn't in the main bundle
 const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 
-type Page = 'plan' | 'compare' | 'summary' | 'ask'
+type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
 
-const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask']
+const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms']
 const pageFromHash = (): Page => PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan'
 
 export default function App() {
@@ -37,12 +39,9 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 print:p-0">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4 print:hidden">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold">Retirement Planner</h1>
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Educational tool only. Not financial, tax or legal advice.
-          </p>
           <p className="text-sm text-slate-500">Everything you enter stays in this browser.</p>
         </div>
         <nav className="flex flex-wrap gap-1">
@@ -53,9 +52,13 @@ export default function App() {
           {page === 'ask' && tab('ask', 'Ask Claude', '#ask')}
         </nav>
       </header>
+      <div className="mb-8">
+        <DisclaimerBanner />
+      </div>
       {page === 'plan' && <Dashboard />}
       {page === 'compare' && <Scenarios />}
       {page === 'summary' && <Summary />}
+      {page === 'terms' && <Terms />}
       {page === 'ask' && (
         <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
           <Ask />
