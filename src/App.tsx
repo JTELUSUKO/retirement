@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
+import { Logo } from './components/Logo'
 import { tabClass } from './components/styles'
 
 // Pages other than "My plan" load on first visit, keeping the first download small (Ask holds the Anthropic SDK)
@@ -13,13 +14,20 @@ const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
 
 const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms']
-const pageFromHash = (): Page => PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan'
+// #print is the summary page with the print / save-as-PDF dialog opened for you (the printer icon)
+const pageFromHash = (): Page =>
+  window.location.hash === '#print' ? 'summary' : (PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan')
+const printFromHash = () => window.location.hash === '#print'
 
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash)
+  const [printRequested, setPrintRequested] = useState(printFromHash)
 
   useEffect(() => {
-    const onHash = () => setPage(pageFromHash())
+    const onHash = () => {
+      setPage(pageFromHash())
+      if (printFromHash()) setPrintRequested(true)
+    }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
@@ -36,7 +44,13 @@ export default function App() {
     <div className="mx-auto max-w-7xl px-4 py-8 print:p-0">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-semibold">Retirement Planner</h1>
+          {/* The logo and name go back to your plan (home) from any page */}
+          <h1 className="text-2xl font-semibold">
+            <a href="#plan" className="inline-flex items-center gap-2 rounded-md hover:text-teal-800 dark:hover:text-teal-300">
+              <Logo />
+              Retirement Planner
+            </a>
+          </h1>
           <p className="text-sm text-muted">Everything you enter stays in this browser.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">
@@ -44,10 +58,10 @@ export default function App() {
           {tab('compare', 'Compare scenarios', '#compare')}
           {/* The summary is the printable report, so it's a printer icon rather than another tab */}
           <a
-            href="#summary"
+            href="#print"
             aria-current={page === 'summary' ? 'page' : undefined}
-            aria-label="Printable summary"
-            title="Printable summary"
+            aria-label="Print or save as PDF"
+            title="Print or save as PDF"
             className={`inline-flex items-center px-2.5 py-1.5 ${tabStyle('summary')}`}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -67,7 +81,16 @@ export default function App() {
         {page === 'plan' && <Dashboard />}
         <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
           {page === 'compare' && <Scenarios />}
-          {page === 'summary' && <Summary />}
+          {page === 'summary' && (
+            <Summary
+              print={printRequested}
+              onPrinted={() => {
+                setPrintRequested(false)
+                // Back to the plain summary address, so a reload doesn't open the dialog again
+                history.replaceState(null, '', '#summary')
+              }}
+            />
+          )}
           {page === 'terms' && <Terms />}
           {page === 'ask' && <Ask />}
         </Suspense>

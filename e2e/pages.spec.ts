@@ -56,6 +56,10 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await page.reload()
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retirement-plan')!).state.plan.currentAge)).toBeGreaterThan(0)
   expect(await page.locator('footer a[target="_blank"]').count()).toBeGreaterThanOrEqual(10)
+  // The logo and title go home (your plan) from any page
+  await page.goto('./#compare')
+  await page.getByRole('link', { name: 'Retirement Planner' }).click()
+  await expect(page).toHaveURL(/#plan$/)
 })
 
 test('Roth conversion calculator', async ({ page }) => {
@@ -128,4 +132,39 @@ test('planner guided setup: labelled steps, revisit finished steps, footer row',
   await expect(page.getByRole('textbox', { name: 'Your age', exact: true })).toHaveValue('55')
   await expect(page.getByRole('button', { name: 'Skip setup' })).toBeVisible()
   await expectFitsScreen(page)
+})
+
+test('printer icon opens the summary and the print / save-as-PDF dialog once', async ({ page }) => {
+  // Count print-dialog requests instead of opening a real dialog
+  await page.addInitScript(() => {
+    ;(window as unknown as { printCalls: number }).printCalls = 0
+    window.print = () => {
+      ;(window as unknown as { printCalls: number }).printCalls++
+    }
+  })
+  const printCalls = () => page.evaluate(() => (window as unknown as { printCalls: number }).printCalls)
+  const icon = page.getByRole('link', { name: 'Print or save as PDF' })
+
+  // Empty plan: nothing to print, so no dialog
+  await page.goto('./')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await icon.click()
+  await expect(page.locator('main')).toContainText('Add your numbers to see results')
+  expect(await printCalls()).toBe(0)
+
+  // A plan: the dialog opens once the summary and its chart are ready
+  await page.goto('./#plan')
+  await page.getByRole('button', { name: 'Explore an example plan' }).click()
+  await icon.click()
+  await expect.poll(printCalls, { timeout: 30_000 }).toBe(1)
+  await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1)
+  await expect(page).toHaveURL(/#summary$/)
+
+  // A reload doesn't reopen it; clicking the icon again on the summary does
+  await page.reload()
+  await page.waitForTimeout(1500)
+  expect(await printCalls()).toBe(0)
+  await icon.click()
+  await expect.poll(printCalls, { timeout: 30_000 }).toBe(1)
 })

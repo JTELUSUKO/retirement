@@ -1,13 +1,14 @@
 import { execFileSync } from 'node:child_process'
 import type { Plugin } from 'vite'
 import { STATE_RULES_YEAR } from '../src/engine/config/stateRules.ts'
+import { logoSvg } from '../src/components/logoSvg.ts'
 import { SCROLL_REGION } from '../src/components/styles.ts'
 import { REVIEWED_DATE, TAX_CONFIG } from '../src/engine/config/taxYear.ts'
 
 // Fills the HTML pages from the tax-year config at build time, so a yearly update is one file
 // (src/engine/config/taxYear.ts). In the HTML:
 //   {{YEAR}} {{PREV_YEAR}} {{NEXT_YEAR}} {{STATE_YEAR}} {{REVIEWED}} {{REV_PROC}}
-//   {{SENIOR_AMOUNT}} {{SENIOR_YEARS}} {{SENIOR_START_SINGLE}} {{SENIOR_START_JOINT}}
+//   {{SENIOR_AMOUNT}} {{SENIOR_YEARS}} {{SENIOR_START_SINGLE}} {{SENIOR_START_JOINT}} {{LOGO}}
 //   <!--BRACKETS--> <!--IRMAA_TIERS--> <!--UNIFORM_TABLE-->          tax tables
 //   <!--SOURCE key: what it covers-->                                one linked source (key in TAX_CONFIG.sources)
 // The build fails if a token is misspelled or a source key doesn't exist. It also writes sitemap.xml and warns when
@@ -88,6 +89,7 @@ const TOKENS: Record<string, string> = {
   STATE_YEAR: String(STATE_RULES_YEAR),
   REVIEWED: REVIEWED_DATE,
   REV_PROC: TAX_CONFIG.sources.revProc.short,
+  LOGO: logoSvg(26),
   SENIOR_AMOUNT: usd(senior.amount),
   SENIOR_YEARS: `${senior.firstYear}–${senior.lastYear}`,
   SENIOR_START_SINGLE: usd(senior.phaseOutStart.single),

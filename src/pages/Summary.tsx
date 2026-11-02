@@ -1,5 +1,5 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
 import {
@@ -61,7 +61,11 @@ function milestoneYears(plan: Plan, years: YearResult[]): YearResult[] {
   )
 }
 
-export function Summary() {
+/**
+ * The printable report. With `print`, it opens the print / save-as-PDF dialog by itself once the results and the
+ * chart are ready (the printer icon), then calls `onPrinted`.
+ */
+export function Summary({ print = false, onPrinted }: { print?: boolean; onPrinted?: () => void }) {
   const plan = usePlanStore((s) => s.plan)
   // The plan and every scenario are evaluated in background workers
   const tasks = useMemo(
@@ -74,6 +78,28 @@ export function Summary() {
   const sims = useSimulations(tasks)
   const ready = !sims.pending && sims.data !== null && sims.data.length === tasks.length
   const evaluations = (ready ? sims.data : null) as PlanEvaluation[] | null
+  const blank = missingEssentials(plan).length > 0
+  useEffect(() => {
+    if (!print) return
+    // Nothing to print yet: just show the "add your numbers" card
+    if (blank) {
+      onPrinted?.()
+      return
+    }
+    if (!ready) return
+    // The chart loads separately; wait for it (up to 5 s) so the PDF isn't missing it
+    let frame = 0
+    const started = performance.now()
+    const tryPrint = () => {
+      if (document.querySelector('.paper svg.recharts-surface') || performance.now() - started > 5000) {
+        onPrinted?.()
+        window.print()
+      } else frame = requestAnimationFrame(tryPrint)
+    }
+    frame = requestAnimationFrame(tryPrint)
+    return () => cancelAnimationFrame(frame)
+  }, [print, ready, blank, onPrinted])
+
   // Captured once when the page opens
   const [today] = useState(() => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))
 
@@ -93,7 +119,7 @@ export function Summary() {
     </div>
   )
 
-  if (missingEssentials(plan).length > 0) {
+  if (blank) {
     return (
       <div>
         {toolbar}
