@@ -26,6 +26,8 @@ const test = base.extend<{ problems: string[] }>({
 })
 
 const results = (page: Page) => page.locator('section[aria-label="Results"]')
+const expectBanner = (page: Page) =>
+  expect(page.getByRole('note', { name: 'Disclaimer' })).toContainText('not financial, tax or legal advice')
 const expectFitsScreen = async (page: Page) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
 
@@ -41,7 +43,7 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await page.goto('./')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
-  await expect(page.getByText('For educational purposes only').first()).toBeVisible()
+  await expect(page.getByText('Educational only — not financial, tax or legal advice.').first()).toBeVisible()
   await page.getByRole('button', { name: /example/i }).first().click()
   await expect(page.getByText(/chance your money lasts/i).first()).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
@@ -59,6 +61,7 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
 test('Roth conversion calculator', async ({ page }) => {
   const expected = rothConversion(ROTH_DEFAULTS)
   await page.goto('./roth-conversion-calculator/')
+  await expectBanner(page)
   await expect(results(page)).toContainText(formatUSD(expected.extraTax))
   await expect(results(page)).toContainText(`${pct(expected.effectiveRate)} of the amount converted`)
   // "Use" fills the first bracket that still has room: then there's none left in it
@@ -77,6 +80,7 @@ test('Roth conversion calculator', async ({ page }) => {
 test('RMD calculator', async ({ page }) => {
   const expected = rmdCalculator(RMD_DEFAULTS)
   await page.goto('./rmd-calculator/')
+  await expectBanner(page)
   await expect(results(page)).toContainText(formatUSD(expected.rmd))
   await expect(results(page)).toContainText(expected.deadline)
   await expect(results(page).locator('tbody tr')).toHaveCount(expected.schedule.length)
@@ -90,6 +94,7 @@ test('RMD calculator', async ({ page }) => {
 test('How long will my money last calculator', async ({ page }) => {
   const expected = moneyLast(MONEY_LAST_DEFAULTS)
   await page.goto('./how-long-will-my-money-last/')
+  await expectBanner(page)
   await expect(results(page)).toContainText(`${Math.floor(expected.typical.years)} years`)
   await expect(results(page)).toContainText(pct(expected.simulated.chanceLasts, 0))
   await expect(results(page)).toContainText(`${formatUSD(expected.spendingThatLasts.typical)} a year`)
