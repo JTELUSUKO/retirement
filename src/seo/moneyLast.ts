@@ -87,7 +87,8 @@ export function simulatedMarkets(mean: number, volatility: number, inflation: nu
   return markets
 }
 
-const percentile = (sorted: number[], p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))]
+/** Value at share `p` (0–1) of an ascending list */
+export const percentile = (sorted: number[], p: number) => sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))]
 
 /** Largest spending (to the dollar) for which `lasts` holds, by bisection. */
 function largestSpending(savings: number, lasts: (spending: number) => boolean): number {

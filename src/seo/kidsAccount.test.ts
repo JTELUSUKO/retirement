@@ -51,6 +51,32 @@ describe("children's investment account", () => {
     expect(r.atAccess.typical).toBe(0)
   })
 
+  it('a baby due in a later deposit year starts in their birth year, with 18 years of contributions', () => {
+    const due = K.pilotBirthYears[1]
+    const r = kidsAccount({ ...KIDS_ACCOUNT_DEFAULTS, birthYear: due })
+    expect(r.startYear).toBe(Math.max(Y, due))
+    expect(r.ageNow).toBe(0)
+    expect(r.years).toBe(K.accessAge)
+    expect(r.schedule[0].age).toBe(0)
+    expect(r.totals.deposit).toBe(K.pilotAmount)
+  })
+
+  it('the default child always gets the deposit', () => {
+    expect(kidsAccount(KIDS_ACCOUNT_DEFAULTS).depositEligible).toBe(true)
+  })
+
+  it('maxing out follows the dollar limit, which loses value to inflation until it is indexed', () => {
+    const r = kidsAccount({ ...KIDS_ACCOUNT_DEFAULTS, birthYear: Y, family: K.annualLimit })
+    const fixedYears = Math.max(0, K.limitsFixedThrough - Y)
+    // In today's dollars: the full limit this year, less in the years it stays fixed, then level once it's indexed
+    expect(r.schedule[0].added).toBeCloseTo(K.annualLimit + K.pilotAmount * Number(r.depositEligible), 6)
+    if (fixedYears > 0) {
+      expect(r.schedule[1].added).toBeCloseTo(K.annualLimit / (1 + KIDS_ACCOUNT_DEFAULTS.inflation), 6)
+      expect(r.schedule[fixedYears + 1].added).toBeCloseTo(r.schedule[fixedYears].added, 6)
+    }
+    expect(r.totals.family).toBeLessThanOrEqual(K.annualLimit * K.accessAge)
+  })
+
   it('caps the employer at its limit and the total at the yearly limit', () => {
     expect(allowedContributions(4_000, 3_000)).toEqual({ family: K.annualLimit - K.employerLimit, employer: K.employerLimit })
     expect(allowedContributions(6_000, 0)).toEqual({ family: K.annualLimit, employer: 0 })

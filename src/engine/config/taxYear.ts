@@ -84,6 +84,8 @@ export const TAX_CONFIG = {
     annualLimit: 5_000,
     /** Employer contributions per employee per year; they count toward the annual cap */
     employerLimit: 2_500,
+    /** Both limits stay at these dollar amounts through this year, then rise with inflation */
+    limitsFixedThrough: 2027,
     /** One-time federal deposit for eligible US-citizen children born in these years; outside the cap */
     pilotAmount: 1_000,
     pilotBirthYears: [2025, 2028] as [number, number],

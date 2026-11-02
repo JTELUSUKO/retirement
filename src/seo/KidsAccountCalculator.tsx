@@ -4,7 +4,7 @@ import { NumberField, PercentField } from '../components/NumberField'
 import { ScrollRegion } from '../components/ScrollRegion'
 import { CALL_TO_ACTION } from '../components/styles'
 import { formatUSD, formatUSDCompact } from '../utils/format'
-import { allowedContributions, kidsAccount, KIDS_ACCOUNT_DEFAULTS, type KidsAccountInputs, type Range } from './kidsAccount'
+import { kidsAccount, KIDS_ACCOUNT_DEFAULTS, type KidsAccountInputs, type Range } from './kidsAccount'
 
 const K = TAX_CONFIG.kidsAccount
 const YEAR = TAX_CONFIG.year
@@ -59,8 +59,8 @@ export function KidsAccountCalculator() {
   const [inputs, setInputs] = useState<KidsAccountInputs>(KIDS_ACCOUNT_DEFAULTS)
   const set = (patch: Partial<KidsAccountInputs>) => setInputs((s) => ({ ...s, ...patch }))
   const r = useMemo(() => kidsAccount(inputs), [inputs])
-  const allowed = allowedContributions(inputs.family, inputs.employer)
-  const capped = allowed.family !== inputs.family || allowed.employer !== inputs.employer
+  const allowed = r.firstYear
+  const capped = r.years > 0 && (allowed.family < inputs.family || allowed.employer < inputs.employer)
   const accessYear = inputs.birthYear + K.accessAge
   const growth = r.atAccess.typical - r.totals.family - r.totals.employer - r.totals.deposit
 
@@ -72,7 +72,8 @@ export function KidsAccountCalculator() {
           value={inputs.birthYear}
           onChange={(birthYear) => set({ birthYear })}
           min={YEAR - K.accessAge + 1}
-          max={YEAR}
+          // Up to the last deposit year, so families expecting a baby can plan too
+          max={Math.max(YEAR, LAST_DEPOSIT_YEAR)}
           info={`Children can have an account until the year they turn ${K.accessAge}. The one-time ${formatUSD(K.pilotAmount)} federal deposit is for US citizens born ${FIRST_DEPOSIT_YEAR}–${LAST_DEPOSIT_YEAR}.`}
         />
         <NumberField
@@ -94,7 +95,8 @@ export function KidsAccountCalculator() {
         {capped && (
           <p className="text-xs text-amber-800 dark:text-amber-300">
             ⚠ Capped at {formatUSD(K.annualLimit)} a year in total (employer up to {formatUSD(K.employerLimit)}): using{' '}
-            {formatUSD(allowed.family)} family and {formatUSD(allowed.employer)} employer.
+            {formatUSD(Math.round(allowed.family))} family and {formatUSD(Math.round(allowed.employer))} employer in the first
+            year. The limits stay at these dollar amounts through {K.limitsFixedThrough}, then rise with inflation.
           </p>
         )}
         <label className="flex items-start gap-2 text-sm">
@@ -119,7 +121,8 @@ export function KidsAccountCalculator() {
             label="Fund fee"
             suffix="%"
             value={Math.round(inputs.fee * 10000) / 100}
-            onChange={(v) => set({ fee: v / 100 })}
+            // Kept to the two decimals the field shows
+            onChange={(v) => set({ fee: Math.round(v * 100) / 10000 })}
             min={0}
             max={K.expenseCap * 100}
             info={`The fund’s yearly expense ratio. Accounts may only hold broad US stock index funds charging ${K.expenseCap * 100}% or less; many charge 0.02–0.05%.`}
@@ -186,7 +189,7 @@ export function KidsAccountCalculator() {
                 With typical returns, in today’s dollars, and nothing added after {K.accessAge}.
               </p>
               <RangeNote range={r.atLater} />
-              {r.depositEligible && (
+              {r.totals.deposit > 0 && (
                 <p className="mt-3 border-t border-slate-200 pt-2 text-sm dark:border-slate-800">
                   The {formatUSD(K.pilotAmount)} federal deposit alone could grow to{' '}
                   <strong className="tabular-nums">{formatUSD(Math.round(r.depositAloneLater))}</strong> by {inputs.laterAge}.
@@ -210,7 +213,7 @@ export function KidsAccountCalculator() {
                   <tbody>
                     {r.schedule.map((y, t) => (
                       <tr key={y.age} className="border-t border-slate-100 tabular-nums dark:border-slate-800">
-                        <td className="py-1 pr-2">{YEAR + t}</td>
+                        <td className="py-1 pr-2">{r.startYear + t}</td>
                         <td className="py-1 pr-2">{y.age}</td>
                         <td className="py-1 pr-2 text-right">{formatUSD(Math.round(y.added))}</td>
                         <td className="py-1 text-right">{formatUSD(Math.round(y.balance))}</td>
