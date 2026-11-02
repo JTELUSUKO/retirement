@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { NO_INCOME_TAX_STATES, TAX_CONFIG, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
+import { CALL_TO_ACTION } from '../components/styles'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
 import { rothConversion, ROTH_DEFAULTS, type RothInputs } from './rothConversion'
@@ -138,11 +139,11 @@ export function RothCalculator() {
         </div>
 
         <div className={card}>
-          <h3 className="font-medium">Fill a bracket</h3>
+          <h2 className="font-medium">Fill a bracket</h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">Conversion that brings this year’s taxable income to the top of each federal bracket.</p>
           <table className="mt-2 w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-500">
+              <tr className="text-left text-slate-500 dark:text-slate-400">
                 <th className="py-1 font-normal">Up to the top of</th>
                 <th className="py-1 text-right font-normal">Convert</th>
                 <th className="py-1" />
@@ -168,7 +169,7 @@ export function RothCalculator() {
 
         {r.irmaa.applies && (
           <div className={`${card} ${r.irmaa.extraYearly > 0 ? 'border-amber-400 dark:border-amber-500' : ''}`}>
-            <h3 className="font-medium">Medicare premiums two years from now</h3>
+            <h2 className="font-medium">Medicare premiums two years from now</h2>
             <p className="mt-1 text-sm">
               {r.irmaa.extraYearly > 0 ? (
                 <>
@@ -196,7 +197,7 @@ export function RothCalculator() {
         )}
 
         <div className={card}>
-          <h3 className="font-medium">After {inputs.years} years, after tax</h3>
+          <h2 className="font-medium">After {inputs.years} years, after tax</h2>
           <dl className="mt-2 text-sm">
             <Row label="Convert">{formatUSD(r.compare.convert)}</Row>
             <Row label="Don’t convert">{formatUSD(r.compare.dontConvert)}</Row>
@@ -217,7 +218,7 @@ export function RothCalculator() {
               {formatUSD(r.compare.earlyPenalty)}). Paying the tax from other savings avoids it.
             </p>
           )}
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             Assumes the same return in both cases, withdrawal of the traditional IRA at your later tax rate, and money kept in
             a taxable account losing 15% of its growth to tax.
           </p>
@@ -225,7 +226,7 @@ export function RothCalculator() {
 
         <a
           href="../"
-          className="block rounded-lg bg-teal-700 px-4 py-3 text-center font-medium text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+          className={CALL_TO_ACTION}
         >
           Plan conversions year by year in the free retirement planner →
         </a>

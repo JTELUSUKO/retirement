@@ -58,9 +58,9 @@ export function OutcomeComparison({ title, description, endAge, baseLabel, chang
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <h2 className="font-medium">{title}</h2>
-      <p className="text-sm text-slate-500">{description}</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
       <table className="mt-3 w-full text-sm tabular-nums">
-        <thead className="text-slate-500">
+        <thead className="text-slate-500 dark:text-slate-400">
           <tr>
             <th className="py-1 text-left font-normal" />
             <th className="py-1 text-right font-normal">{baseLabel}</th>

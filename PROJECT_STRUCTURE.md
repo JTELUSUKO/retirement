@@ -149,7 +149,8 @@ retirement/
 │   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
 │                                #   and the "next year's figures are due" warning from November 15
 ├── e2e/
-│   └── pages.spec.ts            # Browser checks for every page; expected numbers come from the same math the pages use
+│   ├── pages.spec.ts            # Browser checks for every page; expected numbers come from the same math the pages use
+│   └── a11y.spec.ts             # axe-core (Lighthouse's engine) WCAG 2.2 AA checks, light and dark, every page and state
 ├── playwright.config.ts         # Devices, the local preview server, and the --live mode for willitlast.app
 ├── scripts/                     # Regenerate state tax rules from the Tax Foundation table (scripts/README.md)
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.

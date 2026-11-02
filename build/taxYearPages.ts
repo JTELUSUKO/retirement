@@ -26,8 +26,9 @@ const T = TAX_CONFIG.federalTax
 
 const usd = (n: number) => `$${n.toLocaleString('en-US')}`
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const table = (head: string[], rows: string[][]) =>
-  `<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr>${head
+// Focusable (tabindex) so keyboard users can scroll it sideways on a phone
+const table = (head: string[], rows: string[][], label: string) =>
+  `<div class="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" tabindex="0" role="region" aria-label="${label}"><table class="w-full text-sm"><thead><tr>${head
     .map((h) => `<th class="border-b border-slate-300 py-1 pr-3 text-left font-medium dark:border-slate-700">${h}</th>`)
     .join('')}</tr></thead><tbody>${rows
     .map((r) => `<tr>${r.map((c) => `<td class="border-b border-slate-100 py-1 pr-3 tabular-nums dark:border-slate-800">${c}</td>`).join('')}</tr>`)
@@ -42,7 +43,7 @@ function bracketsTable(): string {
     range(i ? brackets.married[i - 1][0] : 0, brackets.married[i][0]),
   ])
   return (
-    table(['Rate', 'Single (taxable income)', 'Married filing jointly'], rows) +
+    table(['Rate', 'Single (taxable income)', 'Married filing jointly'], rows, `${Y} federal income tax brackets`) +
     `<p class="text-sm">Taxable income is income after the standard deduction: ${usd(standardDeduction.single)} single, ${usd(standardDeduction.married)} married filing jointly, plus extra amounts for those 65 and older.</p>`
   )
 }
@@ -55,7 +56,7 @@ function irmaaTable(): string {
     partB + partD === 0 ? 'None' : `${usd(Math.round((partB + partD) * 12))} / yr`,
   ])
   return (
-    table(['Single MAGI', 'Married filing jointly MAGI', 'Extra Part B + D premium'], rows) +
+    table(['Single MAGI', 'Married filing jointly MAGI', 'Extra Part B + D premium'], rows, `${Y} Medicare IRMAA tiers`) +
     '<p class="text-sm">Surcharges are per person on Medicare. The income tiers are adjusted for inflation each year.</p>'
   )
 }
@@ -71,7 +72,7 @@ function uniformTable(): string {
     }),
   )
   return (
-    table(['Age', 'Factor', 'Age', 'Factor', 'Age', 'Factor'], rows) +
+    table(['Age', 'Factor', 'Age', 'Factor', 'Age', 'Factor'], rows, 'IRS Uniform Lifetime Table') +
     '<p class="text-sm">Divide last December 31’s balance by the factor for the age you reach this year. Ages above 110 use the age-110 factor.</p>'
   )
 }

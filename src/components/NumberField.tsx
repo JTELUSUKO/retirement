@@ -66,7 +66,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
             : 'border-slate-500 focus-within:ring-teal-600 dark:border-slate-500'
         }`}
       >
-        {prefix && <span className="pl-3 text-slate-500">{prefix}</span>}
+        {prefix && <span className="pl-3 text-slate-500 dark:text-slate-400">{prefix}</span>}
         <input
           ref={input}
           id={id}
@@ -91,7 +91,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
             if (n !== null) onChange(n)
           }}
         />
-        {suffix && <span className="pr-3 text-slate-500">{suffix}</span>}
+        {suffix && <span className="pr-3 text-slate-500 dark:text-slate-400">{suffix}</span>}
       </div>
       {typingInvalid ? (
         <span className="mt-1 block text-xs text-red-600 dark:text-red-400">{rangeHint}</span>

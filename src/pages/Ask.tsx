@@ -120,7 +120,7 @@ export function Ask() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Claude sees your plan and runs calculations with this app. <strong>AI answers can be wrong.</strong> Educational only, not financial,
           tax or legal advice; check anything important with a professional.
         </p>
@@ -164,7 +164,7 @@ export function Ask() {
           ) : (
             <div key={i} className="max-w-[95%] space-y-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
               {t.notes.length > 0 && (
-                <ul className="space-y-0.5 text-xs text-slate-500">
+                <ul className="space-y-0.5 text-xs text-slate-500 dark:text-slate-400">
                   {t.notes.map((n, j) => (
                     <li key={j}>⚙ {n}</li>
                   ))}
@@ -173,7 +173,7 @@ export function Ask() {
               {t.text ? (
                 <div className="leading-relaxed whitespace-pre-wrap">{t.text}</div>
               ) : (
-                !t.error && chat.busy && i === chat.turns.length - 1 && <div className="text-slate-500">Thinking…</div>
+                !t.error && chat.busy && i === chat.turns.length - 1 && <div className="text-slate-500 dark:text-slate-400">Thinking…</div>
               )}
               {t.error && <div role="alert" className="text-red-600 dark:text-red-400">✕ {t.error}</div>}
             </div>

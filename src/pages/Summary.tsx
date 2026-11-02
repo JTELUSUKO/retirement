@@ -1,4 +1,5 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
+import { SCROLL_REGION } from '../components/styles'
 import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
@@ -157,7 +158,7 @@ export function Summary() {
               <div key={label} className="rounded-md border border-slate-200 p-3">
                 <div className="text-xs text-slate-600">{label}</div>
                 <div className="mt-1 text-lg font-semibold">{value}</div>
-                <div className="text-xs text-slate-500">{note}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{note}</div>
               </div>
             ))}
           </div>
@@ -177,7 +178,7 @@ export function Summary() {
         {scenarios.length > 0 && (
           <Section title="Scenarios">
             {/* Wide tables scroll sideways on phones instead of widening the page */}
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Scenarios table">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
@@ -276,7 +277,7 @@ export function Summary() {
           {plan.accounts.length === 0 ? (
             <p className="text-sm text-slate-600">None</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Accounts table">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
@@ -334,7 +335,7 @@ export function Summary() {
         </Section>
 
         <Section title="Milestones (typical returns, today's dollars)">
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Milestones table">
             <table className="w-full text-sm">
               <thead>
                 <tr>
@@ -351,11 +352,11 @@ export function Summary() {
                   <tr key={y.age}>
                     <td className={td}>
                       {ageCell(plan, y.age)}
-                      {y.age === plan.retirementAge && <span className="text-slate-500"> · retire</span>}
+                      {y.age === plan.retirementAge && <span className="text-slate-500 dark:text-slate-400"> · retire</span>}
                     </td>
                     <td className={`${td} ${num}`}>{formatUSD(y.startBalanceReal)}</td>
                     {y.age < plan.retirementAge ? (
-                      <td colSpan={3} className={`${td} text-center text-slate-500`}>Working and saving</td>
+                      <td colSpan={3} className={`${td} text-center text-slate-500 dark:text-slate-400`}>Working and saving</td>
                     ) : (
                       <>
                         <td className={`${td} ${num}`}>{formatUSD(y.spending / y.priceLevel)}</td>

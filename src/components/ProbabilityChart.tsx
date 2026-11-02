@@ -26,7 +26,7 @@ function ChartTooltip({ active, label, payload }: TooltipProps) {
       <div className="mb-1 font-medium">Age {label}</div>
       {rows.map(([name, value]) => (
         <div key={name} className="flex justify-between gap-6 tabular-nums">
-          <span className="text-slate-500">{name}</span>
+          <span className="text-slate-500 dark:text-slate-400">{name}</span>
           <span>{formatUSD(value)}</span>
         </div>
       ))}

@@ -59,7 +59,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
               : `, ${formatUSD(state.forPlan.annualSpending - state.spending)} more than that.`}
           </p>
           {stale ? (
-            <p className="text-xs text-slate-500">Your plan changed since this was calculated. Calculate again.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Your plan changed since this was calculated. Calculate again.</p>
           ) : (
             state.spending !== state.forPlan.annualSpending && (
               <button
@@ -73,7 +73,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
           )}
         </div>
       )}
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
         Searches the same 1,000 simulated markets, keeping everything else in your plan the same
         {plan.spendingRule.type === 'guardrails' ? ' (including your guardrails)' : ''}.
       </p>

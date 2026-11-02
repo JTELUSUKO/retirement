@@ -80,7 +80,7 @@ export function PlanToolbar() {
           }}
         />
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
         Your plan is saved only in this browser. Use Export to keep a backup or move it to another device.
       </p>
       <UndoBar />

@@ -15,7 +15,7 @@ export function Terms() {
     <article className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold">Disclaimer and terms of use</h1>
-        <p className="text-sm text-slate-500">Last updated {UPDATED}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Last updated {UPDATED}</p>
       </header>
 
       <p className="rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm font-bold text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">

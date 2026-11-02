@@ -37,7 +37,7 @@ export default function App() {
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-semibold">Retirement Planner</h1>
-          <p className="text-sm text-slate-500">Everything you enter stays in this browser.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Everything you enter stays in this browser.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan')}
@@ -63,13 +63,15 @@ export default function App() {
       <div className="mb-8">
         <DisclaimerBanner />
       </div>
-      {page === 'plan' && <Dashboard />}
-      <Suspense fallback={<p className="text-sm text-slate-500">Loading…</p>}>
-        {page === 'compare' && <Scenarios />}
-        {page === 'summary' && <Summary />}
-        {page === 'terms' && <Terms />}
-        {page === 'ask' && <Ask />}
-      </Suspense>
+      <main>
+        {page === 'plan' && <Dashboard />}
+        <Suspense fallback={<p className="text-sm text-slate-500 dark:text-slate-400">Loading…</p>}>
+          {page === 'compare' && <Scenarios />}
+          {page === 'summary' && <Summary />}
+          {page === 'terms' && <Terms />}
+          {page === 'ask' && <Ask />}
+        </Suspense>
+      </main>
       <Footer />
     </div>
   )

@@ -116,7 +116,7 @@ export function ScenarioChart({ series, retirementAges }: Props) {
           <span className="mt-1.5 h-0.5 w-3 shrink-0" style={{ background: scenarioColor(s.slot) }} />
           <span>
             <span className="block truncate text-slate-700 dark:text-slate-300">{s.name}</span>
-            <span className="tabular-nums text-slate-500">{formatUSDCompact(s.values.at(-1)!.value)}</span>
+            <span className="tabular-nums text-slate-500 dark:text-slate-400">{formatUSDCompact(s.values.at(-1)!.value)}</span>
           </span>
         </div>
       ))}

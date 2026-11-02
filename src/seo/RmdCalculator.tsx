@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { TAX_CONFIG, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
+import { CALL_TO_ACTION, SCROLL_REGION } from '../components/styles'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
 import { rmdCalculator, RMD_DEFAULTS, type RmdInputs } from './rmd'
@@ -144,7 +145,7 @@ export function RmdCalculator() {
 
         {tax && (
           <div className={card}>
-            <h3 className="font-medium">Estimated tax on this RMD</h3>
+            <h2 className="font-medium">Estimated tax on this RMD</h2>
             <p className="mt-1 text-2xl font-semibold tabular-nums">{formatUSD(tax.extraTax)}</p>
             <p className="text-sm text-slate-600 dark:text-slate-400">{pct(tax.effectiveRate)} of the RMD</p>
             <dl className="mt-3 border-t border-slate-200 pt-2 text-sm dark:border-slate-800">
@@ -173,7 +174,7 @@ export function RmdCalculator() {
                 {tax.irmaa.people > 1 ? ' for the two of you' : ''} two years from now, at {YEAR} tiers.
               </p>
             )}
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Federal and {YEAR} state rules, simplified. Withholding from the RMD can cover this tax.
             </p>
           </div>
@@ -181,15 +182,15 @@ export function RmdCalculator() {
 
         {r.schedule.length > 0 && (
           <div className={card}>
-            <h3 className="font-medium">Your RMDs year by year</h3>
+            <h2 className="font-medium">Your RMDs year by year</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Projected at a {pct(inputs.annualReturn)} return, taking only the minimum each year. Actual RMDs use each
               December 31 balance.
             </p>
-            <div className="mt-2 max-h-96 overflow-auto">
+            <div className={`mt-2 max-h-96 overflow-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Your RMDs year by year">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-slate-900">
-                  <tr className="text-left text-slate-500">
+                  <tr className="text-left text-slate-500 dark:text-slate-400">
                     <th className="py-1 pr-2 font-normal">Year</th>
                     <th className="py-1 pr-2 font-normal">Age</th>
                     <th className="py-1 pr-2 text-right font-normal">Start balance</th>
@@ -215,7 +216,7 @@ export function RmdCalculator() {
 
         <a
           href="../"
-          className="block rounded-lg bg-teal-700 px-4 py-3 text-center font-medium text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500"
+          className={CALL_TO_ACTION}
         >
           See how RMDs fit your whole retirement in the free planner →
         </a>

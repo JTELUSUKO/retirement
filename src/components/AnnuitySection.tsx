@@ -70,7 +70,7 @@ export function AnnuitySection() {
             <div className="w-36">
               <PercentField label="Payout rate" min={0.1} max={30} value={rate} onChange={(v) => updateAnnuity({ payoutRate: v })} />
             </div>
-            <p className="pb-2 text-xs text-slate-500">
+            <p className="pb-2 text-xs text-slate-500 dark:text-slate-400">
               {a.payoutRate === null ? (
                 <>
                   {a.purchaseAge > 0 ? `Estimated for age ${a.purchaseAge}` : 'Enter an age for an estimate'}

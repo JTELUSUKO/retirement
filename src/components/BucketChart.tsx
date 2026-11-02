@@ -24,7 +24,7 @@ function ChartTooltip({ active, label, payload, buckets }: TooltipProps) {
       <div className="mb-1 font-medium">Age {label}</div>
       {[...buckets].reverse().map((b) => (
         <div key={b} className="flex items-center justify-between gap-6 tabular-nums">
-          <span className="flex items-center gap-1.5 text-slate-500">
+          <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
             <span className="h-2.5 w-2.5 rounded-sm" style={{ background: BUCKET_COLOR[b] }} />
             {BUCKET_LABEL[b]}
           </span>
@@ -32,7 +32,7 @@ function ChartTooltip({ active, label, payload, buckets }: TooltipProps) {
         </div>
       ))}
       {y.rmd > 0 && (
-        <div className="mt-1 border-t border-[var(--chart-grid)] pt-1 text-slate-500">
+        <div className="mt-1 border-t border-[var(--chart-grid)] pt-1 text-slate-500 dark:text-slate-400">
           RMD this year: {formatUSD(y.rmd)}
         </div>
       )}
