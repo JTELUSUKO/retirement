@@ -20,6 +20,7 @@ import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { ageLabel, endLabel } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
+import { SECONDARY } from '../components/styles'
 
 const cell = 'px-3 py-2 align-middle'
 const select =
@@ -100,7 +101,7 @@ export function Scenarios() {
               type="button"
               disabled={full}
               onClick={() => addScenario(p.make(plan))}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
+              className={`${SECONDARY} px-3 py-1.5 text-sm`}
             >
               + {p.label}
             </button>

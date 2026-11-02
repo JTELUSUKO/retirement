@@ -6,6 +6,7 @@ import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
 import { ALL_STATES } from '../utils/states'
 import { applySavings, isBlankPlan, QUICK_ACCOUNT_TYPES, savingsFromPlan, type QuickSavings } from '../utils/quickStart'
 import { NumberField } from './NumberField'
+import { PRIMARY, SECONDARY } from './styles'
 
 const STEPS = ['About you', 'Where you’ll live', 'Your savings', 'Spending', 'Social Security'] as const
 /** Short names under the progress bar */
@@ -13,9 +14,9 @@ const STEP_LABELS = ['You', 'State', 'Savings', 'Spending', 'Social Security']
 
 const select = 'mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900'
 const secondary =
-  'rounded-md border border-slate-400 px-4 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-500 disabled:hover:bg-transparent dark:border-slate-500 dark:hover:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-400'
+  `${SECONDARY} px-4 py-2 text-sm`
 const primary =
-  'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900'
+  `${PRIMARY} px-4 py-2 text-sm`
 
 /** Five short steps for a first visit. Edits a draft and saves it to the plan on Finish. */
 export function QuickStart() {

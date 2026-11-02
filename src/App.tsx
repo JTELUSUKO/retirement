@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
+import { tabClass } from './components/styles'
 
 // Pages other than "My plan" load on first visit, keeping the first download small (Ask holds the Anthropic SDK)
 const Scenarios = lazy(() => import('./pages/Scenarios').then((m) => ({ default: m.Scenarios })))
@@ -23,14 +24,10 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const tabStyle = (value: Page) =>
-    page === value
-      ? // Selected: a quiet fill, so the page's main buttons stay the strongest thing on it
-        'bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100'
+  const tabStyle = (value: Page) => tabClass(page === value)
 
   const tab = (value: Page, label: string, hash: string) => (
-    <a href={hash} aria-current={page === value ? 'page' : undefined} className={`rounded-md px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
+    <a href={hash} aria-current={page === value ? 'page' : undefined} className={`px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
       {label}
     </a>
   )
@@ -51,7 +48,7 @@ export default function App() {
             aria-current={page === 'summary' ? 'page' : undefined}
             aria-label="Printable summary"
             title="Printable summary"
-            className={`inline-flex items-center rounded-md px-2.5 py-1.5 ${tabStyle('summary')}`}
+            className={`inline-flex items-center px-2.5 py-1.5 ${tabStyle('summary')}`}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 9V3h12v6" />

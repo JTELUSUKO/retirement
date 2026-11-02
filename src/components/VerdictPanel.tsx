@@ -6,6 +6,7 @@ import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { endLabel } from '../utils/labels'
 import { articleFor, leverVariants, spendMoreVariant, verdictFor, withArticle, type Lever } from '../utils/levers'
 import { InfoTip } from './InfoTip'
+import { SECONDARY } from './styles'
 
 /** Smallest gain (in percentage points) worth listing */
 const MIN_GAIN = 2
@@ -95,7 +96,7 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
                       addScenario(change)
                       window.location.hash = '#compare'
                     }}
-                    className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800"
+                    className={`${SECONDARY} px-2.5 py-1 text-xs`}
                   >
                     Compare
                   </button>
@@ -104,7 +105,7 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
                     type="button"
                     title="Switch the spending rule to guardrails (change it back under Advanced → Spending rule)"
                     onClick={() => update({ spendingRule: { ...usePlanStore.getState().plan.spendingRule, type: 'guardrails' } })}
-                    className="rounded-md border border-slate-300 px-2.5 py-1 text-xs hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                    className={`${SECONDARY} px-2.5 py-1 text-xs`}
                   >
                     Turn on
                   </button>

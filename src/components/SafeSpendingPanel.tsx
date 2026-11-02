@@ -3,6 +3,7 @@ import type { Plan } from '../engine'
 import { runSimulation } from '../sim/pool'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
+import { PRIMARY, SECONDARY } from './styles'
 
 const TARGETS = [0.8, 0.85, 0.9, 0.95]
 
@@ -42,7 +43,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
           type="button"
           disabled={state.status === 'running'}
           onClick={() => void run()}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900"
+          className={`${PRIMARY} px-3 py-1.5 text-sm`}
         >
           {state.status === 'running' ? 'Calculating…' : 'Calculate'}
         </button>
@@ -64,7 +65,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
               <button
                 type="button"
                 onClick={() => update({ annualSpending: state.spending })}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                className={`${SECONDARY} px-3 py-1.5 text-sm`}
               >
                 Use {formatUSD(state.spending)}/yr in my plan
               </button>

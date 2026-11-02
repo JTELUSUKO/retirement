@@ -105,6 +105,7 @@ retirement/
 │   │   ├── ProbabilityChart.tsx # Monte Carlo bands (10–90th, 25–75th) + median line
 │   │   ├── LazyCharts.tsx       # Loads ProbabilityChart and BucketChart after first paint (the charting library is the biggest download)
 │   │   ├── StatCard.tsx         # Headline number tiles
+│   │   ├── styles.ts            # Shared button (PRIMARY, SECONDARY) and tab (tabClass) styles; use these for new buttons
 │   │   ├── StateField.tsx       # State picker + how the state taxes retirees + partial exemption amount
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/

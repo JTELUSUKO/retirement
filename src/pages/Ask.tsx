@@ -6,6 +6,7 @@ import { describeToolCall } from '../ai/toolNotes'
 import { GettingStarted } from '../components/GettingStarted'
 import { missingEssentials } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { PRIMARY, SECONDARY } from '../components/styles'
 
 const SUGGESTIONS = [
   'Am I on track to retire? What matters most in my plan?',
@@ -15,7 +16,7 @@ const SUGGESTIONS = [
 ]
 
 const button =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:hover:bg-slate-800'
+  `${SECONDARY} px-3 py-1.5 text-sm`
 
 function ApiKeySetup({ onSaved }: { onSaved: () => void }) {
   const [key, setKey] = useState('')
@@ -61,7 +62,7 @@ function ApiKeySetup({ onSaved }: { onSaved: () => void }) {
           <input type="checkbox" className="h-4 w-4 accent-teal-700" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           Remember on this device
         </label>
-        <button type="submit" disabled={!key.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900">
+        <button type="submit" disabled={!key.trim()} className={`${PRIMARY} px-4 py-2 text-sm`}>
           Save key and start
         </button>
       </form>
@@ -206,7 +207,7 @@ export function Ask() {
             Stop
           </button>
         ) : (
-          <button type="submit" disabled={!draft.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900">
+          <button type="submit" disabled={!draft.trim()} className={`${PRIMARY} px-4 py-2 text-sm`}>
             Send
           </button>
         )}

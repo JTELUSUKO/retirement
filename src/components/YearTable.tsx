@@ -3,6 +3,7 @@ import { BUCKETS, spouseOffset, type PercentileYear, type Plan, type YearResult 
 import { BUCKET_COLOR, BUCKET_LABEL } from '../utils/buckets'
 import { formatUSD } from '../utils/format'
 import { ageCell } from '../utils/labels'
+import { tabClass } from './styles'
 
 interface Props {
   averageYears: YearResult[]
@@ -26,11 +27,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
       role="tab"
       aria-selected={view === value}
       onClick={() => setView(value)}
-      className={`rounded-md px-3 py-1 text-sm ${
-        view === value
-          ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-          : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-      }`}
+      className={`px-3 py-1 text-sm ${tabClass(view === value)}`}
     >
       {label}
     </button>

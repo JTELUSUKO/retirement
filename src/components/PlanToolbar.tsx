@@ -2,9 +2,10 @@ import { useRef, useState } from 'react'
 import { backupFileName, MAX_FILE_BYTES, parsePlanFile, serializePlan } from '../store/planFile'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
+import { SECONDARY } from './styles'
 
 const button =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
+  `${SECONDARY} px-3 py-1.5 text-sm`
 
 const undoMessage = { cleared: 'Plan reset to blank.', example: 'Example plan loaded.', imported: 'Plan imported.' }
 

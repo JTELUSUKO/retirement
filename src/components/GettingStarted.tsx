@@ -1,6 +1,7 @@
 import { missingEssentials, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
+import { PRIMARY, SECONDARY } from './styles'
 
 /** Shown instead of results until the essentials are filled in. */
 export function GettingStarted({ plan, onPlanTab = true }: { plan: Plan; onPlanTab?: boolean }) {
@@ -29,7 +30,7 @@ export function GettingStarted({ plan, onPlanTab = true }: { plan: Plan; onPlanT
             setGuide('open')
             window.location.hash = '#plan'
           }}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
+          className={`${PRIMARY} px-4 py-2 text-sm`}
         >
           Use the guided setup
         </button>
@@ -37,7 +38,7 @@ export function GettingStarted({ plan, onPlanTab = true }: { plan: Plan; onPlanT
         <button
           type="button"
           onClick={loadExample}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+          className={`${SECONDARY} px-4 py-2 text-sm font-medium`}
         >
           Load example
         </button>

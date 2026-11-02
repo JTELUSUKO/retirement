@@ -23,6 +23,7 @@ import { useSimulations } from '../sim/useSimulation'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
+import { PRIMARY, SECONDARY } from '../components/styles'
 
 const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits)}%`
@@ -81,11 +82,11 @@ export function Summary() {
         type="button"
         onClick={() => window.print()}
         disabled={!ready}
-        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900"
+        className={`${PRIMARY} px-3 py-1.5 text-sm`}
       >
         {ready ? 'Print / Save as PDF' : 'Preparing…'}
       </button>
-      <a href="#plan" className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+      <a href="#plan" className={`${SECONDARY} px-3 py-1.5 text-sm`}>
         Back to plan
       </a>
     </div>
