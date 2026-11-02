@@ -349,7 +349,8 @@ export function PlanForm() {
       <Section
         id="bigExpenses"
         title="Big expenses"
-        defaultOpen={plan.bigExpenses.length > 0}
+        // Open by default: its + College / + Wedding / + Other buttons are how people find it
+        defaultOpen
         summary={summaries.bigExpenses}
         info="Large costs on top of your yearly spending, in any year: your kids’ college, a wedding, a car, a home down payment. They come out of your savings, before or after you retire."
       >

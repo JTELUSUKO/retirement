@@ -1,6 +1,8 @@
 import { AGE_LIMITS, expenseAmount, expenseStartAge, TAX_CONFIG, WORKING_YEARS_ORDINARY_RATE, type BigExpense, type CollegeType, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
+import { useId } from 'react'
+import { InfoTip } from './InfoTip'
 import { NumberField, PercentField } from './NumberField'
 import { SELECT } from './styles'
 
@@ -31,6 +33,8 @@ function StartsNote({ plan, expense }: { plan: Plan; expense: BigExpense }) {
 function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) {
   const { updateBigExpense, removeBigExpense } = usePlanStore()
   const set = (patch: Partial<BigExpense>) => updateBigExpense(e.id, patch)
+  const typeId = useId()
+  const child = e.kind === 'wedding' ? 'the wedding' : e.kind === 'college' ? 'college' : 'it'
 
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -47,9 +51,17 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
       </div>
 
       {e.kind === 'college' && (
-        <label className="block text-sm">
-          <span className="text-slate-600 dark:text-slate-400">Type of college</span>
+        <div className="block text-sm">
+          <span className="text-slate-600 dark:text-slate-400">
+            <label htmlFor={typeId}>Type of college</label>
+            <InfoTip label="Type of college">
+              Fills in this school year’s average yearly cost (College Board): tuition and fees plus on-campus housing and
+              food. In-state public is cheapest; private colleges often give large discounts, so check a school’s net price
+              calculator. Choose “My own amount” to enter your own figure.
+            </InfoTip>
+          </span>
           <select
+            id={typeId}
             className={SELECT}
             value={e.collegeType ?? 'custom'}
             onChange={(ev) => {
@@ -65,7 +77,7 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
             ))}
             <option value="custom">My own amount</option>
           </select>
-        </label>
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
@@ -84,20 +96,44 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
                 : 'In today’s dollars; it rises with inflation.'
           }
         />
-        {e.kind !== 'wedding' && <NumberField label="Years" min={1} max={40} value={e.years} onChange={(v) => set({ years: v })} />}
+        {e.kind !== 'wedding' && (
+          <NumberField
+            label="Years"
+            min={1}
+            max={40}
+            value={e.years}
+            onChange={(v) => set({ years: v })}
+            info={e.kind === 'college' ? 'How many years you’ll pay: 4 for a typical bachelor’s degree, 2 for community college, more for graduate school.' : 'How many years it’s paid. 1 = a one-time cost, like a car or a down payment.'}
+          />
+        )}
         {e.childAgeNow !== null ? (
           <>
-            <NumberField label="Child’s age now" min={0} max={60} value={e.childAgeNow} onChange={(v) => set({ childAgeNow: v })} />
+            <NumberField
+              label="Child’s age now"
+              min={0}
+              max={60}
+              value={e.childAgeNow}
+              onChange={(v) => set({ childAgeNow: v })}
+              info={`Times ${child} by your child’s age, so it moves with your plan. Use 0 for a baby.`}
+            />
             <NumberField
               label={e.kind === 'college' ? 'Starts at child’s age' : 'At child’s age'}
               min={0}
               max={80}
               value={e.atChildAge}
               onChange={(v) => set({ atChildAge: v })}
+              info={e.kind === 'college' ? 'Most students start college at 18.' : 'The average age at a first wedding in the US is around 30.'}
             />
           </>
         ) : (
-          <NumberField label="Starts at your age" min={AGE_LIMITS.min} max={AGE_LIMITS.max} value={e.startAge} onChange={(v) => set({ startAge: v })} />
+          <NumberField
+            label="Starts at your age"
+            min={AGE_LIMITS.min}
+            max={AGE_LIMITS.max}
+            value={e.startAge}
+            onChange={(v) => set({ startAge: v })}
+            info="Your own age in the year it’s paid (the first year, if it lasts several)."
+          />
         )}
       </div>
 
@@ -146,13 +182,13 @@ export function BigExpenseList() {
         <ExpenseCard key={e.id} plan={plan} expense={e} />
       ))}
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={add} onClick={() => addBigExpense('college')}>
+        <button type="button" className={add} title="Add a child’s college costs: choose the type of college, their age, and any 529 savings" onClick={() => addBigExpense('college')}>
           + College
         </button>
-        <button type="button" className={add} onClick={() => addBigExpense('wedding')}>
+        <button type="button" className={add} title="Add a child’s wedding: a one-time cost at the age you choose" onClick={() => addBigExpense('wedding')}>
           + Wedding
         </button>
-        <button type="button" className={add} onClick={() => addBigExpense('other')}>
+        <button type="button" className={add} title="Add any other big cost: a car, a home down payment, a trip, a renovation…" onClick={() => addBigExpense('other')}>
           + Other (car, home, …)
         </button>
       </div>
