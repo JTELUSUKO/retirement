@@ -1,7 +1,7 @@
 name: Deploy
 
-# Each push to main is checked, then published twice: GitHub Pages (jtelusuko.github.io/retirement/) and Cloudflare
-# (willitlast.app, served from its own domain, so built with BASE_PATH=/).
+# Each push to main is checked and built once, then published twice: GitHub Pages (jtelusuko.github.io/retirement/,
+# which forwards visitors to willitlast.app) and Cloudflare (willitlast.app, served from its own domain at "/").
 
 on:
   push:
@@ -10,18 +10,20 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# Deploys wait their turn instead of being cancelled part-way
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: the sitemap dates each page by its last commit
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -31,25 +33,44 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          # Set the repo variable BASE_PATH to "/" when serving from a custom domain
-          BASE_PATH: ${{ vars.BASE_PATH }}
-      - uses: actions/upload-pages-artifact@v5
+          BASE_PATH: /retirement/
+      - run: mv dist dist-pages
+      - run: npm run build
+        env:
+          BASE_PATH: /
+      - uses: actions/upload-artifact@v7
         with:
+          name: site-pages
+          path: dist-pages
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site-cloudflare
           path: dist
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: site-pages
+          path: dist
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v5
 
   cloudflare:
-    # Only once lint and tests have passed in the build job
     needs: build
+    # The live domain only ever gets main (a manual run on another branch stops here)
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,12 +78,14 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run build
-        env:
-          BASE_PATH: /
+      # Wrangler comes from package-lock.json; no install scripts run in the job that holds the Cloudflare token
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v8
+        with:
+          name: site-cloudflare
+          path: dist
       # Needs the repo secrets CLOUDFLARE_API_TOKEN ("Edit Cloudflare Workers" token) and CLOUDFLARE_ACCOUNT_ID
-      - run: npx --yes wrangler@4.156.2 deploy
+      - run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
