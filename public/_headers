@@ -10,3 +10,13 @@
   X-Frame-Options: DENY
   Referrer-Policy: same-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# Pages (HTML): "no-transform" stops Cloudflare from adding scripts to them (Web Analytics beacon, bot-detection
+# snippet), which keeps the site's "no tracking or analytics" promise true whatever the dashboard settings are.
+# Otherwise the same as Cloudflare's default: always check for a new version.
+/
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/roth-conversion-calculator/*
+  Cache-Control: public, max-age=0, must-revalidate, no-transform

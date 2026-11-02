@@ -11,11 +11,14 @@ import { CONFIG_2026 } from './src/engine/config/2026.ts'
 // An unset or empty BASE_PATH falls back to '/retirement/'; a trailing slash is added if missing.
 const basePath = process.env.BASE_PATH || '/retirement/'
 
-// The live site's security headers (public/_headers), applied to `npm run preview` so CSP problems show up locally.
+// The live site's site-wide security headers (public/_headers), applied to `npm run preview` so CSP problems show up locally.
 // Preview is plain http, so the HTTPS-only parts (HSTS, upgrade-insecure-requests) are left out.
 // Not applied to `npm run dev`, whose hot reload needs inline scripts.
 const previewHeaders = Object.fromEntries(
   readFileSync(new URL('./public/_headers', import.meta.url), 'utf8')
+    // Only the site-wide "/*" rules: the lines indented under it, up to the next path
+    .split(/^\/\*$/m)[1]
+    .split(/^\S/m)[0]
     .split('\n')
     .filter((line) => /^\s+\S+:/.test(line))
     .map((line) => {
