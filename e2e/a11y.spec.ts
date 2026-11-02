@@ -60,6 +60,10 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await page.goto('./4-percent-rule-calculator/')
     await expect(page.locator('section[aria-label="Results"]')).toContainText('in the first year')
   }],
+  ["Kids' investment account", async (page) => {
+    await page.goto('./kids-investment-account-calculator/')
+    await expect(page.locator('section[aria-label="Results"]')).toContainText('Left invested to age')
+  }],
   ['Social Security claiming age', async (page) => {
     await page.goto('./social-security-claiming-age/')
     await expect(page.locator('section[aria-label="Results"]')).toContainText('Break-even ages')

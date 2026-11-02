@@ -8,6 +8,7 @@ import { REVIEWED_DATE, TAX_CONFIG } from '../src/engine/config/taxYear.ts'
 // (src/engine/config/taxYear.ts). In the HTML:
 //   {{YEAR}} {{PREV_YEAR}} {{NEXT_YEAR}} {{STATE_YEAR}} {{REVIEWED}} {{REV_PROC}}
 //   {{SENIOR_AMOUNT}} {{SENIOR_YEARS}} {{SENIOR_START_SINGLE}} {{SENIOR_START_JOINT}} {{LOGO}}
+//   {{KIDS_LIMIT}} {{KIDS_EMPLOYER}} {{KIDS_DEPOSIT}} {{KIDS_DEPOSIT_YEARS}} {{KIDS_FEE_CAP}}  children's accounts
 //   <!--BRACKETS--> <!--IRMAA_TIERS--> <!--UNIFORM_TABLE-->          tax tables
 //   <!--SOURCE key: what it covers-->                                one linked source (key in TAX_CONFIG.sources)
 // The build fails if a token is misspelled or a source key doesn't exist. It also writes sitemap.xml and warns when
@@ -21,6 +22,7 @@ export const PAGES: [string, string][] = [
   ['moneyLast', 'how-long-will-my-money-last/'],
   ['fourPercent', '4-percent-rule-calculator/'],
   ['claimingAge', 'social-security-claiming-age/'],
+  ['kidsAccount', 'kids-investment-account-calculator/'],
 ]
 
 const SITE = 'https://willitlast.app/'
@@ -82,6 +84,7 @@ function uniformTable(): string {
 }
 
 const senior = T.seniorDeduction
+const kids = TAX_CONFIG.kidsAccount
 const TOKENS: Record<string, string> = {
   YEAR: String(Y),
   PREV_YEAR: String(Y - 1),
@@ -94,6 +97,11 @@ const TOKENS: Record<string, string> = {
   SENIOR_YEARS: `${senior.firstYear}–${senior.lastYear}`,
   SENIOR_START_SINGLE: usd(senior.phaseOutStart.single),
   SENIOR_START_JOINT: usd(senior.phaseOutStart.married),
+  KIDS_LIMIT: usd(kids.annualLimit),
+  KIDS_EMPLOYER: usd(kids.employerLimit),
+  KIDS_DEPOSIT: usd(kids.pilotAmount),
+  KIDS_DEPOSIT_YEARS: `${kids.pilotBirthYears[0]}–${kids.pilotBirthYears[1]}`,
+  KIDS_FEE_CAP: `${kids.expenseCap * 100}%`,
 }
 
 /** The logo: the browser-tab icon itself. Vite adds the base path, as it does for the icon link (pages fill in first). */

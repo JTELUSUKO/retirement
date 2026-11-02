@@ -53,6 +53,9 @@ export const TAX_CONFIG = {
       name: 'SSA: Important things to consider when planning for retirement',
     },
     cpi: { url: 'https://www.bls.gov/cpi/', name: 'U.S. Bureau of Labor Statistics: Consumer Price Index' },
+    kidsAccountFaq: { url: 'https://www.irs.gov/faqs/trump-accounts-frequently-asked-questions', name: 'IRS: Children’s account frequently asked questions' },
+    kidsAccountNotice: { url: 'https://www.irs.gov/pub/irs-drop/n-25-68.pdf', name: 'IRS Notice 2025-68 (PDF)' },
+    kidsAccountForm: { url: 'https://www.irs.gov/pub/irs-pdf/i4547.pdf', name: 'IRS: Instructions for Form 4547 (PDF)' },
     acaIncome: { url: 'https://www.healthcare.gov/income-and-household-information/income/', name: 'HealthCare.gov: What income to include' },
     // Follows the state rules' own year (stateRules.ts), which is regenerated when the Tax Foundation table is out
     stateTax: {
@@ -70,6 +73,24 @@ export const TAX_CONFIG = {
     hsaSelf: 4_400,
     hsaFamily: 8_750,
     hsaCatchUp55: 1_000,
+  },
+  /**
+   * Children's investment accounts created by the 2025 tax law (Notice 2025-68, Form 4547 instructions, IRS FAQ):
+   * IRA-type accounts for children under 18, invested only in low-cost broad US stock index funds until January 1 of
+   * the year the child turns 18, then treated like a traditional IRA.
+   */
+  kidsAccount: {
+    /** Yearly cap on contributions from family, friends and employers (indexed in $100 steps after 2027) */
+    annualLimit: 5_000,
+    /** Employer contributions per employee per year; they count toward the annual cap */
+    employerLimit: 2_500,
+    /** One-time federal deposit for eligible US-citizen children born in these years; outside the cap */
+    pilotAmount: 1_000,
+    pilotBirthYears: [2025, 2028] as [number, number],
+    /** Most an eligible fund may charge each year */
+    expenseCap: 0.001,
+    /** Withdrawals open on January 1 of the year the child turns this age */
+    accessAge: 18,
   },
   socialSecurity: {
     fullRetirementAge: 67,

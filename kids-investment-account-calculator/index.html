@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kids’ Investment Account Calculator: Grow Savings From Birth</title>
+    <meta
+      name="description"
+      content="Free calculator for the new federal children’s investment accounts: see what yearly contributions, employer money and the {{KIDS_DEPOSIT}} federal deposit could grow to by 18 and by retirement."
+    />
+    <link rel="canonical" href="https://willitlast.app/kids-investment-account-calculator/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Will It Last?" />
+    <meta property="og:title" content="Kids’ investment account calculator" />
+    <meta property="og:description" content="See what a child’s investment account could grow to by 18 and by retirement, with family and employer contributions and the federal deposit. Free, private, no sign-up." />
+    <meta property="og:url" content="https://willitlast.app/kids-investment-account-calculator/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Kids’ Investment Account Calculator",
+        "url": "https://willitlast.app/kids-investment-account-calculator/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Project the value of a child’s federal investment account at 18 and at a later age, from yearly family and employer contributions and the one-time federal deposit, across 1,000 simulated markets."
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <a href="../" class="inline-flex items-center gap-2 text-lg font-semibold hover:text-teal-800 dark:hover:text-teal-300">{{LOGO}}Will It Last?</a>
+        <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href="../how-long-will-my-money-last/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">How long will my money last?</a>
+          <a href="../4-percent-rule-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">4% rule calculator</a>
+          <a href="../social-security-claiming-age/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Social Security claiming age</a>
+          <a href="../rmd-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">RMD calculator</a>
+          <a href="../roth-conversion-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Roth conversion calculator</a>
+          <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Free retirement planner</a>
+        </nav>
+      </header>
+
+      <div role="note" aria-label="Disclaimer" class="mb-8 rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">
+        <p class="font-semibold">
+          <strong class="font-bold">⚠ Educational only — not financial, tax or legal advice.</strong> Results are estimates,
+          not guarantees, and may contain errors; we accept no responsibility for them.
+          <a href="../#terms" class="font-bold underline underline-offset-2">Read the full disclaimer</a>.
+        </p>
+      </div>
+
+      <main class="space-y-10">
+        <section class="space-y-3">
+          <h1 class="text-3xl font-semibold">Kids’ investment account calculator</h1>
+          <p class="max-w-3xl text-slate-700 dark:text-slate-300">
+            Every US child can now have a federal investment account: an IRA-type account invested in US stock index funds
+            until they turn 18. Enter what your family (and an employer) might put in each year to see what it could grow to
+            by 18, and by retirement if it stays invested. Free, no sign-up, and nothing you enter leaves your browser.
+          </p>
+        </section>
+
+        <div id="calculator">
+          <noscript><p class="rounded-md border border-slate-300 p-4">The calculator needs JavaScript. The guide below works without it.</p></noscript>
+        </div>
+
+        <article class="max-w-3xl space-y-8 leading-relaxed text-slate-700 dark:text-slate-300">
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">How the new children’s accounts work</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Who can have one:</strong> any child with a Social Security number who doesn’t turn 18 before the end of the year the account is opened. Parents open it with IRS Form 4547 or the official online sign-up, and eligible children are being enrolled automatically.</li>
+              <li><strong>Contributions:</strong> up to {{KIDS_LIMIT}} a year from parents, relatives, friends and employers combined, until the year the child turns 17. The limit rises with inflation in later years. Contributions aren’t tax-deductible.</li>
+              <li><strong>Employer money:</strong> an employer can put up to {{KIDS_EMPLOYER}} a year into an employee’s child’s account, tax-free to the employee. It counts toward the yearly limit.</li>
+              <li><strong>The federal deposit:</strong> the government puts a one-time {{KIDS_DEPOSIT}} into the account of each US-citizen child born {{KIDS_DEPOSIT_YEARS}}, if the parent requests it on Form 4547. It doesn’t count toward the yearly limit, and neither do contributions from state or local governments and charities.</li>
+              <li><strong>Investments:</strong> until 18, the money must be in low-cost funds that track a broad US stock index (such as the S&amp;P 500), charging no more than {{KIDS_FEE_CAP}} a year.</li>
+              <li><strong>Withdrawals:</strong> none until January 1 of the year the child turns 18. After that it’s treated much like a traditional IRA.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Why starting at birth matters so much</h2>
+            <p>
+              Money invested for a newborn has 18 years to grow before it can be touched, and many more if it’s left for
+              retirement. In this calculator, the {{KIDS_DEPOSIT}} deposit alone, invested in stocks with typical returns
+              and nothing added, grows to many times its size by retirement age, in today’s dollars. Small yearly amounts
+              add up the same way: the earliest dollars do the most work.
+            </p>
+            <p>
+              Stocks go up and down, so the calculator also shows a range across 1,000 simulated markets. Over 18 years and
+              longer, the range is wide: plan around the typical result, not the best case.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How is the money taxed when it comes out?</h3>
+            <p>
+              After the child turns 18, withdrawals follow traditional IRA rules. The part that came from family contributions
+              (money already taxed) comes back tax-free. Earnings, employer contributions and the federal deposit are taxed as
+              income when withdrawn, and withdrawals before 59½ generally owe a 10% penalty unless an exception applies, such
+              as qualified college costs or a first home purchase. Left invested, it can grow for decades toward retirement.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How does this compare with a 529 plan or a custodial account?</h3>
+            <p>
+              A 529 plan grows tax-free for education and often comes with a state tax deduction. A custodial account (UGMA or
+              UTMA) can be invested in anything and used for the child at any time, but it’s taxed each year and becomes the
+              child’s at 18 or 21. This account is limited to US stock index funds and locked until 18, and it gets the federal
+              deposit and employer contributions. Many families use more than one.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Does it affect financial aid?</h3>
+            <p>
+              Rules for how these accounts count in college financial aid are still being settled. Check with the school’s
+              financial aid office and the latest federal guidance.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What if the rules change?</h3>
+            <p>
+              Treasury and the IRS are still issuing guidance. This page is reviewed against the IRS sources below; check them
+              for the latest before you act.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Sources</h2>
+            <p>
+              Return assumptions are illustrative long-run averages for US stocks, not predictions. Last reviewed
+              {{REVIEWED}}.
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <!--SOURCE kidsAccountFaq: who’s eligible, the federal deposit and opening an account-->
+              <!--SOURCE kidsAccountNotice: contribution limits, investments and withdrawal rules-->
+              <!--SOURCE kidsAccountForm: opening an account and requesting the deposit-->
+              <!--SOURCE pub590b: how traditional IRA withdrawals are taxed-->
+              <!--SOURCE earlyDistributions: exceptions to the 10% early withdrawal penalty-->
+            </ul>
+          </section>
+        </article>
+      </main>
+
+      <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-sm leading-relaxed text-slate-600 dark:border-slate-800 dark:text-slate-400">
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial, tax, investment or legal advice, and not
+          affiliated with the IRS, Treasury or any government agency. Results use illustrative long-run stock market
+          assumptions and simulated markets, in today’s dollars; past returns don’t guarantee future results, and the rules
+          for these accounts are new and may change. Calculations may contain errors; we accept no responsibility or
+          liability for them. Consult a qualified, licensed professional before making financial decisions. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
+        </p>
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, cookies, tracking or analytics.
+          What you enter stays in your browser.
+        </p>
+        <p>Not affiliated with the IRS, SSA, CMS or any government agency. © willitlast.app. All rights reserved.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/seo/kidsAccountPage.tsx"></script>
+  </body>
+</html>

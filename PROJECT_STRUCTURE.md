@@ -138,6 +138,11 @@ retirement/
 │   │   ├── claimingAge.test.ts
 │   │   ├── ClaimingAgeCalculator.tsx
 │   │   ├── claimingAgePage.tsx  # Entry for social-security-claiming-age/index.html
+│   │   ├── kidsAccount.ts       # Children's federal investment accounts: value at 18 and later, 1,000 markets,
+│   │   │                        #   contribution caps and the federal deposit (rules in TAX_CONFIG.kidsAccount)
+│   │   ├── kidsAccount.test.ts
+│   │   ├── KidsAccountCalculator.tsx
+│   │   ├── kidsAccountPage.tsx  # Entry for kids-investment-account-calculator/index.html
 │   │   └── pages.test.ts        # Guards: tokens filled, no typed-in tax years, no-transform header for every page
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
@@ -160,6 +165,8 @@ retirement/
 │   └── index.html               # 4% rule page
 ├── social-security-claiming-age/
 │   └── index.html               # Social Security claiming age page
+├── kids-investment-account-calculator/
+│   └── index.html               # Children's investment account page ({{KIDS_*}} tokens)
 ├── build/
 │   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
 │                                #   and the "next year's figures are due" warning from November 15

@@ -67,6 +67,8 @@ export function Footer() {
         {' · '}
         <a href="social-security-claiming-age/" className="underline underline-offset-2">Social Security claiming age</a>
         {' · '}
+        <a href="kids-investment-account-calculator/" className="underline underline-offset-2">Kids’ investment account</a>
+        {' · '}
         <a href="roth-conversion-calculator/" className="underline underline-offset-2">Roth conversion calculator</a>
         {' · '}
         <a href="rmd-calculator/" className="underline underline-offset-2">RMD calculator</a>

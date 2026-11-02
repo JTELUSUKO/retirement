@@ -1,6 +1,7 @@
 import { expect, test as base, type Page } from '@playwright/test'
 import { CLAIMING_DEFAULTS, claimingAge } from '../src/seo/claimingAge'
 import { FOUR_PERCENT_DEFAULTS, fourPercent } from '../src/seo/fourPercent'
+import { KIDS_ACCOUNT_DEFAULTS, kidsAccount } from '../src/seo/kidsAccount'
 import { MONEY_LAST_DEFAULTS, moneyLast } from '../src/seo/moneyLast'
 import { RMD_DEFAULTS, rmdCalculator } from '../src/seo/rmd'
 import { ROTH_DEFAULTS, rothConversion } from '../src/seo/rothConversion'
@@ -145,6 +146,22 @@ test('4% rule calculator', async ({ page }) => {
   await expect(results(page).locator('tbody td')).toHaveCount(35)
   await typeIn(page, 'Withdrawal rate', '5')
   await expect(results(page)).toContainText(`${formatUSD(fourPercent({ ...FOUR_PERCENT_DEFAULTS, rate: 0.05 }).firstYear)} in the first year`)
+  await expectFitsScreen(page)
+})
+
+test("Kids' investment account calculator", async ({ page }) => {
+  const expected = kidsAccount(KIDS_ACCOUNT_DEFAULTS)
+  await page.goto('./kids-investment-account-calculator/')
+  await expectBanner(page)
+  await expect(results(page)).toContainText(formatUSD(Math.round(expected.atAccess.typical)))
+  await expect(results(page)).toContainText(formatUSD(Math.round(expected.atLater.typical)))
+  await expect(results(page)).toContainText(formatUSD(Math.round(expected.depositAloneLater)))
+  await expect(results(page).locator('tbody tr')).toHaveCount(expected.years)
+  // Over the yearly limit: capped, with a note
+  await typeIn(page, 'Family contributions per year', '9000')
+  await expect(page.getByRole('form', { name: 'Your numbers' })).toContainText('Capped at')
+  const capped = kidsAccount({ ...KIDS_ACCOUNT_DEFAULTS, family: 9000 })
+  await expect(results(page)).toContainText(formatUSD(Math.round(capped.atAccess.typical)))
   await expectFitsScreen(page)
 })
 
