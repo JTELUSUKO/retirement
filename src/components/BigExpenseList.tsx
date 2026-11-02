@@ -1,7 +1,7 @@
+import { useId } from 'react'
 import { AGE_LIMITS, expenseAmount, expenseStartAge, TAX_CONFIG, WORKING_YEARS_ORDINARY_RATE, type BigExpense, type CollegeType, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
-import { useId } from 'react'
 import { InfoTip } from './InfoTip'
 import { NumberField, PercentField } from './NumberField'
 import { SELECT } from './styles'
@@ -34,7 +34,6 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
   const { updateBigExpense, removeBigExpense } = usePlanStore()
   const set = (patch: Partial<BigExpense>) => updateBigExpense(e.id, patch)
   const typeId = useId()
-  const child = e.kind === 'wedding' ? 'the wedding' : e.kind === 'college' ? 'college' : 'it'
 
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -103,7 +102,11 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
             max={40}
             value={e.years}
             onChange={(v) => set({ years: v })}
-            info={e.kind === 'college' ? 'How many years you’ll pay: 4 for a typical bachelor’s degree, 2 for community college, more for graduate school.' : 'How many years it’s paid. 1 = a one-time cost, like a car or a down payment.'}
+            info={
+              e.kind === 'college'
+                ? `How many years you’ll pay: ${C.years} for a typical bachelor’s degree, 2 for community college, more for graduate school.`
+                : 'How many years it’s paid. 1 = a one-time cost, like a car or a down payment.'
+            }
           />
         )}
         {e.childAgeNow !== null ? (
@@ -114,7 +117,7 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
               max={60}
               value={e.childAgeNow}
               onChange={(v) => set({ childAgeNow: v })}
-              info={`Times ${child} by your child’s age, so it moves with your plan. Use 0 for a baby.`}
+              info="When it happens is set by your child’s age, not yours. Use 0 for a baby."
             />
             <NumberField
               label={e.kind === 'college' ? 'Starts at child’s age' : 'At child’s age'}
@@ -122,7 +125,11 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
               max={80}
               value={e.atChildAge}
               onChange={(v) => set({ atChildAge: v })}
-              info={e.kind === 'college' ? 'Most students start college at 18.' : 'The average age at a first wedding in the US is around 30.'}
+              info={
+                e.kind === 'college'
+                  ? `Most students start college at ${C.startChildAge}.`
+                  : `The average age at a first wedding in the US is around ${TAX_CONFIG.bigExpenses.wedding.childAge}.`
+              }
             />
           </>
         ) : (
@@ -181,16 +188,21 @@ export function BigExpenseList() {
       {plan.bigExpenses.map((e) => (
         <ExpenseCard key={e.id} plan={plan} expense={e} />
       ))}
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={add} title="Add a child’s college costs: choose the type of college, their age, and any 529 savings" onClick={() => addBigExpense('college')}>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className={add} onClick={() => addBigExpense('college')}>
           + College
         </button>
-        <button type="button" className={add} title="Add a child’s wedding: a one-time cost at the age you choose" onClick={() => addBigExpense('wedding')}>
+        <button type="button" className={add} onClick={() => addBigExpense('wedding')}>
           + Wedding
         </button>
-        <button type="button" className={add} title="Add any other big cost: a car, a home down payment, a trip, a renovation…" onClick={() => addBigExpense('other')}>
+        <button type="button" className={add} onClick={() => addBigExpense('other')}>
           + Other (car, home, …)
         </button>
+        <InfoTip label="Adding a big expense">
+          College: choose the type of school, your child’s age and any 529 savings. Wedding: a one-time cost at the age
+          you choose. Other: any big cost, such as a car, a home down payment, a trip or a renovation, once or over several
+          years.
+        </InfoTip>
       </div>
       <p className="text-xs text-muted">
         Paid from your savings in the year they happen: cash first, then brokerage, then retirement accounts. Before you
