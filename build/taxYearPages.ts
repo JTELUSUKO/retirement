@@ -1,9 +1,11 @@
+import { execFileSync } from 'node:child_process'
 import type { Plugin } from 'vite'
-import { TAX_CONFIG } from '../src/engine/config/taxYear.ts'
+import { STATE_RULES_YEAR } from '../src/engine/config/stateRules.ts'
+import { REVIEWED_DATE, TAX_CONFIG } from '../src/engine/config/taxYear.ts'
 
 // Fills the HTML pages from the tax-year config at build time, so a yearly update is one file
 // (src/engine/config/taxYear.ts). In the HTML:
-//   {{YEAR}} {{PREV_YEAR}} {{NEXT_YEAR}} {{REVIEWED}} {{REV_PROC}}
+//   {{YEAR}} {{PREV_YEAR}} {{NEXT_YEAR}} {{STATE_YEAR}} {{REVIEWED}} {{REV_PROC}}
 //   {{SENIOR_AMOUNT}} {{SENIOR_YEARS}} {{SENIOR_START_SINGLE}} {{SENIOR_START_JOINT}}
 //   <!--BRACKETS--> <!--IRMAA_TIERS--> <!--UNIFORM_TABLE-->          tax tables
 //   <!--SOURCE key: what it covers-->                                one linked source (key in TAX_CONFIG.sources)
@@ -73,14 +75,15 @@ function uniformTable(): string {
   )
 }
 
-const reviewed = new Date(`${TAX_CONFIG.reviewed}T00:00:00Z`)
 const senior = T.seniorDeduction
 const TOKENS: Record<string, string> = {
   YEAR: String(Y),
   PREV_YEAR: String(Y - 1),
   NEXT_YEAR: String(Y + 1),
-  REVIEWED: reviewed.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }),
-  REV_PROC: TAX_CONFIG.sources.revProc.name.replace('IRS Revenue Procedure', 'IRS Rev. Proc.').replace(' (PDF)', ''),
+  // State rules can lag the federal year (their table comes out a few months later)
+  STATE_YEAR: String(STATE_RULES_YEAR),
+  REVIEWED: REVIEWED_DATE,
+  REV_PROC: TAX_CONFIG.sources.revProc.short,
   SENIOR_AMOUNT: usd(senior.amount),
   SENIOR_YEARS: `${senior.firstYear}–${senior.lastYear}`,
   SENIOR_START_SINGLE: usd(senior.phaseOutStart.single),
@@ -113,6 +116,22 @@ export function updateDue(today = new Date()): boolean {
   return today >= new Date(Date.UTC(Y, 10, 15))
 }
 
+/** Date a page last changed: its last commit, or the tax figures' review date if that's later (or git isn't there). */
+function lastChanged(path: string): string {
+  try {
+    const committed = execFileSync('git', ['log', '-1', '--format=%cs', '--', `${path}index.html`], { encoding: 'utf8' }).trim()
+    if (committed && committed > TAX_CONFIG.reviewed) return committed
+  } catch {
+    // Not a git checkout: fall back to the review date
+  }
+  return TAX_CONFIG.reviewed
+}
+
+function sitemap(): string {
+  const urls = PAGES.map(([, path]) => `  <url><loc>${SITE}${path}</loc><lastmod>${lastChanged(path)}</lastmod></url>`)
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`
+}
+
 export function taxYearPages(): Plugin {
   return {
     name: 'tax-year-pages',
@@ -125,11 +144,13 @@ export function taxYearPages(): Plugin {
     },
     transformIndexHtml: fillPage,
     generateBundle() {
-      const urls = PAGES.map(([, path]) => `  <url><loc>${SITE}${path}</loc><lastmod>${TAX_CONFIG.reviewed}</lastmod></url>`)
-      this.emitFile({
-        type: 'asset',
-        fileName: 'sitemap.xml',
-        source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`,
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap() })
+    },
+    configureServer(server) {
+      // robots.txt points here, so the dev server serves it too
+      server.middlewares.use('/sitemap.xml', (_, res) => {
+        res.setHeader('Content-Type', 'application/xml')
+        res.end(sitemap())
       })
     },
   }

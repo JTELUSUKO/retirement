@@ -1,6 +1,6 @@
 import { TAX_CONFIG, federalIncomeTax, irmaaPerPersonYearly, stateIncomeTax, type FilingStatus } from '../engine'
 
-// Shared by the calculator pages: the extra 2026 federal and state tax (and Medicare surcharge) caused by adding
+// Shared by the calculator pages: the extra federal and state tax for the tax year (and Medicare surcharge) caused by adding
 // retirement income such as a Roth conversion or an RMD to a household's other income.
 
 const T = TAX_CONFIG.federalTax
@@ -42,7 +42,7 @@ export interface ExtraIncomeTax {
   alsoCosts: { socialSecurity: boolean; seniorDeduction: boolean }
   /**
    * Medicare income surcharge (IRMAA) two years later, for everyone on the return (only when they'll be 65+ by then).
-   * Yearly amounts at 2026 tiers; roomInTier is income that can be added before the next tier (Infinity in the top one).
+   * Yearly amounts at the tax year's tiers; roomInTier is income that can be added before the next tier (Infinity in the top one).
    */
   irmaa: { applies: boolean; people: number; beforeYearly: number; afterYearly: number; extraYearly: number; roomInTier: number }
 }
@@ -100,7 +100,7 @@ export function incomeToReach(h: Household, target: number, baseTaxable: number)
   return Math.ceil(lo)
 }
 
-/** Whether income from `before` to `after` falls in the senior deduction's phase-out range (65+, 2025–2028). */
+/** Whether income from `before` to `after` falls in the senior deduction's phase-out range (65+, while the deduction lasts). */
 function shrinksSeniorDeduction(h: Household, before: number, after: number): boolean {
   const { amount, lastYear, phaseOutStart, phaseOutRate } = T.seniorDeduction
   const start = phaseOutStart[h.status]

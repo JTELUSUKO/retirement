@@ -1,15 +1,15 @@
-import { TAX_CONFIG } from '../engine'
-import { REVIEWED_DATE } from '../utils/taxYear'
+import { REVIEWED_DATE, TAX_CONFIG } from '../engine'
 
 const YEAR = new Date().getFullYear()
 
 const S = TAX_CONFIG.sources
 const Y = TAX_CONFIG.year
+const SENIOR = TAX_CONFIG.federalTax.seniorDeduction
 
 /** Official sources for the rules and figures the planner uses (links live in the tax-year config): [source, what it covers] */
 const SOURCES: [{ url: string; name: string }, string][] = [
   [S.revProc, `${Y} tax brackets, standard and 65+ deductions, capital gains rates`],
-  [S.seniorDeduction, 'the senior deduction'],
+  [S.seniorDeduction, `the $${SENIOR.amount.toLocaleString('en-US')} senior deduction for ${SENIOR.firstYear}–${SENIOR.lastYear}`],
   [S.planLimits, '401(k) and IRA contribution limits'],
   [S.rmdTopics, 'RMD ages and rules'],
   [S.pub590b, 'IRA distributions and the RMD life expectancy table'],
@@ -18,7 +18,7 @@ const SOURCES: [{ url: string; name: string }, string][] = [
   [S.ssaDelayed, 'claiming after full retirement age'],
   [S.mySocialSecurity, 'your own benefit estimate'],
   [S.medicarePremiums, 'Part B and D premiums and IRMAA surcharges'],
-  [S.stateTax, `${Y} state income tax rates and brackets`],
+  [S.stateTax, 'state income tax rates and brackets'],
 ]
 
 /** Disclaimer, privacy statement and data sources (hidden when printing; the summary has its own). */

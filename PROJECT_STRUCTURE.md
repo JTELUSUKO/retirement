@@ -18,7 +18,7 @@ retirement/
 │   │   ├── config/
 │   │   │   ├── taxYear.ts       # TAX_CONFIG: the tax year's limits, SS, RMD table, brackets, IRMAA, source links and review
 │   │   │   │                    #   date. The one file to update each year (YEARLY_UPDATE.md); pages read from it too
-│   │   │   └── stateRules.ts    # STATE_TAX_RULES, GENERATED from the Tax Foundation table (41 states + DC); regenerate
+│   │   │   └── stateRules.ts    # STATE_TAX_RULES + STATE_RULES_YEAR, GENERATED from the Tax Foundation table; regenerate
 │   │   ├── types.ts             # Plan, Account, YearResult, ProjectionResult
 │   │   ├── projection.ts        # Year-by-year simulation per account (simulatePath) + average-return projection
 │   │   ├── accounts.ts          # Account type → tax bucket, withdrawal order, proportional withdrawals

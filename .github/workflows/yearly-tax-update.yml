@@ -2,6 +2,7 @@ name: Yearly tax update reminder
 
 # Each November 15, by when the IRS, SSA and CMS have usually published next year's figures, open an issue with the
 # update checklist (GitHub emails it to the repo owner). Run it by hand from the Actions tab to test.
+# GitHub pauses scheduled workflows in public repos after 60 days without commits; YEARLY_UPDATE.md covers that.
 on:
   schedule:
     - cron: '0 14 15 11 *'

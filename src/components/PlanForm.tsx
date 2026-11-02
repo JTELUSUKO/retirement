@@ -236,7 +236,7 @@ export function PlanForm() {
                 label="You add / yr"
                 prefix="$"
                 min={0}
-                info="What you contribute each year until you retire, in today’s dollars (it rises with inflation). You’ll see a warning if it’s above the 2026 IRS limit."
+                info={`What you contribute each year until you retire, in today’s dollars (it rises with inflation). You’ll see a warning if it’s above the IRS limit for ${TAX_CONFIG.year}.`}
                 value={acc.annualContribution}
                 onChange={(v) => updateAccount(acc.id, { annualContribution: v })}
               />

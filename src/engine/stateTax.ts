@@ -1,7 +1,7 @@
-import { NO_INCOME_TAX_STATES, STATE_TAX_RULES, type StateTaxRule } from './config/stateRules'
+import { NO_INCOME_TAX_STATES, STATE_RULES_YEAR, STATE_TAX_RULES, type StateTaxRule } from './config/stateRules'
 import type { FilingStatus } from './types'
 
-export { NO_INCOME_TAX_STATES, STATE_TAX_RULES }
+export { NO_INCOME_TAX_STATES, STATE_RULES_YEAR, STATE_TAX_RULES }
 
 export interface StateTaxInput {
   /** Two-letter code ('' = not chosen) */

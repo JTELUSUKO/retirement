@@ -207,7 +207,7 @@ export function simulatePath(
   }
 
   const birthYear = startYear - plan.currentAge
-  // Tax brackets are in 2026 dollars; shift them if the projection starts in another year.
+  // Tax brackets are in TAX_CONFIG.year dollars; shift them if the projection starts in another year.
   const taxIndexAtStart = (1 + plan.assumptions.inflation) ** (startYear - TAX_CONFIG.year)
 
   // Annuity bought during the projection: fixed nominal payment (or one indexed to inflation)

@@ -3,6 +3,9 @@
 // Brackets: [threshold, rate] = rate applies to taxable income above threshold.
 // Deductions/exemptions are subtracted from income; "credit" amounts are subtracted from tax.
 
+/** Tax year of these state rules. They can lag the federal TAX_CONFIG.year by a few months (the table comes out later). */
+export const STATE_RULES_YEAR = 2026
+
 export type FilingKey = 'single' | 'married'
 
 export interface StateTaxRule {

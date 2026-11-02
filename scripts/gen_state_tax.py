@@ -47,6 +47,8 @@ out = [f'// Generated from the Tax Foundation table "State Individual Income Tax
        f'// (taxfoundation.org/data/all/state/state-income-tax-rates-{YEAR}/). Do not edit by hand: regenerate.',
        '// Brackets: [threshold, rate] = rate applies to taxable income above threshold.',
        '// Deductions/exemptions are subtracted from income; "credit" amounts are subtracted from tax.', '',
+       '/** Tax year of these state rules. They can lag the federal TAX_CONFIG.year by a few months (the table comes out later). */',
+       f'export const STATE_RULES_YEAR = {YEAR}', '',
        "export type FilingKey = 'single' | 'married'", '',
        'export interface StateTaxRule {',
        '  name: string',

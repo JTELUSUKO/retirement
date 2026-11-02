@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
 import {
+  STATE_RULES_YEAR,
   TAX_CONFIG,
   applyScenario,
   householdSocialSecurityMonthly,
@@ -381,7 +382,7 @@ export function Summary() {
             </li>
             <li>
               Federal income tax uses {TAX_CONFIG.year} brackets and deductions, indexed to inflation, and taxes up to 85% of Social Security.
-              State income tax uses each state’s {TAX_CONFIG.year} brackets, deductions and full retirement-income exemptions; partial
+              State income tax uses each state’s {STATE_RULES_YEAR} brackets, deductions and full retirement-income exemptions; partial
               exemptions use the amount you entered.
             </li>
             <li>

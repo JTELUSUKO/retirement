@@ -11,7 +11,7 @@ export { healthcareCost } from './healthcare'
 export { incomeAtAge } from './income'
 export { annuityTaxableShare, estimatePayoutRate, payoutRate } from './annuity'
 export { benefitAtClaimAge } from './socialSecurity'
-export { TAX_CONFIG } from './config/taxYear'
+export { REVIEWED_DATE, TAX_CONFIG } from './config/taxYear'
 export {
   applyScenario,
   survivorDeathAgeOf,
@@ -24,7 +24,7 @@ export {
 export type { Scenario, ScenarioOverrides, StressTest, MarketAdjust } from './scenarios'
 export { evaluatePlan } from './evaluate'
 export type { PlanEvaluation } from './evaluate'
-export { stateIncomeTax, describeStateRule, stateRule, NO_INCOME_TAX_STATES, STATE_TAX_RULES } from './stateTax'
+export { stateIncomeTax, describeStateRule, stateRule, NO_INCOME_TAX_STATES, STATE_RULES_YEAR, STATE_TAX_RULES } from './stateTax'
 export {
   householdAt,
   householdSocialSecurityMonthly,

@@ -5,6 +5,8 @@
 //   65+ deductions), Schedule 1-A Part V (senior deduction), Pub. 590-B Table III (RMD divisors),
 //   IRS Social Security taxation thresholds, SSA early/late claiming rules.
 
+import { STATE_RULES_YEAR } from './stateRules.ts'
+
 export const TAX_CONFIG = {
   year: 2026,
   /** When these figures were last checked against the sources (ISO date; shown on the pages as "last reviewed"). */
@@ -14,7 +16,7 @@ export const TAX_CONFIG = {
    * Several URLs name the year (e.g. Rev. Proc. 2025-32, the CMS 2026 fact sheet): replace them each year.
    */
   sources: {
-    revProc: { url: 'https://www.irs.gov/pub/irs-drop/rp-25-32.pdf', name: 'IRS Revenue Procedure 2025-32 (PDF)' },
+    revProc: { url: 'https://www.irs.gov/pub/irs-drop/rp-25-32.pdf', name: 'IRS Revenue Procedure 2025-32 (PDF)', short: 'IRS Rev. Proc. 2025-32' },
     seniorDeduction: {
       url: 'https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors',
       name: 'IRS: Tax deductions for working Americans and seniors',
@@ -46,9 +48,10 @@ export const TAX_CONFIG = {
     ssaDelayed: { url: 'https://www.ssa.gov/benefits/retirement/planner/delayret.html', name: 'SSA: Delayed retirement credits' },
     mySocialSecurity: { url: 'https://www.ssa.gov/myaccount/', name: 'my Social Security' },
     acaIncome: { url: 'https://www.healthcare.gov/income-and-household-information/income/', name: 'HealthCare.gov: What income to include' },
+    // Follows the state rules' own year (stateRules.ts), which is regenerated when the Tax Foundation table is out
     stateTax: {
-      url: 'https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/',
-      name: 'Tax Foundation: 2026 state income tax rates and brackets',
+      url: `https://taxfoundation.org/data/all/state/state-income-tax-rates-${STATE_RULES_YEAR}/`,
+      name: `Tax Foundation: ${STATE_RULES_YEAR} state income tax rates and brackets`,
     },
   },
   contributionLimits: {
@@ -127,3 +130,11 @@ export const TAX_CONFIG = {
     socialSecurityThresholds: { single: [25_000, 34_000], married: [32_000, 44_000] } as Record<'single' | 'married', [number, number]>,
   },
 } as const
+
+/** The review date as shown on the pages: "November 1, 2026" */
+export const REVIEWED_DATE = new Date(`${TAX_CONFIG.reviewed}T00:00:00Z`).toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
