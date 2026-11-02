@@ -3,6 +3,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
 import { Logo } from './components/Logo'
+import { CalculatorsMenu } from './components/Calculators'
 import { Icon, type IconName } from './components/Icons'
 import { tabClass } from './components/styles'
 
@@ -70,6 +71,7 @@ export default function App() {
         <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan', 'home')}
           {tab('compare', 'Compare scenarios', '#compare', 'columns')}
+          <CalculatorsMenu />
           {/* The summary is the printable report, so it's a printer icon rather than another tab. It's an action, so
               no aria-current; it looks selected on the summary, and the page's heading says where you are */}
           <button

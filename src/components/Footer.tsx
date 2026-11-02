@@ -1,4 +1,5 @@
 import { REVIEWED_DATE, TAX_CONFIG } from '../engine'
+import { CalculatorGrid } from './Calculators'
 
 const YEAR = new Date().getFullYear()
 
@@ -59,20 +60,7 @@ export function Footer() {
           ))}
         </ul>
       </div>
-      <p>
-        <strong className="text-slate-700 dark:text-slate-300">Free calculators:</strong>{' '}
-        <a href="how-long-will-my-money-last/" className="underline underline-offset-2">How long will my money last?</a>
-        {' · '}
-        <a href="4-percent-rule-calculator/" className="underline underline-offset-2">4% rule calculator</a>
-        {' · '}
-        <a href="social-security-claiming-age/" className="underline underline-offset-2">Social Security claiming age</a>
-        {' · '}
-        <a href="kids-investment-account-calculator/" className="underline underline-offset-2">Kids’ investment account</a>
-        {' · '}
-        <a href="roth-conversion-calculator/" className="underline underline-offset-2">Roth conversion calculator</a>
-        {' · '}
-        <a href="rmd-calculator/" className="underline underline-offset-2">RMD calculator</a>
-      </p>
+      <CalculatorGrid />
       <p>© {YEAR} willitlast.app. All rights reserved.</p>
     </footer>
   )

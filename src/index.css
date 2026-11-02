@@ -63,6 +63,20 @@ body {
   }
 }
 
+/* "Look here" glow on the Free calculators button: three pulses on load, then still. None with reduced motion. */
+@keyframes attention {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(13 148 136 / 0); }
+  50% { box-shadow: 0 0 0 6px rgb(13 148 136 / 0.35); }
+}
+.attention {
+  animation: attention 1.2s ease-in-out 0.6s 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attention {
+    animation: none;
+  }
+}
+
 /* Printable summary: always light, including chart colors */
 .paper {
   color-scheme: light;

@@ -28,6 +28,11 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await page.goto('./#summary')
     await expect(page.locator('svg.recharts-surface')).toHaveCount(1, { timeout: 15_000 })
   }],
+  ['Free calculators menu open', async (page) => {
+    await page.goto('./')
+    await page.getByRole('button', { name: /Free calculators/ }).click()
+    await expect(page.locator('#calculators-menu')).toBeVisible()
+  }],
   ['Ask Claude (API key setup)', async (page) => {
     await page.goto('./#ask')
     await expect(page.getByRole('heading', { name: 'Ask Claude about your plan' })).toBeVisible()

@@ -113,6 +113,26 @@ test('RMD calculator', async ({ page }) => {
   await expectFitsScreen(page)
 })
 
+test('Free calculators menu lists every calculator page and opens one', async ({ page }) => {
+  await page.goto('./')
+  const button = page.getByRole('button', { name: /Free calculators/ })
+  await button.click()
+  const menu = page.locator('#calculators-menu')
+  await expect(menu.getByRole('link')).toHaveCount(6)
+  // The open menu stays on screen (on phones it opens from the button's left edge)
+  const box = (await menu.boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0)
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1)
+  await page.keyboard.press('Escape')
+  await expect(menu).toHaveCount(0)
+  // The footer has the same six as cards
+  await expect(page.getByRole('navigation', { name: 'Free calculators' }).getByRole('link')).toHaveCount(6)
+  await button.click()
+  await menu.getByRole('link', { name: /4% rule calculator/ }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('4% rule calculator')
+  await expectFitsScreen(page)
+})
+
 test('state picker: type to filter, pick from the list or leave with a single match', async ({ page }) => {
   await page.goto('./rmd-calculator/')
   const state = page.getByRole('combobox', { name: 'State' })
