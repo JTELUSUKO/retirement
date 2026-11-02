@@ -9,10 +9,10 @@ import {
 } from '../engine'
 
 /** Longest stretch followed; money that lasts this long is treated as lasting indefinitely. */
-const MAX_YEARS = 100
+export const MAX_YEARS = 100
 /** The year-by-year table stops at this age */
 const OLDEST_AGE = 110
-const RUNS = 1000
+export const RUNS = 1000
 const SEED = 20260101
 
 export interface MoneyLastInputs {
@@ -55,7 +55,7 @@ export interface MoneyLastResult {
  * Years the money lasts when `spending` (today's dollars) comes out at the start of each year and the rest earns
  * `realReturn(year)` after inflation. Fractional: the last year counts as the share of spending still covered.
  */
-function yearsLasting(savings: number, spending: number, realReturn: (year: number) => number, cap = MAX_YEARS): number {
+export function yearsLasting(savings: number, spending: number, realReturn: (year: number) => number, cap = MAX_YEARS): number {
   if (spending <= 0) return Infinity
   let balance = savings
   for (let year = 0; year < cap; year++) {
@@ -71,7 +71,7 @@ let cached: { key: string; markets: number[][] } | null = null
  * Real returns for each simulated market, with the same model as the planner's Monte Carlo. Fixed seed, so results
  * don't jump while you type; kept for the last mix and inflation, since only the amounts change as you type.
  */
-function simulatedMarkets(mean: number, volatility: number, inflation: number, years: number): number[][] {
+export function simulatedMarkets(mean: number, volatility: number, inflation: number, years: number): number[][] {
   const key = `${mean}:${volatility}:${inflation}:${years}`
   if (cached?.key === key) return cached.markets
   const random = createRandom(SEED)

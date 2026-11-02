@@ -129,6 +129,15 @@ retirement/
 │   │   ├── moneyLast.test.ts
 │   │   ├── MoneyLastCalculator.tsx
 │   │   ├── moneyLastPage.tsx    # Entry for how-long-will-my-money-last/index.html
+│   │   ├── fourPercent.ts       # 4% rule: first-year spending, chance a rate lasts (the money-last page's markets),
+│   │   │                        #   the rate that lasts in 9 of 10 markets, rate × years success table
+│   │   ├── fourPercent.test.ts
+│   │   ├── FourPercentCalculator.tsx
+│   │   ├── fourPercentPage.tsx  # Entry for 4-percent-rule-calculator/index.html
+│   │   ├── claimingAge.ts       # Social Security claiming age: benefit at 62–70, lifetime totals, break-even ages
+│   │   ├── claimingAge.test.ts
+│   │   ├── ClaimingAgeCalculator.tsx
+│   │   ├── claimingAgePage.tsx  # Entry for social-security-claiming-age/index.html
 │   │   └── pages.test.ts        # Guards: tokens filled, no typed-in tax years, no-transform header for every page
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
@@ -147,6 +156,10 @@ retirement/
 │   └── index.html               # RMD page (same tokens, plus <!--UNIFORM_TABLE-->)
 ├── how-long-will-my-money-last/
 │   └── index.html               # "How long will my money last?" page
+├── 4-percent-rule-calculator/
+│   └── index.html               # 4% rule page
+├── social-security-claiming-age/
+│   └── index.html               # Social Security claiming age page
 ├── build/
 │   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
 │                                #   and the "next year's figures are due" warning from November 15

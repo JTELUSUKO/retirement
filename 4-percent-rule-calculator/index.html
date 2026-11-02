@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>4% Rule Calculator: Safe Withdrawal Rate for Retirement</title>
+    <meta
+      name="description"
+      content="Free 4% rule calculator: see what you can spend from your savings, the chance it lasts 20 to 40 years in 1,000 simulated markets, and how much you need to retire."
+    />
+    <link rel="canonical" href="https://willitlast.app/4-percent-rule-calculator/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Will It Last?" />
+    <meta property="og:title" content="4% rule calculator" />
+    <meta property="og:description" content="What can you spend from your savings? See the chance your withdrawal rate lasts in 1,000 simulated markets, and how much you need. Free, private, no sign-up." />
+    <meta property="og:url" content="https://willitlast.app/4-percent-rule-calculator/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "4% Rule Calculator",
+        "url": "https://willitlast.app/4-percent-rule-calculator/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Test the 4% rule and other withdrawal rates: first-year spending, the chance it lasts a chosen number of years across 1,000 simulated markets, the rate that lasts in 9 of 10 markets, and the savings needed."
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <a href="../" class="inline-flex items-center gap-2 text-lg font-semibold hover:text-teal-800 dark:hover:text-teal-300">{{LOGO}}Will It Last?</a>
+        <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href="../how-long-will-my-money-last/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">How long will my money last?</a>
+          <a href="../social-security-claiming-age/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Social Security claiming age</a>
+          <a href="../rmd-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">RMD calculator</a>
+          <a href="../roth-conversion-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Roth conversion calculator</a>
+          <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Free retirement planner</a>
+        </nav>
+      </header>
+
+      <div role="note" aria-label="Disclaimer" class="mb-8 rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">
+        <p class="font-semibold">
+          <strong class="font-bold">⚠ Educational only — not financial, tax or legal advice.</strong> Results are estimates,
+          not guarantees, and may contain errors; we accept no responsibility for them.
+          <a href="../#terms" class="font-bold underline underline-offset-2">Read the full disclaimer</a>.
+        </p>
+      </div>
+
+      <main class="space-y-10">
+        <section class="space-y-3">
+          <h1 class="text-3xl font-semibold">4% rule calculator</h1>
+          <p class="max-w-3xl text-slate-700 dark:text-slate-300">
+            See what you can spend from your savings at the 4% rule or any other withdrawal rate, the chance it lasts across
+            1,000 simulated markets, and how much you need to retire. Free, no sign-up, and nothing you enter leaves your
+            browser.
+          </p>
+        </section>
+
+        <div id="calculator">
+          <noscript><p class="rounded-md border border-slate-300 p-4">The calculator needs JavaScript. The guide below works without it.</p></noscript>
+        </div>
+
+        <article class="max-w-3xl space-y-8 leading-relaxed text-slate-700 dark:text-slate-300">
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">What is the 4% rule?</h2>
+            <p>
+              The 4% rule is a rule of thumb for retirement spending: in your first year of retirement, withdraw 4% of your
+              savings. Each year after, withdraw the same dollar amount raised for inflation, no matter what markets do. In
+              research on historical US stock and bond returns (William Bengen in 1994, and the “Trinity study” in 1998), that
+              spending lasted at least 30 years in nearly every historical period.
+            </p>
+            <p>
+              Turned around, it says how much you need: about <strong>25 times</strong> the yearly spending your savings must
+              cover. Spending $40,000 a year from savings means about $1,000,000.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Is the 4% rule still safe?</h2>
+            <p>
+              It’s a starting point, not a guarantee. The calculator above tests your withdrawal rate in 1,000 simulated
+              markets with random returns and inflation, so you can see how often it lasts rather than relying on history
+              alone. A few things change the answer:
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Length of retirement.</strong> The rule was built for 30 years. Retiring at 50, or planning to 100, needs a lower rate.</li>
+              <li><strong>Your mix.</strong> Too little in stocks can mean returns don’t keep up with inflation; all stocks means bigger swings.</li>
+              <li><strong>The first years.</strong> A bad market early in retirement does the most damage, because you’re selling while prices are down (sequence-of-returns risk).</li>
+              <li><strong>Fees and taxes.</strong> The rule ignores them. A 1% yearly fee or taxes on withdrawals leave less to spend.</li>
+              <li><strong>Flexibility.</strong> If you can trim spending after bad years, you can usually start higher. Fixed spending needs a lower rate.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What withdrawal rate should I use?</h3>
+            <p>
+              Many planners use 3–4% for a 30-year retirement with fixed spending, and lower for longer retirements. The
+              table above shows how the chance changes with the rate and the number of years, so you can pick the cushion
+              you’re comfortable with.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Does the 4% include Social Security?</h3>
+            <p>
+              No. The rule covers what you withdraw from savings. Subtract Social Security, pensions and other income from your
+              spending first, and use the rest. The <a href="../social-security-claiming-age/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Social Security claiming age calculator</a>
+              and the <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">free retirement planner</a> help with that.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Is the 4% before or after taxes?</h3>
+            <p>
+              Before. Withdrawals from traditional IRAs and 401(k)s are taxed as income, so part of your 4% goes to tax. Roth
+              withdrawals are generally tax-free. The <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">retirement planner</a> estimates taxes year by year.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What if markets do badly right after I retire?</h3>
+            <p>
+              That’s the biggest risk to any withdrawal rate. Common protections: start a little below 4%, keep a year or two
+              of spending in cash, be willing to skip inflation raises after a bad year, or delay Social Security so a larger
+              guaranteed check covers more of your basics.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How is this different from “How long will my money last?”</h3>
+            <p>
+              Both use the same 1,000 simulated markets. This page starts from a withdrawal rate and shows the full table of
+              rates and years; <a href="../how-long-will-my-money-last/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">How long will my money last?</a> starts from your
+              spending and shows the age your money could run out.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Sources</h2>
+            <p>
+              Return assumptions are illustrative long-run averages for stocks and bonds, not predictions. Last reviewed
+              {{REVIEWED}}.
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <!--SOURCE lifeExpectancy: estimate how long you may live-->
+              <!--SOURCE ssaPlanning: what to consider when planning for retirement-->
+              <!--SOURCE cpi: inflation data-->
+              <!--SOURCE pub590b: how IRA and 401(k) withdrawals are taxed-->
+            </ul>
+          </section>
+        </article>
+      </main>
+
+      <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-sm leading-relaxed text-slate-600 dark:border-slate-800 dark:text-slate-400">
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial, tax, investment or legal advice. Results use illustrative long-run
+          market assumptions and simulated markets, before taxes and fees. Past returns don’t guarantee future results, and
+          your actual results will differ. Calculations may contain errors or differ from other tools; we accept no
+          responsibility or liability for them. Consult a qualified, licensed professional before making financial decisions. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
+        </p>
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, cookies, tracking or analytics.
+          What you enter stays in your browser.
+        </p>
+        <p>Not affiliated with the IRS, SSA, CMS or any government agency. © willitlast.app. All rights reserved.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/seo/fourPercentPage.tsx"></script>
+  </body>
+</html>

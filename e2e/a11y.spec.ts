@@ -52,6 +52,14 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await fill(page, 'Yearly spending from savings', '90000')
     await expect(page.locator('section[aria-label="Results"]')).toContainText('years short')
   }],
+  ['4% rule calculator', async (page) => {
+    await page.goto('./4-percent-rule-calculator/')
+    await expect(page.locator('section[aria-label="Results"]')).toContainText('in the first year')
+  }],
+  ['Social Security claiming age', async (page) => {
+    await page.goto('./social-security-claiming-age/')
+    await expect(page.locator('section[aria-label="Results"]')).toContainText('Break-even ages')
+  }],
 ]
 
 async function loadExample(page: Page) {

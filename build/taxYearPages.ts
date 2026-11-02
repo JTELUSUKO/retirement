@@ -19,6 +19,8 @@ export const PAGES: [string, string][] = [
   ['roth', 'roth-conversion-calculator/'],
   ['rmd', 'rmd-calculator/'],
   ['moneyLast', 'how-long-will-my-money-last/'],
+  ['fourPercent', '4-percent-rule-calculator/'],
+  ['claimingAge', 'social-security-claiming-age/'],
 ]
 
 const SITE = 'https://willitlast.app/'

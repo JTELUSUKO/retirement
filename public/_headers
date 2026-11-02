@@ -24,3 +24,7 @@
   Cache-Control: public, max-age=0, must-revalidate, no-transform
 /how-long-will-my-money-last/*
   Cache-Control: public, max-age=0, must-revalidate, no-transform
+/4-percent-rule-calculator/*
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+/social-security-claiming-age/*
+  Cache-Control: public, max-age=0, must-revalidate, no-transform

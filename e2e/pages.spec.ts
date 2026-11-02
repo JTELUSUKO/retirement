@@ -1,4 +1,6 @@
 import { expect, test as base, type Page } from '@playwright/test'
+import { CLAIMING_DEFAULTS, claimingAge } from '../src/seo/claimingAge'
+import { FOUR_PERCENT_DEFAULTS, fourPercent } from '../src/seo/fourPercent'
 import { MONEY_LAST_DEFAULTS, moneyLast } from '../src/seo/moneyLast'
 import { RMD_DEFAULTS, rmdCalculator } from '../src/seo/rmd'
 import { ROTH_DEFAULTS, rothConversion } from '../src/seo/rothConversion'
@@ -128,6 +130,35 @@ test('state picker: type to filter, pick from the list or leave with a single ma
   await expect(page.getByRole('listbox')).toContainText('No state matches')
   await page.keyboard.press('Tab')
   await expect(state).toHaveValue('Texas')
+})
+
+test('4% rule calculator', async ({ page }) => {
+  const expected = fourPercent(FOUR_PERCENT_DEFAULTS)
+  await page.goto('./4-percent-rule-calculator/')
+  await expectBanner(page)
+  await expect(results(page)).toContainText(`${formatUSD(expected.firstYear)} in the first year`)
+  await expect(results(page)).toContainText(pct(expected.chanceLasts, 0))
+  await expect(results(page)).toContainText(pct(expected.rateFor90, 2))
+  // 25× spending at 4%
+  await expect(results(page)).toContainText(formatUSD(1_000_000))
+  // 7 rates × 5 lengths of retirement, with the 4% / 30-year cell outlined
+  await expect(results(page).locator('tbody td')).toHaveCount(35)
+  await typeIn(page, 'Withdrawal rate', '5')
+  await expect(results(page)).toContainText(`${formatUSD(fourPercent({ ...FOUR_PERCENT_DEFAULTS, rate: 0.05 }).firstYear)} in the first year`)
+  await expectFitsScreen(page)
+})
+
+test('Social Security claiming age calculator', async ({ page }) => {
+  const expected = claimingAge(CLAIMING_DEFAULTS)
+  await page.goto('./social-security-claiming-age/')
+  await expectBanner(page)
+  await expect(results(page)).toContainText(`Age ${expected.best.age}`)
+  await expect(results(page)).toContainText('about age 80 and 4 months')
+  await expect(results(page).locator('tbody tr')).toHaveCount(9)
+  // Collecting only to 75 is before every break-even, so claiming at 62 collects the most
+  await typeIn(page, 'Add up benefits to age', '75')
+  await expect(results(page)).toContainText('Age 62')
+  await expectFitsScreen(page)
 })
 
 test('How long will my money last calculator', async ({ page }) => {
