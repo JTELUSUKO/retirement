@@ -40,9 +40,9 @@ year's table. Regenerating them in January moves the label and the Tax Foundatio
 1. `npm test`: the engine tests use the config values, so expected numbers that changed need updating. Read each
    failure; don't just accept the new number.
 2. `npm run lint` and `npm run build` (no "Tax figures are for…" warning once `year` is updated).
-3. `BASE_PATH=/ npm run build && npx vite preview`: check the planner, both calculator pages and their tax tables.
+3. `npm run e2e`, then look over the planner and the calculator pages' tax tables (`BASE_PATH=/ npm run build && npx vite preview`).
 4. Spot-check one calculation per page against the official source (for example, one bracket and one IRMAA tier).
-5. Commit, push (updates GitHub Pages), then `BASE_PATH=/ npm run build && npx wrangler deploy` (willitlast.app).
+5. Commit, push (updates GitHub Pages), then `BASE_PATH=/ npm run build && npx wrangler deploy` (willitlast.app), then `npm run e2e:live`.
 6. Close the reminder issue.
 
 Text that is not a yearly figure stays as written (for example "since 2024" for Roth 401(k) RMDs). A test fails if a

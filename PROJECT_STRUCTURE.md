@@ -147,6 +147,8 @@ retirement/
 ├── build/
 │   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
 │                                #   and the "next year's figures are due" warning from November 15
+├── e2e/
+│   └── run.mjs                  # Browser checks for all pages (Playwright; its browsers are kept in node_modules)
 ├── scripts/                     # Regenerate state tax rules from the Tax Foundation table (scripts/README.md)
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
 ├── package.json                 # Scripts: dev, build, test, lint, preview
@@ -401,6 +403,8 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run lint` | Lint with oxlint |
+| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone, Android and dark mode (`e2e/run.mjs`; screenshots in `.tmp/e2e/`) |
+| `npm run e2e:live` | The same checks against https://willitlast.app after a deploy (visible browser windows) |
 
 ## Calculator pages (SEO)
 
