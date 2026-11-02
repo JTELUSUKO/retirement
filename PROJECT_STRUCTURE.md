@@ -144,8 +144,8 @@ retirement/
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / #summary) + footer;
-│   │                            #   Ask Claude is hidden from the menu but still opens at #ask
+│   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / print / #ask, marked
+│   │                            #   Beta) + footer
 │   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app, reloads once after a deploy
 │   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry for the planner
@@ -199,8 +199,8 @@ retirement/
    ready, and each result carries its own label and baseline, so a late result can't show under the wrong
    label. Gains under 2 points are hidden.
 6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
-   The one exception is **Ask Claude**, which is hidden from the menu (it opens only at `#ask`, marked
-   experimental): with the visitor's own API key, the plan is sent to api.anthropic.com when they ask a question.
+   The one exception is **Ask Claude** (in the menu, marked Beta): with the visitor's own API key, the plan is sent
+   to api.anthropic.com when they ask a question. The header, footer, terms and the Ask page all say so.
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
 7. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.

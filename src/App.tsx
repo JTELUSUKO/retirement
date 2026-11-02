@@ -65,7 +65,7 @@ export default function App() {
               Retirement Planner
             </a>
           </h1>
-          <p className="text-sm text-muted">Everything you enter stays in this browser.</p>
+          <p className="text-sm text-muted">Everything you enter stays in this browser, unless you use Ask Claude.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan', 'home')}
@@ -85,8 +85,18 @@ export default function App() {
               <rect x="6" y="14" width="12" height="7" />
             </svg>
           </button>
-          {/* Ask Claude is hidden from the menu; it still opens at #ask */}
-          {page === 'ask' && tab('ask', 'Ask Claude', '#ask')}
+          {/* Beta: needs the visitor's own Anthropic API key, and (unlike the rest of the app) sends the plan to Anthropic */}
+          <a
+            href="#ask"
+            aria-current={page === 'ask' ? 'page' : undefined}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium ${tabStyle('ask')}`}
+          >
+            <Icon name="sparkles" size={15} />
+            Ask Claude
+            <span className="rounded-full bg-teal-100 px-1.5 py-px text-[10px] font-semibold tracking-wide text-teal-900 uppercase dark:bg-teal-900 dark:text-teal-100">
+              Beta
+            </span>
+          </a>
         </nav>
       </header>
       <div className="mb-8">

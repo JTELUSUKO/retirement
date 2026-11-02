@@ -69,7 +69,7 @@ export function Terms() {
         </p>
       </Section>
 
-      <Section title="5. AI assistant (experimental)">
+      <Section title="5. AI assistant (beta)">
         <p>
           The optional “Ask Claude” assistant uses an AI model from Anthropic with an API key you provide; your
           questions and plan go directly from your browser to Anthropic under their terms. <strong>AI answers can be
@@ -116,7 +116,8 @@ export function Terms() {
       <Section title="10. Your data and privacy">
         <p>
           The calculator has no accounts, cookies, tracking or analytics. What you enter stays in your browser and is
-          not sent to us. Clearing your browser data erases your plan, so use Export to keep a copy. Like any web host,
+          not sent to us. If you use the optional Ask Claude assistant, your plan and questions go from your browser
+          to Anthropic (see section 5). Clearing your browser data erases your plan, so use Export to keep a copy. Like any web host,
           our hosting provider keeps standard server logs of page visits.
         </p>
       </Section>

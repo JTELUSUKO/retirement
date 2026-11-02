@@ -28,6 +28,10 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await page.goto('./#summary')
     await expect(page.locator('svg.recharts-surface')).toHaveCount(1, { timeout: 15_000 })
   }],
+  ['Ask Claude (API key setup)', async (page) => {
+    await page.goto('./#ask')
+    await expect(page.getByRole('heading', { name: 'Ask Claude about your plan' })).toBeVisible()
+  }],
   ['terms', async (page) => {
     await page.goto('./#terms')
     await expect(page.locator('#root')).toContainText('Disclaimer and terms of use')
