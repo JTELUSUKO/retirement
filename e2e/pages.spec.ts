@@ -5,6 +5,7 @@ import { KIDS_ACCOUNT_DEFAULTS, kidsAccount } from '../src/seo/kidsAccount'
 import { MONEY_LAST_DEFAULTS, moneyLast } from '../src/seo/moneyLast'
 import { RMD_DEFAULTS, rmdCalculator } from '../src/seo/rmd'
 import { ROTH_DEFAULTS, rothConversion } from '../src/seo/rothConversion'
+import { CALCULATORS } from '../src/utils/calculators'
 import { formatUSD } from '../src/utils/format'
 
 // Expected numbers come from the same code the pages run, with the pages' starting values, so the yearly tax update
@@ -118,15 +119,26 @@ test('Free calculators menu lists every calculator page and opens one', async ({
   const button = page.getByRole('button', { name: /Free calculators/ })
   await button.click()
   const menu = page.locator('#calculators-menu')
-  await expect(menu.getByRole('link')).toHaveCount(6)
+  await expect(menu.getByRole('link')).toHaveCount(CALCULATORS.length)
   // The open menu stays on screen (on phones it opens from the button's left edge)
   const box = (await menu.boundingBox())!
   expect(box.x).toBeGreaterThanOrEqual(0)
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width + 1)
   await page.keyboard.press('Escape')
   await expect(menu).toHaveCount(0)
+  // At an in-between width the button sits mid-row; the menu still fits
+  const size = page.viewportSize()!
+  await page.setViewportSize({ width: 560, height: size.height })
+  await button.click()
+  const mid = (await menu.boundingBox())!
+  expect(mid.x).toBeGreaterThanOrEqual(0)
+  expect(mid.x + mid.width).toBeLessThanOrEqual(561)
+  await page.keyboard.press('Escape')
+  await page.setViewportSize(size)
+  // Opened once: no more glow
+  await expect(button).not.toHaveClass(/attention/)
   // The footer has the same six as cards
-  await expect(page.getByRole('navigation', { name: 'Free calculators' }).getByRole('link')).toHaveCount(6)
+  await expect(page.getByRole('navigation', { name: 'Free calculators' }).getByRole('link')).toHaveCount(CALCULATORS.length)
   await button.click()
   await menu.getByRole('link', { name: /4% rule calculator/ }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('4% rule calculator')

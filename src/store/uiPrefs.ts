@@ -10,6 +10,9 @@ interface UiPrefs {
   /** Sections the visitor opened or closed (overrides each section's default) */
   open: Record<string, boolean>
   guide: GuideState
+  /** The Free calculators menu has been opened (its "look here" glow stops) */
+  calculatorsSeen: boolean
+  setCalculatorsSeen: () => void
   setMode: (mode: FormMode) => void
   setGuide: (guide: GuideState) => void
   setOpen: (section: string, open: boolean) => void
@@ -22,6 +25,8 @@ export const useUiPrefs = create<UiPrefs>()(
       mode: 'basic',
       open: {},
       guide: 'auto',
+      calculatorsSeen: false,
+      setCalculatorsSeen: () => set({ calculatorsSeen: true }),
       setMode: (mode) => set({ mode }),
       setGuide: (guide) => set({ guide }),
       setOpen: (section, open) => set((s) => ({ open: { ...s.open, [section]: open } })),
