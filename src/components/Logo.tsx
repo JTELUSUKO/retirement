@@ -1,7 +1,4 @@
-import { logoSvg } from './logoSvg'
-
-/** The site's logo mark (see logoSvg.ts). */
+/** The site's logo: the browser-tab icon itself (public/favicon.svg), so there's one file to redesign. Decorative. */
 export function Logo({ size = 28 }: { size?: number }) {
-  // Static markup we write ourselves, not user content
-  return <span className="inline-flex shrink-0" dangerouslySetInnerHTML={{ __html: logoSvg(size) }} />
+  return <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={size} height={size} className="shrink-0" />
 }

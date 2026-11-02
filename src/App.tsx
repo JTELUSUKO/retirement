@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
@@ -14,19 +14,27 @@ const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
 
 const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms']
-// #print is the summary page with the print / save-as-PDF dialog opened for you (the printer icon)
-const pageFromHash = (): Page =>
-  window.location.hash === '#print' ? 'summary' : (PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan')
-const printFromHash = () => window.location.hash === '#print'
+const pageFromHash = (): Page => PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan'
 
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash)
-  const [printRequested, setPrintRequested] = useState(printFromHash)
+  // The printer icon: print from the summary page, opening it first if needed
+  const [printRequested, setPrintRequested] = useState(false)
+  const printDone = useCallback(() => setPrintRequested(false), [])
+  // Set by the summary page: prints right away (inside the click, which some browsers require) if it's ready
+  const printNow = useRef<(() => boolean) | null>(null)
+  const requestPrint = () => {
+    if (page === 'summary' && printNow.current?.()) return
+    setPrintRequested(true)
+    if (page !== 'summary') window.location.hash = '#summary'
+  }
 
   useEffect(() => {
     const onHash = () => {
-      setPage(pageFromHash())
-      if (printFromHash()) setPrintRequested(true)
+      const next = pageFromHash()
+      setPage(next)
+      // Leaving the summary cancels a print that was still waiting for the results
+      if (next !== 'summary') setPrintRequested(false)
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
@@ -57,19 +65,19 @@ export default function App() {
           {tab('plan', 'My plan', '#plan')}
           {tab('compare', 'Compare scenarios', '#compare')}
           {/* The summary is the printable report, so it's a printer icon rather than another tab */}
-          <a
-            href="#print"
-            aria-current={page === 'summary' ? 'page' : undefined}
+          <button
+            type="button"
+            onClick={requestPrint}
             aria-label="Print or save as PDF"
             title="Print or save as PDF"
-            className={`inline-flex items-center px-2.5 py-1.5 ${tabStyle('summary')}`}
+            className={`inline-flex items-center px-2.5 py-1.5 ${tabClass(false)}`}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 9V3h12v6" />
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="7" />
             </svg>
-          </a>
+          </button>
           {/* Ask Claude is hidden from the menu; it still opens at #ask */}
           {page === 'ask' && tab('ask', 'Ask Claude', '#ask')}
         </nav>
@@ -82,14 +90,7 @@ export default function App() {
         <Suspense fallback={<p className="text-sm text-muted">Loading…</p>}>
           {page === 'compare' && <Scenarios />}
           {page === 'summary' && (
-            <Summary
-              print={printRequested}
-              onPrinted={() => {
-                setPrintRequested(false)
-                // Back to the plain summary address, so a reload doesn't open the dialog again
-                history.replaceState(null, '', '#summary')
-              }}
-            />
+            <Summary print={printRequested} onPrintDone={printDone} printNowRef={printNow} />
           )}
           {page === 'terms' && <Terms />}
           {page === 'ask' && <Ask />}

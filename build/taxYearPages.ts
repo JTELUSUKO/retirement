@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import type { Plugin } from 'vite'
 import { STATE_RULES_YEAR } from '../src/engine/config/stateRules.ts'
-import { logoSvg } from '../src/components/logoSvg.ts'
 import { SCROLL_REGION } from '../src/components/styles.ts'
 import { REVIEWED_DATE, TAX_CONFIG } from '../src/engine/config/taxYear.ts'
 
@@ -89,12 +88,15 @@ const TOKENS: Record<string, string> = {
   STATE_YEAR: String(STATE_RULES_YEAR),
   REVIEWED: REVIEWED_DATE,
   REV_PROC: TAX_CONFIG.sources.revProc.short,
-  LOGO: logoSvg(26),
   SENIOR_AMOUNT: usd(senior.amount),
   SENIOR_YEARS: `${senior.firstYear}–${senior.lastYear}`,
   SENIOR_START_SINGLE: usd(senior.phaseOutStart.single),
   SENIOR_START_JOINT: usd(senior.phaseOutStart.married),
 }
+
+/** The logo: the browser-tab icon itself, under the site's base path (set when the build starts). */
+let base = '/'
+const logo = () => `<img src="${base}favicon.svg" alt="" width="26" height="26" class="shrink-0">`
 
 export function fillPage(html: string): string {
   const sources: Record<string, { url: string; name: string }> = TAX_CONFIG.sources
@@ -109,6 +111,7 @@ export function fillPage(html: string): string {
       return `<li><a href="${source.url}" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">${escapeHtml(source.name)}</a>${what}</li>`
     })
     .replace(/\{\{(\w+)\}\}/g, (match, token: string) => {
+      if (token === 'LOGO') return logo()
       if (!(token in TOKENS)) throw new Error(`Unknown page token ${match}`)
       return TOKENS[token]
     })
@@ -141,6 +144,9 @@ function sitemap(): string {
 export function taxYearPages(): Plugin {
   return {
     name: 'tax-year-pages',
+    configResolved(config) {
+      base = config.base
+    },
     buildStart() {
       if (!updateDue()) return
       const message = `Tax figures are for ${Y}; ${Y + 1} figures are due. See YEARLY_UPDATE.md.`

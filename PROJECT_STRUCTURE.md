@@ -106,6 +106,8 @@ retirement/
 │   │   ├── LazyCharts.tsx       # Loads ProbabilityChart and BucketChart after first paint (the charting library is the biggest download)
 │   │   ├── StatCard.tsx         # Headline number tiles
 │   │   ├── styles.ts            # Shared button (PRIMARY, SECONDARY) and tab (tabClass) styles; use these for new buttons
+│   │   ├── Logo.tsx             # The logo: public/favicon.svg itself (calculator pages use the {{LOGO}} token)
+│   │   ├── ScrollRegion.tsx     # Scrolling table box: focusable and labelled only while it overflows
 │   │   ├── StateField.tsx       # State picker + how the state taxes retirees + partial exemption amount
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/

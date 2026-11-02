@@ -1,5 +1,5 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
 import {
@@ -61,11 +61,22 @@ function milestoneYears(plan: Plan, years: YearResult[]): YearResult[] {
   )
 }
 
+const chartReady = () => document.querySelector('.paper svg.recharts-surface') !== null
+
 /**
- * The printable report. With `print`, it opens the print / save-as-PDF dialog by itself once the results and the
- * chart are ready (the printer icon), then calls `onPrinted`.
+ * The printable report. The printer icon either prints at once through `printNowRef` (when the report is ready, so
+ * the dialog opens inside the click) or sets `print`: then the dialog opens once the results and the chart are ready,
+ * and `onPrintDone` clears the request (also when there's nothing to print or the results failed).
  */
-export function Summary({ print = false, onPrinted }: { print?: boolean; onPrinted?: () => void }) {
+export function Summary({
+  print = false,
+  onPrintDone,
+  printNowRef,
+}: {
+  print?: boolean
+  onPrintDone?: () => void
+  printNowRef?: RefObject<(() => boolean) | null>
+}) {
   const plan = usePlanStore((s) => s.plan)
   // The plan and every scenario are evaluated in background workers
   const tasks = useMemo(
@@ -76,14 +87,27 @@ export function Summary({ print = false, onPrinted }: { print?: boolean; onPrint
     [plan],
   )
   const sims = useSimulations(tasks)
-  const ready = !sims.pending && sims.data !== null && sims.data.length === tasks.length
+  // Results for exactly these tasks (not older ones kept on screen after a failed run)
+  const ready = !sims.pending && sims.error === null && sims.dataTasks === tasks && sims.data !== null
   const evaluations = (ready ? sims.data : null) as PlanEvaluation[] | null
   const blank = missingEssentials(plan).length > 0
   useEffect(() => {
+    if (!printNowRef) return
+    printNowRef.current = () => {
+      if (blank || !ready || !chartReady()) return false
+      window.print()
+      return true
+    }
+    return () => {
+      printNowRef.current = null
+    }
+  }, [printNowRef, blank, ready])
+
+  useEffect(() => {
     if (!print) return
-    // Nothing to print yet: just show the "add your numbers" card
-    if (blank) {
-      onPrinted?.()
+    // Nothing to print (no plan yet) or the results failed: drop the request, the page shows why
+    if (blank || sims.error !== null) {
+      onPrintDone?.()
       return
     }
     if (!ready) return
@@ -91,14 +115,14 @@ export function Summary({ print = false, onPrinted }: { print?: boolean; onPrint
     let frame = 0
     const started = performance.now()
     const tryPrint = () => {
-      if (document.querySelector('.paper svg.recharts-surface') || performance.now() - started > 5000) {
-        onPrinted?.()
+      if (chartReady() || performance.now() - started > 5000) {
+        onPrintDone?.()
         window.print()
       } else frame = requestAnimationFrame(tryPrint)
     }
     frame = requestAnimationFrame(tryPrint)
     return () => cancelAnimationFrame(frame)
-  }, [print, ready, blank, onPrinted])
+  }, [print, ready, blank, sims.error, onPrintDone])
 
   // Captured once when the page opens
   const [today] = useState(() => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))

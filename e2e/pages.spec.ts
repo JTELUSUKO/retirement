@@ -134,7 +134,7 @@ test('planner guided setup: labelled steps, revisit finished steps, footer row',
   await expectFitsScreen(page)
 })
 
-test('printer icon opens the summary and the print / save-as-PDF dialog once', async ({ page }) => {
+test('printer icon opens the print / save-as-PDF dialog', async ({ page }) => {
   // Count print-dialog requests instead of opening a real dialog
   await page.addInitScript(() => {
     ;(window as unknown as { printCalls: number }).printCalls = 0
@@ -143,9 +143,9 @@ test('printer icon opens the summary and the print / save-as-PDF dialog once', a
     }
   })
   const printCalls = () => page.evaluate(() => (window as unknown as { printCalls: number }).printCalls)
-  const icon = page.getByRole('link', { name: 'Print or save as PDF' })
+  const icon = page.getByRole('button', { name: 'Print or save as PDF' })
 
-  // Empty plan: nothing to print, so no dialog
+  // Empty plan: opens the summary's "add your numbers" card, no dialog
   await page.goto('./')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
@@ -153,18 +153,29 @@ test('printer icon opens the summary and the print / save-as-PDF dialog once', a
   await expect(page.locator('main')).toContainText('Add your numbers to see results')
   expect(await printCalls()).toBe(0)
 
-  // A plan: the dialog opens once the summary and its chart are ready
+  // From another page: opens the summary, then the dialog once the results and chart are ready
   await page.goto('./#plan')
   await page.getByRole('button', { name: 'Explore an example plan' }).click()
   await icon.click()
+  await expect(page).toHaveURL(/#summary$/)
   await expect.poll(printCalls, { timeout: 30_000 }).toBe(1)
   await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1)
-  await expect(page).toHaveURL(/#summary$/)
 
-  // A reload doesn't reopen it; clicking the icon again on the summary does
-  await page.reload()
-  await page.waitForTimeout(1500)
-  expect(await printCalls()).toBe(0)
+  // On the ready summary: the dialog opens straight from the click
   await icon.click()
-  await expect.poll(printCalls, { timeout: 30_000 }).toBe(1)
+  expect(await printCalls()).toBe(2)
+
+  // A reload doesn't reopen it
+  await page.reload()
+  await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1, { timeout: 30_000 })
+  expect(await printCalls()).toBe(0)
+
+  // Leaving before the summary is ready cancels the request: coming back later doesn't print
+  await page.goto('./#plan')
+  await icon.click()
+  await page.goto('./#compare')
+  await page.goto('./#summary')
+  await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1, { timeout: 30_000 })
+  await page.waitForTimeout(500)
+  expect(await printCalls()).toBe(0)
 })
