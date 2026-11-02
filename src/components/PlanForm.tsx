@@ -29,7 +29,7 @@ function MixSelect({ label, mean, volatility, onPick }: {
     <label className="block text-sm">
       <span className="text-slate-600 dark:text-slate-400">{label}</span>
       <select
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+        className="mt-1 w-full rounded-md border border-slate-500 bg-white px-2 py-2 dark:border-slate-500 dark:bg-slate-900"
         value={current === undefined ? 'custom' : String(current)}
         onChange={(e) => e.target.value !== 'custom' && onPick(mixReturns(Number(e.target.value)))}
       >
@@ -148,7 +148,7 @@ export function PlanForm() {
         <label className="block text-sm">
           <span className="text-slate-600 dark:text-slate-400">Tax filing status</span>
           <select
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+            className="mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900"
             value={plan.filingStatus}
             onChange={(e) => update({ filingStatus: e.target.value as Plan['filingStatus'] })}
           >
@@ -201,13 +201,13 @@ export function PlanForm() {
           <div key={acc.id} className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
             <div className="flex gap-2">
               <input
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                className="w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
                 value={acc.name}
                 aria-label="Account name"
                 onChange={(e) => updateAccount(acc.id, { name: e.target.value })}
               />
               <select
-                className="rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                className="rounded-md border border-slate-500 bg-white px-2 text-sm dark:border-slate-500 dark:bg-slate-900"
                 value={acc.type}
                 aria-label="Account type"
                 onChange={(e) => {
@@ -289,7 +289,7 @@ export function PlanForm() {
               <select
                 // The wrapping label also holds the ⓘ button, which would otherwise take the label
                 aria-label="Spending rule"
-                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+                className="mt-1 w-full rounded-md border border-slate-500 bg-white px-2 py-2 dark:border-slate-500 dark:bg-slate-900"
                 value={plan.spendingRule.type}
                 onChange={(e) => update({ spendingRule: { ...plan.spendingRule, type: e.target.value as Plan['spendingRule']['type'] } })}
               >

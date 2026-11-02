@@ -24,7 +24,7 @@ const SOURCES: [{ url: string; name: string }, string][] = [
 /** Disclaimer, privacy statement and data sources (hidden when printing; the summary has its own). */
 export function Footer() {
   return (
-    <footer className="mt-16 space-y-4 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500 print:hidden dark:border-slate-800">
+    <footer className="mt-16 space-y-4 border-t border-slate-200 pt-6 text-sm leading-relaxed text-slate-600 print:hidden dark:border-slate-800 dark:text-slate-400">
       <p className="rounded-md border border-amber-400 bg-amber-50 p-3 font-semibold text-amber-950 dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100">
         <strong className="font-bold">Important:</strong> This is an educational planning tool, not financial, tax,
         investment or legal advice, and not a recommendation to buy, sell or do anything. The site’s owner is not a

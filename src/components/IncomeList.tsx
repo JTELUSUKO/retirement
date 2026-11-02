@@ -26,13 +26,13 @@ function IncomeCard({ stream, married }: { stream: IncomeStream; married: boolea
     <div className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
       <div className="flex gap-2">
         <input
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
           value={stream.name}
           aria-label="Income name"
           onChange={(e) => set({ name: e.target.value })}
         />
         <select
-          className="rounded-md border border-slate-300 bg-white px-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="rounded-md border border-slate-500 bg-white px-2 text-sm dark:border-slate-500 dark:bg-slate-900"
           value={stream.kind}
           aria-label="Income type"
           onChange={(e) => {

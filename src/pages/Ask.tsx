@@ -51,7 +51,7 @@ function ApiKeySetup({ onSaved }: { onSaved: () => void }) {
             type="password"
             autoComplete="off"
             spellCheck={false}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 font-mono text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 font-mono text-sm dark:border-slate-500 dark:bg-slate-900"
             placeholder="sk-ant-…"
             value={key}
             onChange={(e) => setKey(e.target.value)}
@@ -189,7 +189,7 @@ export function Ask() {
       >
         <textarea
           rows={2}
-          className="w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          className="w-full resize-none rounded-md border border-slate-500 bg-white px-3 py-2 text-sm dark:border-slate-500 dark:bg-slate-900"
           placeholder="Ask about your plan… (Enter to send, Shift+Enter for a new line)"
           aria-label="Your question"
           value={draft}

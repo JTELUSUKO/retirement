@@ -28,7 +28,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-slate-600 dark:text-slate-400">For a</span>
         <select
-          className="rounded-md border border-slate-300 bg-white px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900"
+          className="rounded-md border border-slate-500 bg-white px-2 py-1.5 dark:border-slate-500 dark:bg-slate-900"
           value={target}
           aria-label="Target chance of success"
           onChange={(e) => setTarget(Number(e.target.value))}

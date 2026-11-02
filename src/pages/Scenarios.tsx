@@ -23,7 +23,7 @@ import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
 
 const cell = 'px-3 py-2 align-middle'
 const select =
-  'w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-sm dark:border-slate-700 dark:bg-slate-900'
+  'w-full rounded-md border border-slate-500 bg-white px-2 py-2 text-sm dark:border-slate-500 dark:bg-slate-900'
 
 export function Scenarios() {
   const { plan, addScenario, updateScenario, removeScenario } = usePlanStore()

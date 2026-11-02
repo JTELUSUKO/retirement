@@ -8,9 +8,11 @@ import { applySavings, isBlankPlan, QUICK_ACCOUNT_TYPES, savingsFromPlan, type Q
 import { NumberField } from './NumberField'
 
 const STEPS = ['About you', 'Where you’ll live', 'Your savings', 'Spending', 'Social Security'] as const
+/** Short names under the progress bar */
+const STEP_LABELS = ['You', 'State', 'Savings', 'Spending', 'Social Security']
 
-const select = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900'
-const secondary = 'rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
+const select = 'mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900'
+const secondary = 'rounded-md border border-slate-400 px-4 py-2 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
 const primary =
   'rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900'
 
@@ -163,11 +165,28 @@ export function QuickStart() {
         <h2 id="quickstart-heading" className="text-xl font-semibold">
           {STEPS[step]}
         </h2>
-        <div className="flex gap-1 pt-1" aria-hidden>
-          {STEPS.map((s, i) => (
-            <span key={s} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-teal-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
-          ))}
-        </div>
+        {/* Finished steps can be revisited; later ones open with Next, once each step is valid */}
+        <ol className="grid grid-cols-5 gap-1.5 pt-2" aria-label="Setup progress">
+          {STEP_LABELS.map((label, i) => {
+            const bar = `block h-2 rounded-full ${i <= step ? 'bg-teal-600 dark:bg-teal-500' : 'bg-slate-200 dark:bg-slate-700'}`
+            const text = `mt-1.5 block text-xs leading-tight ${i === step ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'}`
+            return (
+              <li key={label} aria-current={i === step ? 'step' : undefined}>
+                {i < step ? (
+                  <button type="button" className="group w-full text-left" onClick={() => setStep(i)} aria-label={`Back to step ${i + 1}: ${STEPS[i]}`}>
+                    <span className={`${bar} group-hover:bg-teal-700`} />
+                    <span className={`${text} underline-offset-2 group-hover:underline`}>{label}</span>
+                  </button>
+                ) : (
+                  <>
+                    <span className={bar} />
+                    <span className={text}>{label}</span>
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ol>
       </div>
 
       <form
@@ -180,25 +199,32 @@ export function QuickStart() {
         }}
       >
         {body[step]}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <button type="button" className={secondary} disabled={step === 0} onClick={() => setStep(step - 1)} hidden={step === 0}>
-            Back
+        {/* One row at the card's foot: the way out on the left, away from Back / Next on the right */}
+        <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+          <button
+            type="button"
+            className="text-sm text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline dark:text-slate-400 dark:hover:text-slate-100"
+            onClick={() => setGuide(startedBlank ? 'skipped' : 'auto')}
+          >
+            {startedBlank ? 'Skip setup' : 'Close without saving'}
           </button>
-          <button type="submit" disabled={!canContinue} className={`${primary} ml-auto`}>
-            {last ? 'See my results' : 'Next'}
-          </button>
+          <div className="ml-auto flex gap-2">
+            {step > 0 && (
+              <button type="button" className={secondary} onClick={() => setStep(step - 1)}>
+                Back
+              </button>
+            )}
+            <button type="submit" disabled={!canContinue} className={primary}>
+              {last ? 'See my results' : 'Next'}
+            </button>
+          </div>
         </div>
       </form>
 
-      <p className="border-t border-slate-200 pt-4 text-sm text-slate-500 dark:border-slate-800">
-        {startedBlank ? 'Prefer the full form?' : 'Changed your mind?'}{' '}
-        <button type="button" className="font-medium text-teal-700 underline dark:text-teal-400" onClick={() => setGuide(startedBlank ? 'skipped' : 'auto')}>
-          {startedBlank ? 'Skip setup' : 'Close without saving'}
-        </button>
+      <p className="text-sm text-slate-600 dark:text-slate-400">
         {startedBlank && (
           <>
-            {' '}
-            or{' '}
+            Want to look around first?{' '}
             <button
               type="button"
               className="font-medium text-teal-700 underline dark:text-teal-400"
@@ -207,11 +233,12 @@ export function QuickStart() {
                 setGuide('auto')
               }}
             >
-              explore an example plan
+              Explore an example plan
             </button>
+            .{' '}
           </>
         )}
-        . Nothing you enter leaves this browser.
+        Nothing you enter leaves this browser.
       </p>
     </section>
   )

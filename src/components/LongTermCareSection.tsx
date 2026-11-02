@@ -29,7 +29,7 @@ export function LongTermCareSection() {
               <label className="block text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Who</span>
                 <select
-                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-900"
+                  className="mt-1 w-full rounded-md border border-slate-500 bg-white px-2 py-2 dark:border-slate-500 dark:bg-slate-900"
                   value={l.who}
                   onChange={(e) => updateLongTermCare({ who: e.target.value as typeof l.who })}
                 >

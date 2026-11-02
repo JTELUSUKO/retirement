@@ -47,7 +47,7 @@ export function AnnuitySection() {
           <label className="block text-sm">
             <span className="text-slate-600 dark:text-slate-400">Pay with</span>
             <select
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
+              className="mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900"
               value={a.fundedFrom}
               onChange={(e) => updateAnnuity({ fundedFrom: e.target.value as typeof a.fundedFrom })}
             >

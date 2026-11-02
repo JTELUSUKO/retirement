@@ -63,7 +63,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
         className={`${hideLabel ? '' : 'mt-1 '}flex items-center rounded-md border bg-white focus-within:ring-2 dark:bg-slate-900 ${
           invalid
             ? 'border-red-500 focus-within:ring-red-500'
-            : 'border-slate-300 focus-within:ring-teal-600 dark:border-slate-700'
+            : 'border-slate-500 focus-within:ring-teal-600 dark:border-slate-500'
         }`}
       >
         {prefix && <span className="pl-3 text-slate-500">{prefix}</span>}
@@ -73,7 +73,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
           type="text"
           inputMode="decimal"
           autoComplete="off"
-          className="w-full bg-transparent px-3 py-2 outline-none"
+          className="w-full bg-transparent px-3 py-2 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400"
           // Money shows thousands separators ("450,000"); while typing, the raw text is kept
           value={editing ? text : value === 0 ? '' : prefix === '$' ? value.toLocaleString('en-US', { maximumFractionDigits: 2 }) : String(value)}
           placeholder={placeholder}

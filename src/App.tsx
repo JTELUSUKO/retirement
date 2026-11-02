@@ -23,16 +23,13 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
+  const tabStyle = (value: Page) =>
+    page === value
+      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+      : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+
   const tab = (value: Page, label: string, hash: string) => (
-    <a
-      href={hash}
-      aria-current={page === value ? 'page' : undefined}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-        page === value
-          ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-          : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
-      }`}
-    >
+    <a href={hash} aria-current={page === value ? 'page' : undefined} className={`rounded-md px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
       {label}
     </a>
   )
@@ -44,10 +41,23 @@ export default function App() {
           <h1 className="text-2xl font-semibold">Retirement Planner</h1>
           <p className="text-sm text-slate-500">Everything you enter stays in this browser.</p>
         </div>
-        <nav className="flex flex-wrap gap-1">
+        <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan')}
           {tab('compare', 'Compare scenarios', '#compare')}
-          {tab('summary', 'Print summary', '#summary')}
+          {/* The summary is the printable report, so it's a printer icon rather than another tab */}
+          <a
+            href="#summary"
+            aria-current={page === 'summary' ? 'page' : undefined}
+            aria-label="Printable summary"
+            title="Printable summary"
+            className={`inline-flex items-center rounded-md px-2.5 py-1.5 ${tabStyle('summary')}`}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9V3h12v6" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="7" />
+            </svg>
+          </a>
           {/* Ask Claude is hidden from the menu; it still opens at #ask */}
           {page === 'ask' && tab('ask', 'Ask Claude', '#ask')}
         </nav>

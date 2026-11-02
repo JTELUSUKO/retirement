@@ -10,7 +10,7 @@ const OLDEST = 110
 
 const card = 'rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
 const select =
-  'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900'
+  'mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900'
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
