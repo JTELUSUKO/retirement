@@ -3,20 +3,10 @@ import { TAX_CONFIG, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
-import { rmdCalculator, type RmdInputs } from './rmd'
+import { rmdCalculator, RMD_DEFAULTS, type RmdInputs } from './rmd'
 
 const YEAR = TAX_CONFIG.year
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
-
-const DEFAULTS: RmdInputs = {
-  status: 'married',
-  state: '',
-  birthYear: 1952,
-  balance: 500_000,
-  otherIncome: 20_000,
-  socialSecurity: 45_000,
-  annualReturn: 0.05,
-}
 
 const card = 'rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
 const select =
@@ -33,7 +23,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 /** Interactive RMD calculator: this year's required minimum distribution, deadline, tax and future RMDs. */
 export function RmdCalculator() {
-  const [inputs, setInputs] = useState<RmdInputs>(DEFAULTS)
+  const [inputs, setInputs] = useState<RmdInputs>(RMD_DEFAULTS)
   const set = (patch: Partial<RmdInputs>) => setInputs((s) => ({ ...s, ...patch }))
   const r = useMemo(() => rmdCalculator(inputs), [inputs])
   const tax = r.tax

@@ -58,3 +58,17 @@ export function rothConversion(inputs: RothInputs): RothResult {
 
   return { ...tax, fillTo, compare }
 }
+
+/** The calculator page starts with these values (the browser tests check results for them too). */
+export const ROTH_DEFAULTS: RothInputs = {
+  status: 'married',
+  state: '',
+  age: 62,
+  otherIncome: 60_000,
+  socialSecurity: 0,
+  conversion: 50_000,
+  years: 15,
+  annualReturn: 0.06,
+  futureTaxRate: 0.22,
+  payTaxFrom: 'savings',
+}

@@ -3,22 +3,9 @@ import { NO_INCOME_TAX_STATES, TAX_CONFIG, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
-import { rothConversion, type RothInputs } from './rothConversion'
+import { rothConversion, ROTH_DEFAULTS, type RothInputs } from './rothConversion'
 
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
-
-const DEFAULTS: RothInputs = {
-  status: 'married',
-  state: '',
-  age: 62,
-  otherIncome: 60_000,
-  socialSecurity: 0,
-  conversion: 50_000,
-  years: 15,
-  annualReturn: 0.06,
-  futureTaxRate: 0.22,
-  payTaxFrom: 'savings',
-}
 
 const card = 'rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
 const select =
@@ -35,7 +22,7 @@ function Row({ label, children, strong }: { label: string; children: ReactNode; 
 
 /** Interactive Roth conversion calculator: tax cost this year, bracket room, Medicare surcharge, break-even. */
 export function RothCalculator() {
-  const [inputs, setInputs] = useState<RothInputs>(DEFAULTS)
+  const [inputs, setInputs] = useState<RothInputs>(ROTH_DEFAULTS)
   const set = (patch: Partial<RothInputs>) => setInputs((s) => ({ ...s, ...patch }))
   const r = useMemo(() => rothConversion(inputs), [inputs])
   const ahead = r.compare.convert - r.compare.dontConvert

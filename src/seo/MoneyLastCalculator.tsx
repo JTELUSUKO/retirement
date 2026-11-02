@@ -2,20 +2,11 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { MIX_PRESETS } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { formatUSD } from '../utils/format'
-import { moneyLast, type MoneyLastInputs } from './moneyLast'
+import { moneyLast, MONEY_LAST_DEFAULTS, type MoneyLastInputs } from './moneyLast'
 
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
 /** Ages past this read as "past 110": the table and the IRS tables stop there. */
 const OLDEST = 110
-
-const DEFAULTS: MoneyLastInputs = {
-  savings: 1_000_000,
-  spending: 50_000,
-  age: 65,
-  planToAge: 95,
-  stockShare: 0.6,
-  inflation: 0.025,
-}
 
 const card = 'rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
 const select =
@@ -36,7 +27,7 @@ const yearsText = (years: number) => (Number.isFinite(years) ? `${Math.floor(yea
 
 /** Interactive "how long will my money last" calculator. */
 export function MoneyLastCalculator() {
-  const [inputs, setInputs] = useState<MoneyLastInputs>(DEFAULTS)
+  const [inputs, setInputs] = useState<MoneyLastInputs>(MONEY_LAST_DEFAULTS)
   const set = (patch: Partial<MoneyLastInputs>) => setInputs((s) => ({ ...s, ...patch }))
   const valid = inputs.planToAge > inputs.age
   const r = useMemo(() => (valid ? moneyLast(inputs) : null), [inputs, valid])

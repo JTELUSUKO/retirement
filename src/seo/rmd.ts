@@ -77,3 +77,14 @@ export function rmdCalculator(inputs: RmdInputs): RmdResult {
     tax: rmd > 0 ? extraIncomeTax({ ...inputs, age }, rmd) : null,
   }
 }
+
+/** The calculator page starts with these values (the browser tests check results for them too). */
+export const RMD_DEFAULTS: RmdInputs = {
+  status: 'married',
+  state: '',
+  birthYear: 1952,
+  balance: 500_000,
+  otherIncome: 20_000,
+  socialSecurity: 45_000,
+  annualReturn: 0.05,
+}

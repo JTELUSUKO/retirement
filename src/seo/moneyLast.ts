@@ -140,3 +140,13 @@ export function moneyLast(inputs: MoneyLastInputs): MoneyLastResult {
     spendingThatLasts: { typical: typicalSpending, ninetyPercent },
   }
 }
+
+/** The calculator page starts with these values (the browser tests check results for them too). */
+export const MONEY_LAST_DEFAULTS: MoneyLastInputs = {
+  savings: 1_000_000,
+  spending: 50_000,
+  age: 65,
+  planToAge: 95,
+  stockShare: 0.6,
+  inflation: 0.025,
+}

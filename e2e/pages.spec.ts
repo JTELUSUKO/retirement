@@ -1,0 +1,102 @@
+import { expect, test as base, type Page } from '@playwright/test'
+import { MONEY_LAST_DEFAULTS, moneyLast } from '../src/seo/moneyLast'
+import { RMD_DEFAULTS, rmdCalculator } from '../src/seo/rmd'
+import { ROTH_DEFAULTS, rothConversion } from '../src/seo/rothConversion'
+import { formatUSD } from '../src/utils/format'
+
+// Expected numbers come from the same code the pages run, with the pages' starting values, so the yearly tax update
+// doesn't break these checks; a mismatch means the page shows something other than what the math says.
+
+const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
+
+/** Fails a test if the page logs an error or the browser blocks something (CSP). */
+const test = base.extend<{ problems: string[] }>({
+  problems: [
+    async ({ page }, use) => {
+      const problems: string[] = []
+      page.on('pageerror', (e) => problems.push(e.message))
+      page.on('console', (m) => {
+        if (m.type() === 'error' || /Refused|violat/i.test(m.text())) problems.push(m.text())
+      })
+      await use(problems)
+      expect(problems).toEqual([])
+    },
+    { auto: true },
+  ],
+})
+
+const results = (page: Page) => page.locator('section[aria-label="Results"]')
+const expectFitsScreen = async (page: Page) =>
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+
+/** Type like a person: click, select all, type, Tab away. */
+async function typeIn(page: Page, label: string, value: string) {
+  await page.getByRole('textbox', { name: label, exact: true }).click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type(value)
+  await page.keyboard.press('Tab')
+}
+
+test('planner: example plan, every tab, saved plan', async ({ page }) => {
+  await page.goto('./')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await expect(page.getByText('For educational purposes only').first()).toBeVisible()
+  await page.getByRole('button', { name: /example/i }).first().click()
+  await expect(page.getByText(/chance your money lasts/i).first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
+  await expectFitsScreen(page)
+  for (const tab of ['compare', 'summary', 'terms']) {
+    await page.goto(`./#${tab}`)
+    await expect(page.locator('#root')).toContainText(tab === 'terms' ? 'Disclaimer and terms of use' : /\d+%/, { timeout: 15_000 })
+    await expectFitsScreen(page)
+  }
+  await page.reload()
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retirement-plan')!).state.plan.currentAge)).toBeGreaterThan(0)
+  expect(await page.locator('footer a[target="_blank"]').count()).toBeGreaterThanOrEqual(10)
+})
+
+test('Roth conversion calculator', async ({ page }) => {
+  const expected = rothConversion(ROTH_DEFAULTS)
+  await page.goto('./roth-conversion-calculator/')
+  await expect(results(page)).toContainText(formatUSD(expected.extraTax))
+  await expect(results(page)).toContainText(`${pct(expected.effectiveRate)} of the amount converted`)
+  // "Use" fills the first bracket that still has room: then there's none left in it
+  const fill = expected.fillTo.find((f) => f.amount > 0)!
+  await page.getByRole('button', { name: 'Use' }).first().click()
+  await expect(results(page)).toContainText(new RegExp(`Room left in the ${pct(fill.rate, 0)} bracket\\s*\\$0`))
+  await typeIn(page, 'Your age this year', '66')
+  await typeIn(page, 'Social Security received this year', '40000')
+  await expect(results(page)).toContainText('Medicare premiums two years from now')
+  await typeIn(page, 'Other taxable income this year', '75000')
+  await expect(page.getByRole('textbox', { name: 'Other taxable income this year' })).toHaveValue('75,000')
+  await expect(page.locator('article table')).toHaveCount(2)
+  await expectFitsScreen(page)
+})
+
+test('RMD calculator', async ({ page }) => {
+  const expected = rmdCalculator(RMD_DEFAULTS)
+  await page.goto('./rmd-calculator/')
+  await expect(results(page)).toContainText(formatUSD(expected.rmd))
+  await expect(results(page)).toContainText(expected.deadline)
+  await expect(results(page).locator('tbody tr')).toHaveCount(expected.schedule.length)
+  const later = rmdCalculator({ ...RMD_DEFAULTS, birthYear: 1962 })
+  await typeIn(page, 'Year you were born', '1962')
+  await expect(results(page)).toContainText(`first RMD is for ${later.firstYear}, the year you turn ${later.startAge}`)
+  await expect(page.locator('article table')).toHaveCount(1)
+  await expectFitsScreen(page)
+})
+
+test('How long will my money last calculator', async ({ page }) => {
+  const expected = moneyLast(MONEY_LAST_DEFAULTS)
+  await page.goto('./how-long-will-my-money-last/')
+  await expect(results(page)).toContainText(`${Math.floor(expected.typical.years)} years`)
+  await expect(results(page)).toContainText(pct(expected.simulated.chanceLasts, 0))
+  await expect(results(page)).toContainText(`${formatUSD(expected.spendingThatLasts.typical)} a year`)
+  await expect(results(page)).toContainText(`${formatUSD(expected.spendingThatLasts.ninetyPercent)} a year`)
+  await typeIn(page, 'Yearly spending from savings', '1000')
+  await expect(results(page)).toContainText('Indefinitely')
+  await typeIn(page, 'Yearly spending from savings', String(MONEY_LAST_DEFAULTS.savings / 5))
+  await expect(results(page)).toContainText('years short of your plan age')
+  await expectFitsScreen(page)
+})
