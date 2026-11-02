@@ -51,6 +51,17 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await expect(page.locator('section[aria-labelledby="verdict-heading"]')).toContainText('points)', { timeout: 30_000 })
   // The example plan has low-tax years before RMDs
   await expect(page.getByRole('region', { name: 'Watch-outs' })).toContainText('Converting some pre-tax savings to Roth')
+  // What-if sliders preview a change without saving it, then Apply writes it to the plan
+  const whatIf = page.getByRole('region', { name: 'Play with your plan' })
+  await whatIf.getByRole('slider', { name: /Retire at/ }).focus()
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await expect(whatIf).toContainText('(was 65)')
+  await expect(whatIf).toContainText('vs your plan', { timeout: 30_000 })
+  await expect(page.getByLabel('Retire at', { exact: true })).toHaveValue('65')
+  await whatIf.getByRole('button', { name: 'Apply to my plan' }).click()
+  await expect(page.getByLabel('Retire at', { exact: true })).toHaveValue('67')
+  await expect(whatIf).not.toContainText('(was')
   await expectFitsScreen(page)
   for (const tab of ['compare', 'summary', 'terms']) {
     await page.goto(`./#${tab}`)

@@ -3,6 +3,7 @@ import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, MIX_PRESETS, mixReturns, 
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs, type FormMode } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from '../utils/labels'
+import { Icon, type IconName } from './Icons'
 import { InfoTip } from './InfoTip'
 import { AnnuitySection } from './AnnuitySection'
 import { IncomeList } from './IncomeList'
@@ -43,6 +44,19 @@ function MixSelect({ label, mean, volatility, onPick }: {
 
 type SectionId = 'you' | 'accounts' | 'spending' | 'survivor' | 'income' | 'annuity' | 'ltc' | 'tax' | 'healthcare' | 'assumptions'
 
+const SECTION_ICON: Record<SectionId, IconName> = {
+  you: 'user',
+  accounts: 'wallet',
+  spending: 'banknote',
+  survivor: 'users',
+  income: 'briefcase',
+  annuity: 'umbrella',
+  ltc: 'heart',
+  tax: 'percent',
+  healthcare: 'pulse',
+  assumptions: 'trend',
+}
+
 /** Collapsible form section; shows a one-line summary when closed. */
 function Section({
   id,
@@ -74,6 +88,7 @@ function Section({
           className="flex items-center gap-1.5 rounded hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 dark:hover:text-slate-200"
         >
           <span aria-hidden className={`inline-block transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+          <Icon name={SECTION_ICON[id]} size={14} className="text-teal-700 dark:text-teal-400" />
           {title}
         </button>
         {info && <InfoTip label={title}>{info}</InfoTip>}

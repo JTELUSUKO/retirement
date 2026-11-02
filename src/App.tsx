@@ -3,6 +3,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
 import { Logo } from './components/Logo'
+import { Icon, type IconName } from './components/Icons'
 import { tabClass } from './components/styles'
 
 // Pages other than "My plan" load on first visit, keeping the first download small (Ask holds the Anthropic SDK)
@@ -46,8 +47,9 @@ export default function App() {
 
   const tabStyle = (value: Page) => tabClass(page === value)
 
-  const tab = (value: Page, label: string, hash: string) => (
-    <a href={hash} aria-current={page === value ? 'page' : undefined} className={`px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
+  const tab = (value: Page, label: string, hash: string, icon?: IconName) => (
+    <a href={hash} aria-current={page === value ? 'page' : undefined} className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
+      {icon && <Icon name={icon} size={15} />}
       {label}
     </a>
   )
@@ -66,8 +68,8 @@ export default function App() {
           <p className="text-sm text-muted">Everything you enter stays in this browser.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">
-          {tab('plan', 'My plan', '#plan')}
-          {tab('compare', 'Compare scenarios', '#compare')}
+          {tab('plan', 'My plan', '#plan', 'home')}
+          {tab('compare', 'Compare scenarios', '#compare', 'columns')}
           {/* The summary is the printable report, so it's a printer icon rather than another tab. It's an action, so
               no aria-current; it looks selected on the summary, and the page's heading says where you are */}
           <button
