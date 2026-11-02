@@ -191,7 +191,7 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
 /** A new big expense with the preset's typical figures (yearly config) */
 export function newBigExpense(kind: BigExpenseKind, plan: Plan): BigExpense {
   const { college, wedding } = TAX_CONFIG.bigExpenses
-  const base = { id: crypto.randomUUID(), kind, childAgeNow: null, atChildAge: 0, startAge: plan.currentAge + 5, excessInflation: 0, collegeType: null, saved529: 0, yearly529: 0 }
+  const base = { id: crypto.randomUUID(), kind, childAgeNow: null, atChildAge: 0, startAge: plan.currentAge ? plan.currentAge + 5 : 0, excessInflation: 0, collegeType: null, saved529: 0, yearly529: 0 }
   if (kind === 'college') {
     return { ...base, name: 'College', annualAmount: college.publicInState, collegeType: 'publicInState', years: college.years, childAgeNow: 10, atChildAge: college.startChildAge, excessInflation: college.excessInflation }
   }

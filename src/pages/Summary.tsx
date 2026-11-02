@@ -6,6 +6,7 @@ import {
   STATE_RULES_YEAR,
   TAX_CONFIG,
   applyScenario,
+  expenseAmount,
   expenseStartAge,
   householdSocialSecurityMonthly,
   spouseOffset,
@@ -316,7 +317,7 @@ export function Summary({
               ...plan.bigExpenses.map(
                 (e): [string, string] => [
                   e.name.trim() || 'Big expense',
-                  `${formatUSD(e.annualAmount)}${e.years > 1 ? `/yr for ${e.years} years` : ''} from your age ${expenseStartAge(plan, e)}${e.kind === 'college' && e.saved529 + e.yearly529 > 0 ? ` (529: ${formatUSD(e.saved529)} now + ${formatUSD(e.yearly529)}/yr)` : ''}`,
+                  `${formatUSD(expenseAmount(e))}${e.years > 1 ? `/yr for ${e.years} years` : ''} from your age ${expenseStartAge(plan, e)}${e.kind === 'college' && e.saved529 + e.yearly529 > 0 ? ` (529: ${formatUSD(e.saved529)} now + ${formatUSD(e.yearly529)}/yr)` : ''}`,
                 ],
               ),
               ['Investment fees', pct(plan.assumptions.annualFee, 2)],

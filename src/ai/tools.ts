@@ -10,7 +10,10 @@ import {
   type Plan,
   type PlanEvaluation,
   type Scenario,
-  type StressTest, expenseStartAge } from '../engine'
+  type StressTest,
+  expenseStartAge,
+  expenseTotal,
+} from '../engine'
 
 /**
  * Read-only tools Claude can call. They run the app's own engine in the browser, so every
@@ -145,7 +148,7 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
             name: x.name,
             fromAge: expenseStartAge(plan, x),
             // Today's dollars, before college costs' extra growth
-            totalToday: round(x.annualAmount * x.years),
+            totalToday: round(expenseTotal(x)),
           })),
           lifetimeBigExpenses: round(e.projection!.years.reduce((sum, y) => sum + y.bigExpenses / y.priceLevel, 0)),
           lifetimeBigExpensesFrom529: round(e.projection!.years.reduce((sum, y) => sum + y.bigExpensesFrom529 / y.priceLevel, 0)),
@@ -161,7 +164,9 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
         age: y.age,
         ...(y.spouseAge !== null ? { spouseAge: y.spouseAge } : {}),
         savings: round(y.startBalanceReal),
-        spendingInclHealthcare: round(y.spending / y.priceLevel),
+        // Big expenses paid from savings are in y.spending; report them on their own
+        spendingInclHealthcare: round((y.spending - (y.bigExpenses - y.bigExpensesFrom529)) / y.priceLevel),
+        ...(y.bigExpenses > 0 ? { bigExpenses: round(y.bigExpenses / y.priceLevel) } : {}),
         income: round(y.income / y.priceLevel),
         federalTax: round(y.federalTax / y.priceLevel),
         stateTax: round(y.stateTax / y.priceLevel),

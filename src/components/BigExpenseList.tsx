@@ -1,4 +1,4 @@
-import { AGE_LIMITS, expenseStartAge, TAX_CONFIG, WORKING_YEARS_ORDINARY_RATE, type BigExpense, type CollegeType, type Plan } from '../engine'
+import { AGE_LIMITS, expenseAmount, expenseStartAge, TAX_CONFIG, WORKING_YEARS_ORDINARY_RATE, type BigExpense, type CollegeType, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD } from '../utils/format'
 import { NumberField, PercentField } from './NumberField'
@@ -73,9 +73,9 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
           label={e.kind === 'wedding' || e.years === 1 ? 'Cost' : 'Cost per year'}
           prefix="$"
           min={0}
-          value={e.annualAmount}
+          value={expenseAmount(e)}
           // Typing your own cost leaves the college preset
-          onChange={(v) => set(e.kind === 'college' && v !== e.annualAmount ? { annualAmount: v, collegeType: null } : { annualAmount: v })}
+          onChange={(v) => set(e.kind === 'college' && v !== expenseAmount(e) ? { annualAmount: v, collegeType: null } : { annualAmount: v })}
           info={
             e.kind === 'college'
               ? 'Tuition and fees plus housing and food, in today’s dollars (College Board averages for this school year). Leave out what scholarships, aid or your child will cover.'
@@ -159,7 +159,8 @@ export function BigExpenseList() {
       <p className="text-xs text-muted">
         Paid from your savings in the year they happen: cash first, then brokerage, then retirement accounts. Before you
         retire, pre-tax withdrawals are taxed at about {Math.round(WORKING_YEARS_ORDINARY_RATE * 100)}% plus a 10% penalty
-        before 59½.
+        before 59½. Roth money is treated as your contributions (tax-free); earnings taken before 59½ would also owe tax
+        and a penalty.
       </p>
     </div>
   )

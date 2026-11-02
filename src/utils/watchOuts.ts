@@ -25,10 +25,10 @@ export function watchOuts(plan: Plan, result: ProjectionResult): WatchOut[] {
 
   // Big expenses before retiring that reach retirement accounts (pre-tax or Roth), with their taxes and penalty
   const early = result.years.filter(
-    (y) => y.age < plan.retirementAge && y.age < lastAge && y.bigExpenses > 0 && y.withdrawalsByBucket.pretax + y.withdrawalsByBucket.roth > y.rmd,
+    (y) => y.age < plan.retirementAge && y.age < lastAge && y.bigExpenses > 0 && fromRetirementAccounts(y) > 0,
   )
   if (early.length > 0) {
-    const fromRetirement = early.reduce((sum, y) => sum + (y.withdrawalsByBucket.pretax - y.rmd + y.withdrawalsByBucket.roth) / y.priceLevel, 0)
+    const fromRetirement = early.reduce((sum, y) => sum + fromRetirementAccounts(y) / y.priceLevel, 0)
     const taxes = early.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
     out.push({
       key: 'big-expense-early',
@@ -99,6 +99,9 @@ export function watchOuts(plan: Plan, result: ProjectionResult): WatchOut[] {
 
   return out.sort((a, b) => a.age - b.age)
 }
+
+/** Pre-tax (beyond any RMD), Roth and HSA money taken out in a year */
+const fromRetirementAccounts = (y: YearResult) => y.withdrawalsByBucket.pretax - y.rmd + y.withdrawalsByBucket.roth + y.withdrawalsByBucket.hsa
 
 /** The first run of consecutive years in a bracket below `rate`, or null. */
 function lowRun(years: YearResult[], rate: number): YearResult[] | null {

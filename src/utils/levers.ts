@@ -1,4 +1,4 @@
-import { applyScenario, mixLabel, mixReturns, mixShare, planEndAge, type BigExpense, type Plan, type Scenario } from '../engine'
+import { applyScenario, expenseAmount, mixLabel, mixReturns, mixShare, planEndAge, type BigExpense, type Plan, type Scenario } from '../engine'
 import { formatUSD } from './format'
 import { roundSpending, SCENARIO_PRESETS } from './scenarioPresets'
 
@@ -27,7 +27,7 @@ export function patchFor(latest: Plan, patch: LeverPatch): Partial<Plan> | null 
   if (patch.kind === 'mix' && mixShare(latest.assumptions.returnPostRetirement, latest.assumptions.volatilityPostRetirement) !== patch.fromShare) return null
   if (patch.kind === 'college-half') {
     // Only the college expenses that were tested, if they're still there
-    if (!patch.ids.every((id) => latest.bigExpenses.some((e) => e.id === id))) return null
+    if (!patch.ids.every((id) => latest.bigExpenses.some((e) => e.id === id && e.collegeType !== null))) return null
     return { bigExpenses: latest.bigExpenses.map((e) => (patch.ids.includes(e.id) ? halved(e) : e)) }
   }
   return patch.kind === 'guardrails'
@@ -72,8 +72,9 @@ export function leverVariants(plan: Plan): Lever[] {
       },
     })
   }
-  // College costs: what if aid, loans or a cheaper school covered half
-  const colleges = plan.bigExpenses.filter((e) => e.kind === 'college' && e.annualAmount > 0)
+  // College costs: what if aid, loans or a cheaper school covered half. Only for the full preset costs, so it isn't
+  // offered again on what it already halved
+  const colleges = plan.bigExpenses.filter((e) => e.kind === 'college' && e.collegeType !== null)
   if (colleges.length > 0) {
     const ids = colleges.map((e) => e.id)
     levers.push({
@@ -105,7 +106,7 @@ export function leverVariants(plan: Plan): Lever[] {
 }
 
 /** A college expense at half its cost (no longer a preset amount) */
-const halved = (e: BigExpense): BigExpense => ({ ...e, annualAmount: Math.round(e.annualAmount / 2), collegeType: null })
+const halved = (e: BigExpense): BigExpense => ({ ...e, annualAmount: Math.round(expenseAmount(e) / 2), collegeType: null })
 
 /** Stock share of the balanced mix tested against more cautious ones */
 const BALANCED = 0.6

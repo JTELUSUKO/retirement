@@ -1,6 +1,6 @@
 export * from './types'
 export { projectPlan, simulatePath, WORKING_YEARS_GAINS_RATE, WORKING_YEARS_ORDINARY_RATE } from './projection'
-export { bigExpensesTotal, expenseAt, expenseStartAge } from './bigExpenses'
+export { bigExpensesTotal, expenseAmount, expenseAt, expenseStartAge, expenseTotal, expenseYears } from './bigExpenses'
 export type { MarketFn, YearMarket } from './projection'
 export { INFLATION_PERSISTENCE, INFLATION_SHOCK, lognormalReturn, runMonteCarlo } from './monteCarlo'
 export { createRandom, normal } from './random'

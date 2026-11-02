@@ -44,6 +44,10 @@ describe('levers', () => {
     // The college expense was removed since: the button leaves the plan alone
     expect(patchFor({ ...plan, bigExpenses: [wedding] }, lever.patch!)).toBeNull()
     expect(leverVariants(examplePlan).map((l) => l.key)).not.toContain('college-half')
+    // Once halved it's your own amount, so it isn't offered (or applied) again
+    const after = { ...plan, ...patchFor(plan, lever.patch!)! }
+    expect(leverVariants(after).map((l) => l.key)).not.toContain('college-half')
+    expect(patchFor(after, lever.patch!)).toBeNull()
   })
 
   it('can be sent to a simulation worker (no functions)', () => {

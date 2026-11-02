@@ -39,6 +39,9 @@ export function evaluatePlan(plan: Plan, stress: StressTest = 'none'): PlanEvalu
   const last = monteCarlo.years.at(-1)!
   const real = (pick: (y: ProjectionResult['years'][number]) => number) =>
     projection.years.reduce((sum, y) => sum + pick(y) / y.priceLevel, 0)
+  // "Over retirement", like My plan: working-year taxes on big expenses are in the watch-outs instead
+  const retiredReal = (pick: (y: ProjectionResult['years'][number]) => number) =>
+    projection.years.reduce((sum, y) => sum + (y.age >= plan.retirementAge ? pick(y) / y.priceLevel : 0), 0)
   return {
     issues,
     successRate: monteCarlo.successRate,
@@ -46,9 +49,9 @@ export function evaluatePlan(plan: Plan, stress: StressTest = 'none'): PlanEvalu
     depletionAge: projection.depletionAge,
     leftTypical: last.p50,
     leftPoor: last.p10,
-    lifetimeTax: real((y) => y.tax),
-    lifetimeFederalTax: real((y) => y.federalTax),
-    lifetimeStateTax: real((y) => y.stateTax),
+    lifetimeTax: retiredReal((y) => y.tax),
+    lifetimeFederalTax: retiredReal((y) => y.federalTax),
+    lifetimeStateTax: retiredReal((y) => y.stateTax),
     lifetimeHealthcare: real((y) => y.healthcare),
     projection,
     monteCarlo,

@@ -1,6 +1,6 @@
 import { TAX_CONFIG } from './config/taxYear'
 import { planEndAge, spouseOffset } from './survivor'
-import { expenseStartAge } from './bigExpenses'
+import { expenseStartAge, expenseYears } from './bigExpenses'
 import type { Plan, PlanIssue } from './types'
 
 const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
@@ -101,9 +101,11 @@ export function validatePlan(plan: Plan): PlanIssue[] {
   for (const e of plan.bigExpenses) {
     const name = e.name.trim() || 'A big expense'
     if (e.years < 1 || e.years > 40) issues.push({ field: 'bigExpenses', message: `“${name}” must last 1–40 years.` })
-    if (e.childAgeNow !== null && (e.childAgeNow < 0 || e.childAgeNow > 60)) {
+    if (e.childAgeNow === null && e.startAge === 0) {
+      issues.push({ field: 'bigExpenses', message: `Enter the age you’ll be when “${name}” starts.` })
+    } else if (e.childAgeNow !== null && (e.childAgeNow < 0 || e.childAgeNow > 60)) {
       issues.push({ field: 'bigExpenses', message: `“${name}”: the child’s age must be 0–60.` })
-    } else if (expenseStartAge(plan, e) + e.years <= plan.currentAge) {
+    } else if (expenseStartAge(plan, e) + expenseYears(e) <= plan.currentAge) {
       issues.push({ field: 'bigExpenses', message: `“${name}” is already over; remove it or change when it starts.` })
     } else if (expenseStartAge(plan, e) > planEndAge(plan)) {
       issues.push({ field: 'bigExpenses', message: `“${name}” starts after your plan ends (age ${planEndAge(plan)}); change when it starts or remove it.` })

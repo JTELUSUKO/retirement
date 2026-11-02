@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { expenseAt, expenseStartAge } from './bigExpenses'
+import { expenseAmount, expenseAt, expenseStartAge } from './bigExpenses'
+import { evaluatePlan } from './evaluate'
 import { projectPlan, WORKING_YEARS_GAINS_RATE, WORKING_YEARS_ORDINARY_RATE } from './projection'
 import { TAX_CONFIG } from './config/taxYear'
 import { basePlan } from './testFixtures'
@@ -125,5 +126,25 @@ describe('big expenses', () => {
   it('flags an expense that starts after the plan ends', () => {
     const plan = { ...working, bigExpenses: [expense({ name: 'Wedding', childAgeNow: 0, atChildAge: 30 })] }
     expect(validatePlan(plan).map((i) => i.message).join(' ')).toMatch(/starts after your plan ends/)
+  })
+
+  it('a college preset follows the current yearly figure, not the amount saved when it was picked', () => {
+    const stale = expense({ kind: 'college', collegeType: 'privateNonprofit', annualAmount: 1 })
+    expect(expenseAmount(stale)).toBe(TAX_CONFIG.bigExpenses.college.privateNonprofit)
+    expect(expenseAmount({ ...stale, collegeType: null })).toBe(1)
+  })
+
+  it('asks for a start age on an expense added before your age was entered', () => {
+    const plan = { ...working, bigExpenses: [expense({ name: 'Car', startAge: 0 })] }
+    expect(validatePlan(plan).map((i) => i.message)).toContain('Enter the age you’ll be when “Car” starts.')
+  })
+
+  it('lifetime tax counts retired years only (working-year taxes on big expenses are in the watch-out)', () => {
+    const plan = { ...working, accounts: [working.accounts[1]], bigExpenses: [expense({ startAge: 52 })] }
+    const withExpense = evaluatePlan(plan)
+    const without = evaluatePlan({ ...plan, bigExpenses: [] })
+    expect(withExpense.projection!.years.find((y) => y.age === 52)!.tax).toBeGreaterThan(0)
+    // Same retirement (the expense only shrinks the pre-tax balance a little), so retirement taxes stay close
+    expect(withExpense.lifetimeTax).toBeLessThanOrEqual(without.lifetimeTax)
   })
 })

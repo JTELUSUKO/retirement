@@ -98,7 +98,8 @@ export interface BigExpense {
   startAge: number
   /** Yearly cost growth above inflation (college has historically risen faster than prices) */
   excessInflation: number
-  /** College: the cost preset picked (its amount comes from the yearly figures), or null for your own amount */
+  /** College: the cost preset picked, or null for your own amount (annualAmount). A preset always uses the current
+   *  yearly figure (expenseAmount), so it follows the yearly update */
   collegeType: CollegeType | null
   /** College: 529 balance today, used first for this expense (tax-free) */
   saved529: number
