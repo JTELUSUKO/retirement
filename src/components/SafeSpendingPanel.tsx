@@ -42,7 +42,7 @@ export function SafeSpendingPanel({ plan }: { plan: Plan }) {
           type="button"
           disabled={state.status === 'running'}
           onClick={() => void run()}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900"
         >
           {state.status === 'running' ? 'Calculating…' : 'Calculate'}
         </button>

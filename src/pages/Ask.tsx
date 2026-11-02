@@ -61,7 +61,7 @@ function ApiKeySetup({ onSaved }: { onSaved: () => void }) {
           <input type="checkbox" className="h-4 w-4 accent-teal-700" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           Remember on this device
         </label>
-        <button type="submit" disabled={!key.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+        <button type="submit" disabled={!key.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900">
           Save key and start
         </button>
       </form>
@@ -206,7 +206,7 @@ export function Ask() {
             Stop
           </button>
         ) : (
-          <button type="submit" disabled={!draft.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900">
+          <button type="submit" disabled={!draft.trim()} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900">
             Send
           </button>
         )}

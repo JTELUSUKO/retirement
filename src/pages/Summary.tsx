@@ -81,7 +81,7 @@ export function Summary() {
         type="button"
         onClick={() => window.print()}
         disabled={!ready}
-        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-700 dark:disabled:bg-slate-700 dark:disabled:text-slate-200 dark:bg-slate-100 dark:text-slate-900"
       >
         {ready ? 'Print / Save as PDF' : 'Preparing…'}
       </button>

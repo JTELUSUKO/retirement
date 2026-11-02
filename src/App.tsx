@@ -25,8 +25,9 @@ export default function App() {
 
   const tabStyle = (value: Page) =>
     page === value
-      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-      : 'text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800'
+      ? // Selected: a quiet fill, so the page's main buttons stay the strongest thing on it
+        'bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100'
 
   const tab = (value: Page, label: string, hash: string) => (
     <a href={hash} aria-current={page === value ? 'page' : undefined} className={`rounded-md px-3 py-1.5 text-sm font-medium ${tabStyle(value)}`}>
