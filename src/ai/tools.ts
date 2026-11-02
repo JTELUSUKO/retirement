@@ -10,8 +10,7 @@ import {
   type Plan,
   type PlanEvaluation,
   type Scenario,
-  type StressTest,
-} from '../engine'
+  type StressTest, expenseStartAge } from '../engine'
 
 /**
  * Read-only tools Claude can call. They run the app's own engine in the browser, so every
@@ -140,6 +139,18 @@ export function summarize(plan: Plan, e: PlanEvaluation) {
     lifetimeRothConversions: round(e.projection!.years.reduce((sum, y) => sum + y.rothConversion / y.priceLevel, 0)),
     lifetimeStateTax: round(e.lifetimeStateTax),
     lifetimeHealthcare: round(e.lifetimeHealthcare),
+    ...(plan.bigExpenses.length > 0
+      ? {
+          bigExpenses: plan.bigExpenses.map((x) => ({
+            name: x.name,
+            fromAge: expenseStartAge(plan, x),
+            // Today's dollars, before college costs' extra growth
+            totalToday: round(x.annualAmount * x.years),
+          })),
+          lifetimeBigExpenses: round(e.projection!.years.reduce((sum, y) => sum + y.bigExpenses / y.priceLevel, 0)),
+          lifetimeBigExpensesFrom529: round(e.projection!.years.reduce((sum, y) => sum + y.bigExpensesFrom529 / y.priceLevel, 0)),
+        }
+      : {}),
     socialSecurityMonthlyAtClaimAge: round(householdSocialSecurityMonthly(plan)),
     ...(survivorFromAge(plan) !== Infinity
       ? { survivorModeled: `${plan.survivor.whoDies === 'you' ? 'you die' : 'your spouse dies'} at ${plan.survivor.firstDeathAge}` }

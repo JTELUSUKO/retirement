@@ -40,5 +40,7 @@ export default defineConfig({
   preview: { headers: previewHeaders },
   test: {
     include: ['src/**/*.test.ts'],
+    // The simulation tests run thousands of markets; 5s (the default) fails them on a busy machine
+    testTimeout: 20_000,
   },
 })

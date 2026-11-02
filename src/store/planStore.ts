@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Account, IncomeStream, Plan, Scenario } from '../engine'
+import { TAX_CONFIG, type Account, type BigExpense, type BigExpenseKind, type IncomeStream, type Plan, type Scenario } from '../engine'
 import { defaultAccountName } from '../utils/labels'
 
 /** Sample plan behind “Load example”. */
@@ -36,6 +36,7 @@ export const examplePlan: Plan = {
   scenarios: [],
   rothConversion: { enabled: false, fillToRate: 0.12, fromAge: 0, toAge: 0, stayUnderIrmaa: true },
   longTermCare: { enabled: false, who: 'you', startAge: 85, years: 3, annualCost: 100_000 },
+  bigExpenses: [],
   spendingRule: { type: 'fixed', band: 0.2, adjustment: 0.1, floor: 0.75 },
   healthcare: { preMedicareAnnual: 12_000, medicareAnnual: 7_000, excessInflation: 0.02 },
   assumptions: {
@@ -69,6 +70,7 @@ export const blankPlan: Plan = {
   incomeStreams: [],
   annuityPurchase: { ...examplePlan.annuityPurchase, enabled: false, purchaseAge: 0 },
   scenarios: [],
+  bigExpenses: [],
 }
 
 /** Back to a blank plan, keeping the visitor's own assumptions and healthcare estimates. */
@@ -179,14 +181,29 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 16) {
     state.plan = { ...state.plan, spendingRule: state.plan.spendingRule ?? { type: 'fixed', band: 0.2, adjustment: 0.1, floor: 0.75 } }
   }
+  // v16 → v17: big expenses (none)
+  if (version < 17) {
+    state.plan = { ...state.plan, bigExpenses: state.plan.bigExpenses ?? [] }
+  }
   return state
+}
+
+/** A new big expense with the preset's typical figures (yearly config) */
+export function newBigExpense(kind: BigExpenseKind, plan: Plan): BigExpense {
+  const { college, wedding } = TAX_CONFIG.bigExpenses
+  const base = { id: crypto.randomUUID(), kind, childAgeNow: null, atChildAge: 0, startAge: plan.currentAge + 5, excessInflation: 0, collegeType: null, saved529: 0, yearly529: 0 }
+  if (kind === 'college') {
+    return { ...base, name: 'College', annualAmount: college.publicInState, collegeType: 'publicInState', years: college.years, childAgeNow: 10, atChildAge: college.startChildAge, excessInflation: college.excessInflation }
+  }
+  if (kind === 'wedding') return { ...base, name: 'Wedding', annualAmount: wedding.amount, years: 1, childAgeNow: 10, atChildAge: wedding.childAge }
+  return { ...base, name: 'Big expense', annualAmount: 0, years: 1 }
 }
 
 /** Scenarios shown next to the base plan (each runs its own simulation). */
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 16
+export const PLAN_VERSION = 17
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 
@@ -209,6 +226,9 @@ interface PlanState {
   updateAccount: (id: string, patch: Partial<Account>) => void
   addAccount: () => void
   removeAccount: (id: string) => void
+  addBigExpense: (kind: BigExpenseKind) => void
+  updateBigExpense: (id: string, patch: Partial<BigExpense>) => void
+  removeBigExpense: (id: string) => void
   addIncome: () => void
   updateIncome: (id: string, patch: Partial<IncomeStream>) => void
   removeIncome: (id: string) => void
@@ -255,6 +275,10 @@ export const usePlanStore = create<PlanState>()(
             ],
           })),
         removeAccount: (id) => edit((p) => ({ ...p, accounts: p.accounts.filter((a) => a.id !== id) })),
+        addBigExpense: (kind) => edit((p) => ({ ...p, bigExpenses: [...p.bigExpenses, newBigExpense(kind, p)] })),
+        updateBigExpense: (id, patch) =>
+          edit((p) => ({ ...p, bigExpenses: p.bigExpenses.map((e) => (e.id === id ? { ...e, ...patch } : e)) })),
+        removeBigExpense: (id) => edit((p) => ({ ...p, bigExpenses: p.bigExpenses.filter((e) => e.id !== id) })),
         addIncome: () =>
           edit((p) => ({
             ...p,

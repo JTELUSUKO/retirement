@@ -13,6 +13,9 @@ export const SECONDARY =
 export const CALL_TO_ACTION =
   'block rounded-lg bg-teal-700 px-4 py-3 text-center font-medium text-white hover:bg-teal-800'
 
+/** Dropdowns in forms (full width, under their label). */
+export const SELECT = 'mt-1 w-full rounded-md border border-slate-500 bg-white px-2 py-2 text-sm dark:border-slate-500 dark:bg-slate-900'
+
 /** Focus outline for scrollable boxes (see ScrollRegion). */
 export const SCROLL_REGION = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600'
 

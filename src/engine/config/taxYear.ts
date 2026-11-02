@@ -53,6 +53,8 @@ export const TAX_CONFIG = {
       name: 'SSA: Important things to consider when planning for retirement',
     },
     cpi: { url: 'https://www.bls.gov/cpi/', name: 'U.S. Bureau of Labor Statistics: Consumer Price Index' },
+    collegePricing: { url: 'https://research.collegeboard.org/trends/college-pricing/highlights', name: 'College Board: Trends in College Pricing' },
+    weddingCost: { url: 'https://www.theknot.com/content/average-wedding-cost', name: 'The Knot: Average wedding cost' },
     kidsAccountFaq: { url: 'https://www.irs.gov/faqs/trump-accounts-frequently-asked-questions', name: 'IRS: Children’s account frequently asked questions' },
     kidsAccountNotice: { url: 'https://www.irs.gov/pub/irs-drop/n-25-68.pdf', name: 'IRS Notice 2025-68 (PDF)' },
     kidsAccountForm: { url: 'https://www.irs.gov/pub/irs-pdf/i4547.pdf', name: 'IRS: Instructions for Form 4547 (PDF)' },
@@ -73,6 +75,22 @@ export const TAX_CONFIG = {
     hsaSelf: 4_400,
     hsaFamily: 8_750,
     hsaCatchUp55: 1_000,
+  },
+  /**
+   * Presets for big expenses (planner): average yearly college costs, College Board "Trends in College Pricing"
+   * (published tuition and fees plus on-campus housing and food, 2025–26), and The Knot's average wedding cost.
+   */
+  bigExpenses: {
+    college: {
+      publicInState: 25_850,
+      publicOutOfState: 45_780,
+      privateNonprofit: 60_920,
+      /** Default yearly growth above inflation */
+      excessInflation: 0.01,
+      years: 4,
+      startChildAge: 18,
+    },
+    wedding: { amount: 34_000, childAge: 30 },
   },
   /**
    * Children's investment accounts created by the 2025 tax law (Notice 2025-68, Form 4547 instructions, IRS FAQ):

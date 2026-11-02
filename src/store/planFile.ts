@@ -120,6 +120,19 @@ function shapeProblem(plan: unknown): string | null {
     }
   }
 
+  if (!Array.isArray(plan.bigExpenses)) return '“bigExpenses” must be a list'
+  for (const [i, e] of plan.bigExpenses.entries()) {
+    if (!isObj(e) || typeof e.id !== 'string' || typeof e.name !== 'string') return `big expense ${i + 1} is incomplete`
+    if (!['college', 'wedding', 'other'].includes(e.kind as string)) return `big expense “${e.name}” has an unknown type`
+    for (const key of ['annualAmount', 'years', 'atChildAge', 'startAge', 'excessInflation', 'saved529', 'yearly529']) {
+      if (!isNum(e[key])) return `big expense “${e.name}”: “${key}” must be a number`
+    }
+    if (e.childAgeNow !== null && !isNum(e.childAgeNow)) return `big expense “${e.name}”: the child’s age must be a number or empty`
+    if (e.collegeType !== null && !['publicInState', 'publicOutOfState', 'privateNonprofit'].includes(e.collegeType as string)) {
+      return `big expense “${e.name}” has an unknown college type`
+    }
+  }
+
   if (!Array.isArray(plan.incomeStreams)) return '“incomeStreams” must be a list'
   for (const [i, s] of plan.incomeStreams.entries()) {
     if (!isObj(s) || typeof s.id !== 'string' || typeof s.name !== 'string') return `income ${i + 1} is incomplete`

@@ -17,6 +17,7 @@ How the app models a plan:
 - Brokerage (taxable) accounts track cost basis: selling realizes gains above basis, and a 1.5% qualified-dividend yield is taxed yearly in retirement, at 0/15/20% capital-gains rates plus the 3.8% NIIT. Pre-tax withdrawals before 59½ owe a 10% penalty (Rule of 55 exempts 401(k)s when retiring at 55+). The "typical returns" projection uses the median (compounded) return, so it lines up with the middle of the Monte Carlo; the return inputs are average yearly returns.
 - Medicare income surcharges (IRMAA, CMS ${TAX_CONFIG.year} tiers) are charged per person 65+ based on MAGI two years earlier and included in healthcare. If rothConversion is enabled, pre-tax money is converted to Roth each year in its age window up to the top of the chosen federal bracket (optionally staying under the first IRMAA threshold from 63); run_what_if can turn conversions on/off or change the bracket.
 - spendingRule "guardrails" cuts spending (not healthcare) 10% when the withdrawal rate rises >20% above its starting level (never below spendingRule.floor, no cuts in the last 15 years) and restores cuts 10% at a time when it falls >20% below (never above the plan); the starting rate is set once Social Security is flowing; results then include how often cuts happen. For "how much can I spend?", call find_safe_spending.
+- bigExpenses are large costs in any year (college, a wedding, a car…), in today's dollars per year for "years" years, rising with inflation plus excessInflation. A child's expense starts when the child (childAgeNow today) reaches atChildAge, otherwise at your startAge. College uses its own 529 first (saved529 now plus yearly529 from pay while working; leftovers stay the child's). The rest comes from savings in the usual order; before retirement, pre-tax withdrawals are taxed at about 22% plus the 10% penalty before 59½, and guardrails never cut these costs. Results include each year's bigExpenses.
 - Fees (assumptions.annualFee) come off invested accounts yearly. Optional longTermCare adds a care cost for one person for some years (in healthcare). Stress test "long-term-care" turns it on with the plan's settings or $100K/yr for 3 years from 85.
 - Not modeled: local/city income tax, state income-based phase-outs and Social Security exemptions, ACA subsidies, separate retirement dates per spouse, payroll tax on part-time work. The Social Security estimate assumes working until 67.
 
@@ -32,11 +33,12 @@ How to answer:
 
 /** The plan as the assistant sees it: inputs only, no internal ids. */
 export function planSnapshot(plan: Plan): string {
-  const { accounts, incomeStreams, scenarios, ...rest } = plan
+  const { accounts, incomeStreams, scenarios, bigExpenses, ...rest } = plan
   return JSON.stringify({
     ...rest,
     accounts: accounts.map(({ id: _id, ...a }) => a),
     incomeStreams: incomeStreams.map(({ id: _id, ...s }) => s),
+    bigExpenses: bigExpenses.map(({ id: _id, ...e }) => e),
     scenarios: scenarios.map(({ id: _id, slot: _slot, ...s }) => s),
     units: 'Money in today’s dollars unless noted; rates are fractions (0.07 = 7%).',
   })

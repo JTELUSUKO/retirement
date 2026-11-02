@@ -25,7 +25,8 @@ The calculator pages' year, dates, tax tables and source links fill in from this
 | 7 | `rmd` start ages and Uniform Lifetime Table | IRS Publication 590-B | Rarely changes |
 | 8 | `federalTax.niit`, `socialSecurityThresholds` | Fixed by law (not indexed) | Only when the law changes |
 | 9 | `socialSecurity` claiming ages | SSA | Rarely changes |
-| 10 | `kidsAccount` (children's account yearly and employer limits, indexed after 2027; $1,000 deposit birth years) | IRS children's account FAQ, Form 4547 instructions, newsroom inflation-adjustment releases | October–November |
+| 10 | `bigExpenses` college costs (tuition and fees + housing and food) and wedding cost | College Board "Trends in College Pricing" (October); The Knot Real Weddings Study (February) | October / February |
+| 11 | `kidsAccount` (children's account yearly and employer limits, indexed after 2027; $1,000 deposit birth years) | IRS children's account FAQ, Form 4547 instructions, newsroom inflation-adjustment releases | October–November |
 
 Then, in the same file:
 - set **`year`** to the new year and **`reviewed`** to today's date;

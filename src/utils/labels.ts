@@ -1,6 +1,6 @@
 import type { AccountType, IncomeKind, Plan, Scenario } from '../engine'
 import { formatUSD, formatUSDCompact } from './format'
-import { applyScenario, planEndAge, spouseOffset, STRESS_LABEL } from '../engine'
+import { applyScenario, bigExpensesTotal, planEndAge, spouseOffset, STRESS_LABEL } from '../engine'
 
 export const ACCOUNT_TYPE_LABEL: Record<AccountType, string> = {
   '401k': '401(k) / 403(b)',
@@ -90,6 +90,9 @@ export function sectionSummaries(plan: Plan): Record<string, string> {
       : 'No accounts yet',
     spending: `${plan.annualSpending ? `${formatUSD(plan.annualSpending)}/yr` : 'Spending not set'} · Social Security ${formatUSD(plan.socialSecurityAtFRA)}/mo${plan.spendingRule.type === 'guardrails' ? ' · guardrails' : ''}`,
     survivor: s.enabled ? `${s.whoDies === 'you' ? 'You die' : 'Spouse dies'} at ${s.firstDeathAge}` : 'Not modeled',
+    bigExpenses: plan.bigExpenses.length
+      ? `${plan.bigExpenses.map((e) => e.name.trim() || 'Big expense').join(', ')} · ${formatUSDCompact(bigExpensesTotal(plan))} in today’s dollars`
+      : 'None',
     income: plan.incomeStreams.length
       ? `${plan.incomeStreams.length} source${plan.incomeStreams.length === 1 ? '' : 's'} · ${formatUSD(incomeTotal)}/yr`
       : 'None',

@@ -114,6 +114,27 @@ test('RMD calculator', async ({ page }) => {
   await expectFitsScreen(page)
 })
 
+test('big expenses: add college, see it in the results, the lever and the summary', async ({ page }) => {
+  await page.goto('./')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByRole('button', { name: /example/i }).first().click()
+  await page.getByRole('button', { name: 'Big expenses', exact: true }).click()
+  await page.getByRole('button', { name: '+ College' }).click()
+  await expect(page.getByRole('combobox', { name: 'Type of college' })).toHaveValue('publicInState')
+  await typeIn(page, 'Child’s age now', '15')
+  await expect(page.locator('#root')).toContainText('(before you retire)')
+  // Results: the big-expenses line and the "halve college" lever
+  await expect(page.locator('#root')).toContainText('Big expenses:', { timeout: 30_000 })
+  await expect(page.locator('section[aria-label="Results"], #root')).toContainText('Pay half of the college costs', { timeout: 30_000 })
+  // "My own amount" keeps the cost and drops the preset
+  await page.getByRole('combobox', { name: 'Type of college' }).selectOption('custom')
+  await expect(page.getByRole('combobox', { name: 'Type of college' })).toHaveValue('custom')
+  await page.goto('./#summary')
+  await expect(page.locator('#root')).toContainText('College', { timeout: 15_000 })
+  await expectFitsScreen(page)
+})
+
 test('Free calculators menu lists every calculator page and opens one', async ({ page }) => {
   await page.goto('./')
   const button = page.getByRole('button', { name: /Free calculators/ })

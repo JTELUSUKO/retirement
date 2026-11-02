@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { projectPlan, type Plan } from '../engine'
-import { examplePlan } from '../store/planStore'
+import { examplePlan, newBigExpense } from '../store/planStore'
 import { watchOuts } from './watchOuts'
 
 const check = (plan: Plan) => watchOuts(plan, projectPlan(plan))
@@ -12,6 +12,18 @@ describe('watch-outs', () => {
     const [w] = check(examplePlan)
     expect(w.key).toBe('roth-window')
     expect(w.text).toMatch(/^At ages 65–\d+ your federal tax bracket is 12% or lower, below the 22% when RMDs start at \d+/)
+  })
+
+  it('flags a big expense before retiring that reaches retirement accounts, not one that cash covers', () => {
+    // College when you're 58-61, retiring at 65, with only pre-tax savings: taxes and the 10% penalty
+    const college = { ...newBigExpense('college', examplePlan), childAgeNow: 15 }
+    const plan = { ...examplePlan, accounts: pretaxOnly(450_000), bigExpenses: [college] }
+    const w = check(plan).find((x) => x.key === 'big-expense-early')!
+    expect(w.age).toBe(58)
+    expect(w.text).toMatch(/^Big expenses at ages 58–61 take about \$[\d,]+ out of retirement accounts before you retire, costing about \$[\d,]+ in taxes and penalties/)
+    // A small cost the example plan's emergency fund covers: nothing to flag
+    const small = { ...newBigExpense('other', examplePlan), annualAmount: 5_000 }
+    expect(keys({ ...examplePlan, bigExpenses: [small] })).not.toContain('big-expense-early')
   })
 
   it('leaves the window out once Roth conversions are on', () => {

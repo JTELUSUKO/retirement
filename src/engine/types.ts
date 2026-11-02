@@ -64,6 +64,8 @@ export interface Plan {
   rothConversion: RothConversionSettings
   /** Optional long-term care need (a cost shock). */
   longTermCare: LongTermCareSettings
+  /** Big one-off or multi-year costs paid from savings: college, a wedding, a car, a home down payment… */
+  bigExpenses: BigExpense[]
   /** Fixed spending, or guardrails that cut/raise spending after bad/good markets. */
   spendingRule: SpendingRule
   socialSecurityClaimAge: number
@@ -75,6 +77,33 @@ export interface Plan {
   scenarios: Scenario[]
   healthcare: HealthcareCosts
   assumptions: Assumptions
+}
+
+export type BigExpenseKind = 'college' | 'wedding' | 'other'
+export type CollegeType = 'publicInState' | 'publicOutOfState' | 'privateNonprofit'
+
+export interface BigExpense {
+  id: string
+  name: string
+  kind: BigExpenseKind
+  /** Cost per year, in today's dollars */
+  annualAmount: number
+  /** Years it's paid (1 = a one-time cost) */
+  years: number
+  /** A child's expense starts at a child's age: their age today (null = timed by your age, `startAge`) */
+  childAgeNow: number | null
+  /** The child's age when it starts (with childAgeNow) */
+  atChildAge: number
+  /** Your age when it starts (when childAgeNow is null) */
+  startAge: number
+  /** Yearly cost growth above inflation (college has historically risen faster than prices) */
+  excessInflation: number
+  /** College: the cost preset picked (its amount comes from the yearly figures), or null for your own amount */
+  collegeType: CollegeType | null
+  /** College: 529 balance today, used first for this expense (tax-free) */
+  saved529: number
+  /** College: yearly 529 contributions until it starts, today's dollars (from your pay, like other contributions) */
+  yearly529: number
 }
 
 export type IncomeKind = 'pension' | 'annuity' | 'work' | 'rental' | 'other'
@@ -232,6 +261,9 @@ export interface YearResult {
   irmaa: number
   /** Long-term care costs this year (nominal; included in healthcare) */
   longTermCare: number
+  /** Big expenses this year (nominal): their full cost, and the part paid from 529s; the rest is in spending */
+  bigExpenses: number
+  bigExpensesFrom529: number
   /** Spending as a share of the plan this year (1 unless guardrails adjusted it) */
   spendingFactor: number
   /** Modified AGI this year (nominal), used for IRMAA two years later */

@@ -72,6 +72,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const lifetimeIrmaaReal = retiredYears.reduce((sum, y) => sum + y.irmaa / y.priceLevel, 0)
   const lifetimeLtcReal = retiredYears.reduce((sum, y) => sum + y.longTermCare / y.priceLevel, 0)
   const lifetimeHealthReal = retiredYears.reduce((sum, y) => sum + y.healthcare / y.priceLevel, 0)
+  const bigExpensesReal = result.years.reduce((sum, y) => sum + y.bigExpenses / y.priceLevel, 0)
+  const bigFrom529Real = result.years.reduce((sum, y) => sum + y.bigExpensesFrom529 / y.priceLevel, 0)
   const avgTaxRate =
     retiredYears.reduce((sum, y) => sum + y.tax, 0) /
     Math.max(retiredYears.reduce((sum, y) => sum + y.withdrawal + y.income, 0), 1)
@@ -139,6 +141,14 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         today's dollars, including medical costs rising faster than inflation
         {lifetimeIrmaaReal > 0 ? `, ${formatUSDCompact(lifetimeIrmaaReal)} of Medicare income surcharges (IRMAA)` : ''}
         {lifetimeLtcReal > 0 ? `, and ${formatUSDCompact(lifetimeLtcReal)} of long-term care` : ''}.
+        {bigExpensesReal > 0 && (
+          <>
+            <br />
+            Big expenses: <strong className="tabular-nums">{formatUSDCompact(bigExpensesReal)}</strong> in today's dollars
+            {bigFrom529Real > 0 ? `, ${formatUSDCompact(bigFrom529Real)} of it from 529s` : ''}, including college costs rising faster than
+            inflation where set.
+          </>
+        )}
       </p>
 
       <SafeSpendingPanel plan={plan} />

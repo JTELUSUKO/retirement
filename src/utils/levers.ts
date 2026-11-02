@@ -1,4 +1,4 @@
-import { applyScenario, mixLabel, mixReturns, mixShare, planEndAge, type Plan, type Scenario } from '../engine'
+import { applyScenario, mixLabel, mixReturns, mixShare, planEndAge, type BigExpense, type Plan, type Scenario } from '../engine'
 import { formatUSD } from './format'
 import { roundSpending, SCENARIO_PRESETS } from './scenarioPresets'
 
@@ -17,6 +17,7 @@ export interface Lever {
 type LeverPatch =
   | { kind: 'guardrails' }
   | { kind: 'mix'; fromShare: number; returnPostRetirement: number; volatilityPostRetirement: number }
+  | { kind: 'college-half'; ids: string[] }
 
 /**
  * The plan change a lever's button makes, applied to the latest plan; null when the latest plan no longer has what
@@ -24,6 +25,11 @@ type LeverPatch =
  */
 export function patchFor(latest: Plan, patch: LeverPatch): Partial<Plan> | null {
   if (patch.kind === 'mix' && mixShare(latest.assumptions.returnPostRetirement, latest.assumptions.volatilityPostRetirement) !== patch.fromShare) return null
+  if (patch.kind === 'college-half') {
+    // Only the college expenses that were tested, if they're still there
+    if (!patch.ids.every((id) => latest.bigExpenses.some((e) => e.id === id))) return null
+    return { bigExpenses: latest.bigExpenses.map((e) => (patch.ids.includes(e.id) ? halved(e) : e)) }
+  }
   return patch.kind === 'guardrails'
     ? { spendingRule: { ...latest.spendingRule, type: 'guardrails' } }
     : { assumptions: { ...latest.assumptions, returnPostRetirement: patch.returnPostRetirement, volatilityPostRetirement: patch.volatilityPostRetirement } }
@@ -66,6 +72,17 @@ export function leverVariants(plan: Plan): Lever[] {
       },
     })
   }
+  // College costs: what if aid, loans or a cheaper school covered half
+  const colleges = plan.bigExpenses.filter((e) => e.kind === 'college' && e.annualAmount > 0)
+  if (colleges.length > 0) {
+    const ids = colleges.map((e) => e.id)
+    levers.push({
+      key: 'college-half',
+      label: 'Pay half of the college costs (aid, scholarships, loans or a cheaper school)',
+      plan: { ...plan, bigExpenses: plan.bigExpenses.map((e) => (ids.includes(e.id) ? halved(e) : e)) },
+      patch: { kind: 'college-half', ids, button: 'Halve', title: 'Halve the college cost in Big expenses (change it back there)' },
+    })
+  }
   // A cautious mix after retiring: test a balanced one (more stocks means bigger ups and downs along the way)
   const share = mixShare(plan.assumptions.returnPostRetirement, plan.assumptions.volatilityPostRetirement)
   if (share !== null && share < BALANCED) {
@@ -86,6 +103,9 @@ export function leverVariants(plan: Plan): Lever[] {
   }
   return levers
 }
+
+/** A college expense at half its cost (no longer a preset amount) */
+const halved = (e: BigExpense): BigExpense => ({ ...e, annualAmount: Math.round(e.annualAmount / 2), collegeType: null })
 
 /** Stock share of the balanced mix tested against more cautious ones */
 const BALANCED = 0.6

@@ -28,6 +28,13 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await page.goto('./#summary')
     await expect(page.locator('svg.recharts-surface')).toHaveCount(1, { timeout: 15_000 })
   }],
+  ['plan with a college expense', async (page) => {
+    await loadExample(page)
+    await page.getByRole('button', { name: 'Big expenses', exact: true }).click()
+    await page.getByRole('button', { name: '+ College' }).click()
+    await expect(page.getByRole('combobox', { name: 'Type of college' })).toBeVisible()
+    await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
+  }],
   ['Free calculators menu open', async (page) => {
     await page.goto('./')
     await page.getByRole('button', { name: /Free calculators/ }).click()

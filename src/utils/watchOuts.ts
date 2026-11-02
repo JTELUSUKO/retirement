@@ -2,7 +2,7 @@ import type { Plan, ProjectionResult, YearResult } from '../engine'
 import { formatUSD } from './format'
 
 export interface WatchOut {
-  key: 'penalty' | 'rmd-bracket' | 'roth-window' | 'irmaa'
+  key: 'penalty' | 'rmd-bracket' | 'roth-window' | 'irmaa' | 'big-expense-early'
   /** Age it starts, for ordering */
   age: number
   /** A cost to look at, or an opportunity */
@@ -22,6 +22,21 @@ export function watchOuts(plan: Plan, result: ProjectionResult): WatchOut[] {
   const retired = result.years.filter((y) => y.age >= plan.retirementAge && y.age < lastAge)
   const at = (age: number) => retired.find((y) => y.age === age)
   const out: WatchOut[] = []
+
+  // Big expenses before retiring that reach retirement accounts (pre-tax or Roth), with their taxes and penalty
+  const early = result.years.filter(
+    (y) => y.age < plan.retirementAge && y.age < lastAge && y.bigExpenses > 0 && y.withdrawalsByBucket.pretax + y.withdrawalsByBucket.roth > y.rmd,
+  )
+  if (early.length > 0) {
+    const fromRetirement = early.reduce((sum, y) => sum + (y.withdrawalsByBucket.pretax - y.rmd + y.withdrawalsByBucket.roth) / y.priceLevel, 0)
+    const taxes = early.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
+    out.push({
+      key: 'big-expense-early',
+      age: early[0].age,
+      tone: 'warn',
+      text: `Big expenses at ${ages(early[0].age, early.at(-1)!.age)} take about ${formatUSD(fromRetirement)} out of retirement accounts before you retire${taxes > 0 ? `, costing about ${formatUSD(taxes)} in taxes and penalties` : ''} (today’s dollars). Saving for them in cash, a brokerage account or a 529 avoids that.`,
+    })
+  }
 
   const penalized = retired.filter((y) => y.earlyWithdrawalPenalty > 0)
   if (penalized.length > 0) {

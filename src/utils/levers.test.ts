@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { examplePlan } from '../store/planStore'
+import { examplePlan, newBigExpense } from '../store/planStore'
 import { applyScenario, mixReturns } from '../engine'
 import { articleFor, leverVariants, patchFor, spendMoreVariant, verdictFor, withArticle } from './levers'
 import { SCENARIO_PRESETS } from './scenarioPresets'
@@ -32,6 +32,18 @@ describe('levers', () => {
     expect(patchFor(withMix(0.8), mix.patch!)).toBeNull()
     // Already balanced or more, or a custom mix (the example plan): not tested
     for (const plan of [withMix(0.6), withMix(1), examplePlan]) expect(leverVariants(plan).map((l) => l.key)).not.toContain('mix')
+  })
+
+  it('tests halving college costs when the plan pays for college, and the button halves just those', () => {
+    const college = newBigExpense('college', examplePlan)
+    const wedding = newBigExpense('wedding', examplePlan)
+    const plan = { ...examplePlan, bigExpenses: [college, wedding] }
+    const lever = leverVariants(plan).find((l) => l.key === 'college-half')!
+    expect(lever.plan.bigExpenses.map((e) => e.annualAmount)).toEqual([Math.round(college.annualAmount / 2), wedding.annualAmount])
+    expect(patchFor(plan, lever.patch!)!.bigExpenses![0]).toMatchObject({ annualAmount: Math.round(college.annualAmount / 2), collegeType: null })
+    // The college expense was removed since: the button leaves the plan alone
+    expect(patchFor({ ...plan, bigExpenses: [wedding] }, lever.patch!)).toBeNull()
+    expect(leverVariants(examplePlan).map((l) => l.key)).not.toContain('college-half')
   })
 
   it('can be sent to a simulation worker (no functions)', () => {

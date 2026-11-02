@@ -1,5 +1,6 @@
 import { TAX_CONFIG } from './config/taxYear'
 import { planEndAge, spouseOffset } from './survivor'
+import { expenseStartAge } from './bigExpenses'
 import type { Plan, PlanIssue } from './types'
 
 const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
@@ -60,6 +61,7 @@ export function validatePlan(plan: Plan): PlanIssue[] {
     plan.socialSecurityAtFRA,
     plan.spouseSocialSecurityAtFRA,
     ...plan.incomeStreams.map((i) => i.annualAmount),
+    ...plan.bigExpenses.flatMap((e) => [e.annualAmount, e.saved529, e.yearly529]),
     plan.healthcare.preMedicareAnnual,
     plan.healthcare.medicareAnnual,
     plan.stateRetirementExclusion,
@@ -93,6 +95,21 @@ export function validatePlan(plan: Plan): PlanIssue[] {
   for (const stream of plan.incomeStreams) {
     if (stream.survivorShare < 0 || stream.survivorShare > 1) {
       issues.push({ field: 'incomeStreams', message: `“${stream.name}” survivor share must be 0–100%.` })
+    }
+  }
+
+  for (const e of plan.bigExpenses) {
+    const name = e.name.trim() || 'A big expense'
+    if (e.years < 1 || e.years > 40) issues.push({ field: 'bigExpenses', message: `“${name}” must last 1–40 years.` })
+    if (e.childAgeNow !== null && (e.childAgeNow < 0 || e.childAgeNow > 60)) {
+      issues.push({ field: 'bigExpenses', message: `“${name}”: the child’s age must be 0–60.` })
+    } else if (expenseStartAge(plan, e) + e.years <= plan.currentAge) {
+      issues.push({ field: 'bigExpenses', message: `“${name}” is already over; remove it or change when it starts.` })
+    } else if (expenseStartAge(plan, e) > planEndAge(plan)) {
+      issues.push({ field: 'bigExpenses', message: `“${name}” starts after your plan ends (age ${planEndAge(plan)}); change when it starts or remove it.` })
+    }
+    if (e.excessInflation < -0.05 || e.excessInflation > 0.1) {
+      issues.push({ field: 'bigExpenses', message: `“${name}”: extra cost growth must be between −5% and 10% a year.` })
     }
   }
 

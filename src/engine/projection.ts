@@ -6,6 +6,7 @@ import { householdAt, planEndAge, socialSecurityAt, spouseOffset } from './survi
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcarePerPerson } from './healthcare'
 import { longTermCareAt } from './longTermCare'
+import { expenseAt, expenseStartAge } from './bigExpenses'
 import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
@@ -26,6 +27,14 @@ export const QUALIFIED_DIVIDEND_YIELD = 0.015
 
 /** Penalty on non-medical HSA withdrawals before 65. */
 export const HSA_PENALTY = 0.2
+
+/**
+ * Taxes on withdrawals during working years (big expenses before retirement): pay isn't modeled, so pre-tax and
+ * non-medical HSA withdrawals are taxed at a typical working-years federal rate stacked on top of it, and capital
+ * gains at the usual 15%. State tax isn't added for these years.
+ */
+export const WORKING_YEARS_ORDINARY_RATE = 0.22
+export const WORKING_YEARS_GAINS_RATE = 0.15
 
 /** Id of the hidden taxable account that holds reinvested RMDs when the plan has none. */
 export const REINVESTED_RMD_ID = 'reinvested-rmd'
@@ -65,6 +74,11 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  *   ones, measured from the year Social Security is flowing.
  * - Married couples can model one spouse dying first (see survivor.ts): from that age the survivor keeps
  *   the larger Social Security benefit, spends less, pays healthcare for one, and files single the next year.
+ * - Big expenses (college, a wedding, …) are added to spending in the years they're paid, in any year, rising
+ *   with inflation plus their own extra growth. A college expense uses its 529 first (tax-free; the 529 grows like
+ *   your investments and gets its yearly contributions until the expense starts; anything left after is the
+ *   child's and isn't counted). Before retirement the rest comes out of savings in the same order, taxed as
+ *   described at WORKING_YEARS_ORDINARY_RATE (plus the 10% early-withdrawal penalty) and never cut by guardrails.
  * - Income beyond spending and tax is reinvested in a taxable account.
  * - An annuity purchase (at or after retirement) moves the premium out of savings at the
  *   start of the purchase year; payments start that year and last for life.
@@ -139,6 +153,8 @@ export function simulatePath(
         ]
       : [{ bucket, idx: indexesIn(bucket) }],
   )
+  // While still working the Rule of 55 doesn't apply yet: all pre-tax money before 59½ owes the penalty
+  const workingGroups: Group[] = WITHDRAWAL_ORDER.map((bucket) => ({ bucket, idx: indexesIn(bucket), penalized: bucket === 'pretax' }))
 
   /**
    * Take the RMD, then `need` dollars from copies of the balances: the HSA pays up to `medicalCost` first
@@ -153,6 +169,7 @@ export function simulatePath(
     medicalCost: number,
     age: number,
     convert = 0,
+    working = false,
   ) => {
     const next = [...from]
     const nextBasis = [...fromBasis]
@@ -171,7 +188,7 @@ export function simulatePath(
     remaining -= hsaMedical
 
     // 59 is treated as after 59½ (withdrawals assumed in the second half of that year)
-    for (const g of age < 59 ? earlyGroups : normalGroups) {
+    for (const g of age >= 59 ? normalGroups : working ? workingGroups : earlyGroups) {
       if (remaining <= 0) break
       const { taken, gains } = take(next, nextBasis, g.idx, remaining)
       withdrawalsByBucket[g.bucket] += taken
@@ -232,6 +249,8 @@ export function simulatePath(
   )
   const convFrom = conv.fromAge || plan.retirementAge
   const convTo = conv.toAge || rmdStartAge(startYear - plan.currentAge) - 1
+  // 529 balances for big expenses (nominal), used first for their own expense
+  const funds529 = plan.bigExpenses.map((e) => (e.kind === 'college' ? e.saved529 : 0))
   let depletionAge: number | null = null
   let balanceAtRetirement = total()
   let balanceAtRetirementReal = balanceAtRetirement
@@ -273,7 +292,18 @@ export function simulatePath(
       : 0
 
     const household = householdAt(plan, age)
-    let spending = 0
+    // Big expenses this year: the 529 pays its own expense first; the rest comes from savings
+    let bigExpenses = 0
+    let bigExpensesFrom529 = 0
+    plan.bigExpenses.forEach((e, i) => {
+      const cost = expenseAt(plan, e, age) * priceLevel * (1 + e.excessInflation) ** t
+      const from529 = Math.min(funds529[i], cost)
+      funds529[i] -= from529
+      bigExpenses += cost
+      bigExpensesFrom529 += from529
+    })
+    const bigFromSavings = bigExpenses - bigExpensesFrom529
+    let spending = bigFromSavings
     let healthcare = 0
     let irmaa = 0
     let longTermCare = 0
@@ -295,6 +325,7 @@ export function simulatePath(
       const planned = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1) * priceLevel
       if (rule.type === 'guardrails') {
         // Withdrawal rate this year at the current spending level (healthcare is never cut)
+        // Big expenses are left out: a one-off cost shouldn't trigger a lasting cut (or set the starting rate)
         const fromSavings = Math.max(planned * spendingFactor + healthcare - (other.amount + ssIncome + annuityIncome), 0)
         const rate = startBalance > 0 ? fromSavings / startBalance : 0
         // The starting rate is set once Social Security is flowing (a benefit starting would look like a windfall)
@@ -307,7 +338,7 @@ export function simulatePath(
           spendingFactor = Math.min(spendingFactor * (1 + rule.adjustment), GUARDRAIL_CEILING)
         }
       }
-      spending = planned * spendingFactor + healthcare
+      spending = planned * spendingFactor + healthcare + bigFromSavings
     }
     const income = other.amount + ssIncome + annuityIncome
     // Negative when income exceeds spending; the surplus (after tax) is reinvested below
@@ -333,7 +364,7 @@ export function simulatePath(
     let conversion = 0
     // Qualified dividends from brokerage accounts (taxed in retirement; reinvested, so they add to basis)
     const dividends = balances.reduce((sum, b, i) => sum + (isTaxable[i] ? b * QUALIFIED_DIVIDEND_YIELD : 0), 0)
-    let draw = drawDown(balances, basis, Math.max(gap, 0), rmdRequired, healthcare, age)
+    let draw = drawDown(balances, basis, Math.max(gap, 0), rmdRequired, healthcare, age, 0, !retired)
     if (retired) {
       const annuityTaxable = annuityIncome * (annuity?.taxableShare ?? 0)
       const taxPriceLevel = priceLevel * taxIndexAtStart
@@ -395,6 +426,27 @@ export function simulatePath(
         draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age, conversion)
       }
       federalBracket = marginalRate(taxableOrdinary, household.taxStatus, taxPriceLevel)
+    } else if (gap > 0) {
+      // A big expense while working: tax on what it takes out of savings, paid from savings too. An RMD while
+      // working stays untaxed, like the rest of working years (pay isn't modeled), so only the extra pre-tax counts.
+      for (let pass = 0; pass < 25; pass++) {
+        const pretaxExtra = draw.pretaxWithdrawn - draw.rmd
+        earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
+        const hsaPenalty = age < TAX_CONFIG.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
+        capitalGains = draw.realizedGains
+        federalTax =
+          WORKING_YEARS_ORDINARY_RATE * (pretaxExtra + draw.hsaNonMedical) +
+          WORKING_YEARS_GAINS_RATE * capitalGains +
+          earlyWithdrawalPenalty +
+          hsaPenalty
+        // Added on top of pay, which isn't modeled
+        taxableIncome = pretaxExtra + draw.hsaNonMedical + capitalGains
+        federalBracket = pretaxExtra + draw.hsaNonMedical > 0 ? WORKING_YEARS_ORDINARY_RATE : 0
+        const settled = Math.abs(federalTax - tax) < 0.5
+        tax = federalTax
+        if (settled) break
+        draw = drawDown(balances, basis, Math.max(gap, 0) + tax, rmdRequired, 0, age, 0, true)
+      }
     }
     magiStatus[t] = household.taxStatus
     balances.splice(0, balances.length, ...draw.balances)
@@ -419,6 +471,14 @@ export function simulatePath(
         if (isTaxable[i]) basis[i] += added
         contributions += added
       }
+    })
+
+    // 529s grow with your investments and get their contributions until their expense starts
+    plan.bigExpenses.forEach((e, i) => {
+      if (e.kind !== 'college') return
+      funds529[i] *= (1 + market.return) * (1 - fee)
+      // From your pay, so only while working; year-end, so the last one lands just before the first year of college
+      if (!retired && age < expenseStartAge(plan, e)) funds529[i] += e.yearly529 * priceLevel
     })
 
     priceLevel *= 1 + market.inflation
@@ -449,11 +509,13 @@ export function simulatePath(
       healthcare,
       tax,
       federalTax,
-      capitalGains: retired ? capitalGains : 0,
+      capitalGains,
       earlyWithdrawalPenalty,
       rothConversion: draw.converted,
       irmaa,
       longTermCare,
+      bigExpenses,
+      bigExpensesFrom529,
       spendingFactor: retired ? spendingFactor : 1,
       magi: retired ? magi : 0,
       stateTax,

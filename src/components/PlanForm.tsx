@@ -6,6 +6,7 @@ import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoA
 import { Icon, type IconName } from './Icons'
 import { InfoTip } from './InfoTip'
 import { AnnuitySection } from './AnnuitySection'
+import { BigExpenseList } from './BigExpenseList'
 import { IncomeList } from './IncomeList'
 import { LongTermCareSection } from './LongTermCareSection'
 import { NumberField, PercentField } from './NumberField'
@@ -42,12 +43,13 @@ function MixSelect({ label, mean, volatility, onPick }: {
   )
 }
 
-type SectionId = 'you' | 'accounts' | 'spending' | 'survivor' | 'income' | 'annuity' | 'ltc' | 'tax' | 'healthcare' | 'assumptions'
+type SectionId = 'you' | 'accounts' | 'spending' | 'bigExpenses' | 'survivor' | 'income' | 'annuity' | 'ltc' | 'tax' | 'healthcare' | 'assumptions'
 
 const SECTION_ICON: Record<SectionId, IconName> = {
   you: 'user',
   accounts: 'wallet',
   spending: 'banknote',
+  bigExpenses: 'sprout',
   survivor: 'users',
   income: 'briefcase',
   annuity: 'umbrella',
@@ -342,6 +344,16 @@ export function PlanForm() {
             affects the estimate; otherwise use a somewhat lower amount here.
           </p>
         )}
+      </Section>
+
+      <Section
+        id="bigExpenses"
+        title="Big expenses"
+        defaultOpen={plan.bigExpenses.length > 0}
+        summary={summaries.bigExpenses}
+        info="Large costs on top of your yearly spending, in any year: your kids’ college, a wedding, a car, a home down payment. They come out of your savings, before or after you retire."
+      >
+        <BigExpenseList />
       </Section>
 
       {advanced && (

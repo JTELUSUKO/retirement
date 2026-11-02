@@ -17,6 +17,14 @@ describe('plan backup files', () => {
     expect(result).toEqual({ ok: true, plan: examplePlan })
   })
 
+  it('checks big expenses, and adds an empty list to files from before them', () => {
+    expectError(fileWith({ plan: { ...examplePlan, bigExpenses: null } }), /bigExpenses/)
+    expectError(fileWith({ plan: { ...examplePlan, bigExpenses: [{ id: 'e', name: 'College', kind: 'college', annualAmount: 1 }] } }), /College/)
+    const { bigExpenses: _b, ...before } = examplePlan
+    const result = parsePlanFile(fileWith({ version: 16, plan: before }))
+    expect(result.ok && result.plan.bigExpenses).toEqual([])
+  })
+
   it('names the file with the date', () => {
     expect(backupFileName(new Date('2026-10-17T12:00:00Z'))).toBe('retirement-plan-2026-10-17.json')
   })
