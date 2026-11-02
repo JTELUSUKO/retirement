@@ -12,13 +12,13 @@ retirement/
 ├── public/                      # Static files copied as-is into the build
 │   ├── favicon.svg
 │   ├── _headers                 # Security headers for willitlast.app (Cloudflare)
-│   ├── robots.txt               # Allows all crawlers, points to the sitemap
-│   └── sitemap.xml              # Every public page; add new calculator pages here
+│   └── robots.txt               # Allows all crawlers, points to the sitemap (sitemap.xml is generated at build time)
 ├── src/
 │   ├── engine/                  # Pure calculation code. No React, no browser APIs.
 │   │   ├── config/
-│   │   │   ├── 2026.ts          # Yearly US rules: limits, SS, RMD table, federal tax brackets/deductions. Update each January.
-│   │   │   └── stateTax2026.ts  # GENERATED from the Tax Foundation 2026 table (41 states + DC); regenerate, don't hand-edit
+│   │   │   ├── taxYear.ts       # TAX_CONFIG: the tax year's limits, SS, RMD table, brackets, IRMAA, source links and review
+│   │   │   │                    #   date. The one file to update each year (YEARLY_UPDATE.md); pages read from it too
+│   │   │   └── stateRules.ts    # STATE_TAX_RULES, GENERATED from the Tax Foundation table (41 states + DC); regenerate
 │   │   ├── types.ts             # Plan, Account, YearResult, ProjectionResult
 │   │   ├── projection.ts        # Year-by-year simulation per account (simulatePath) + average-return projection
 │   │   ├── accounts.ts          # Account type → tax bucket, withdrawal order, proportional withdrawals
@@ -133,13 +133,17 @@ retirement/
 ├── index.html                   # HTML entry for the planner
 ├── roth-conversion-calculator/
 │   └── index.html               # Calculator page: guide text in plain HTML (crawlable), calculator mounts in #calculator.
-│                                #   <!--BRACKETS_2026--> and <!--IRMAA_2026--> are filled from engine/config at build time
+│                                #   {{YEAR}}-style tokens, tax tables and <!--SOURCE key: …--> links are filled at build time
 ├── rmd-calculator/
-│   └── index.html               # RMD page; <!--UNIFORM_TABLE--> is filled from engine/config at build time
+│   └── index.html               # RMD page (same tokens, plus <!--UNIFORM_TABLE-->)
+├── build/
+│   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
+│                                #   and the "next year's figures are due" warning from November 15
+├── scripts/                     # Regenerate state tax rules from the Tax Foundation table (scripts/README.md)
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
-│                                #   Lists each HTML page under build.rolldownOptions.input; fills the tax tables
 ├── package.json                 # Scripts: dev, build, test, lint, preview
 ├── PROJECT_STRUCTURE.md         # This file
+├── YEARLY_UPDATE.md             # Checklist for moving to next year's tax figures (a GitHub issue reminds each Nov 15)
 └── README.md                    # What the app does + how to run it
 ```
 
@@ -225,7 +229,7 @@ One row per year; the age is your age at the **start** of that year.
   exemption amount otherwise, adds federally taxable Social Security in the 8 states that tax it (CO, CT, MN, MT,
   NM, RI, UT, VT; their own exemptions aren't modeled), subtracts the state standard deduction and exemptions,
   applies the 2026 brackets and subtracts credits. Brackets are indexed with inflation (not all states do).
-  Data: `config/stateTax2026.ts`, generated from the Tax Foundation's 2026 table.
+  Data: `config/stateRules.ts`, generated from the Tax Foundation's table for the tax year.
 - **Not modeled:** local/city tax, state income-based phase-outs, capital gains, IRMAA, credits, and taxes
   during working years.
 
@@ -396,11 +400,15 @@ Each calculator is its own page at `willitlast.app/<name>/` so search engines ca
 tax tables are plain HTML in `<name>/index.html`; only the calculator itself is React. To add one:
 1. Put the math in `src/seo/<name>.ts` on top of the engine, with tests.
 2. Add `<name>/index.html` (title, meta description, canonical URL, the disclaimer banner, the guide text) and an entry
-   script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator.
-3. Add the page to `build.rolldownOptions.input` in `vite.config.ts`, to `public/sitemap.xml`, and link it from the
+   script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator. Write tax years and yearly
+   figures as tokens (`{{YEAR}}`, `{{REVIEWED}}`, …) and sources as `<!--SOURCE key: what it covers-->` with a key
+   from `TAX_CONFIG.sources`; see the top of `build/taxYearPages.ts`.
+3. Add the page to `PAGES` in `build/taxYearPages.ts` (that builds it and lists it in the sitemap), and link it from the
    planner's footer (`Footer.tsx`) and the other calculator pages' header nav.
 4. Add a `/<name>/*` rule with `Cache-Control: … no-transform` to `public/_headers`, so Cloudflare doesn't add its
    analytics script to the page.
+
+`src/seo/pages.test.ts` fails if a page has an unfilled token, a typed-in tax year, or no `no-transform` rule.
 
 Tax on added retirement income (a conversion, an RMD) comes from `src/seo/incomeTax.ts`, so every page agrees.
 

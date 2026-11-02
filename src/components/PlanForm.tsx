@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AGE_LIMITS, CONFIG_2026, contributionWarnings, MIX_PRESETS, mixReturns, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
+import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, MIX_PRESETS, mixReturns, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs, type FormMode } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from '../utils/labels'
@@ -115,7 +115,7 @@ export function PlanForm() {
   // Blank (0) fields just show their placeholder; the results area lists what's still needed
   const errorFor = (field: PlanIssue['field']) =>
     field !== 'accounts' && plan[field] === 0 ? undefined : issues.find((i) => i.field === field)?.message
-  const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
+  const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
   const modeButton = (value: FormMode, label: string) => (
     <button
       type="button"
@@ -322,9 +322,9 @@ export function PlanForm() {
             <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} info="62 to 70. Claiming early lowers the benefit for life (about 30% less at 62); waiting past 67 raises it 8% a year." value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
           </div>
         )}
-        {plan.retirementAge > 0 && plan.retirementAge < CONFIG_2026.socialSecurity.fullRetirementAge && (
+        {plan.retirementAge > 0 && plan.retirementAge < TAX_CONFIG.socialSecurity.fullRetirementAge && (
           <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
-            ⚠ Your ssa.gov estimate assumes you keep earning until {CONFIG_2026.socialSecurity.fullRetirementAge}. Stopping
+            ⚠ Your ssa.gov estimate assumes you keep earning until {TAX_CONFIG.socialSecurity.fullRetirementAge}. Stopping
             work at {plan.retirementAge} means fewer earning years, which can lower your benefit, especially if you have
             fewer than 35 years of earnings. Your my Social Security account can show how changing your future earnings
             affects the estimate; otherwise use a somewhat lower amount here.

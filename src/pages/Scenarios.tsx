@@ -6,7 +6,7 @@ import { scenarioColor } from '../utils/buckets'
 import {
   AGE_LIMITS,
   applyScenario,
-  CONFIG_2026,
+  TAX_CONFIG,
   missingEssentials,
   survivorDeathAgeOf,
   type PlanEvaluation,
@@ -84,7 +84,7 @@ export function Scenarios() {
   )
 
   const emphasize = (value: string, isBest: boolean) => (isBest ? <strong>{value}</strong> : value)
-  const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
+  const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 
-const { fullRetirementAge, earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
+const { fullRetirementAge, earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
 
 /**
  * Monthly benefit when claiming at `claimAge`, given the benefit at full retirement age.

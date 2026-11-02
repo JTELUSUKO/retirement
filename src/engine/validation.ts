@@ -1,8 +1,8 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import { planEndAge, spouseOffset } from './survivor'
 import type { Plan, PlanIssue } from './types'
 
-const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
+const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
 
 export const AGE_LIMITS = { min: 18, max: 110 }
 

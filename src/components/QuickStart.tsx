@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { AGE_LIMITS, CONFIG_2026, describeStateRule, NO_INCOME_TAX_STATES, validatePlan, type Plan } from '../engine'
+import { AGE_LIMITS, TAX_CONFIG, describeStateRule, NO_INCOME_TAX_STATES, validatePlan, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
@@ -27,7 +27,7 @@ export function QuickStart() {
   const [savings, setSavings] = useState<QuickSavings>(() => savingsFromPlan(plan))
   const set = (patch: Partial<Plan>) => setDraft((d) => ({ ...d, ...patch }))
   const married = draft.filingStatus === 'married'
-  const { earliestClaimAge, latestClaimAge } = CONFIG_2026.socialSecurity
+  const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
 
   // Age problems are shown only once every age is filled in
   const ageFields = ['currentAge', 'retirementAge', 'lifeExpectancy', 'spouseCurrentAge'] as const

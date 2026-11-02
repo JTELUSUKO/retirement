@@ -1,7 +1,7 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import type { FilingStatus } from './types'
 
-const TIERS = CONFIG_2026.irmaa
+const TIERS = TAX_CONFIG.irmaa
 
 /**
  * Yearly Medicare surcharge for ONE person on Medicare, in today's dollars, given MAGI (nominal) and the

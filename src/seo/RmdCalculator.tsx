@@ -1,11 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { CONFIG_2026, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
+import { TAX_CONFIG, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
 import { rmdCalculator, type RmdInputs } from './rmd'
 
-const YEAR = CONFIG_2026.year
+const YEAR = TAX_CONFIG.year
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
 
 const DEFAULTS: RmdInputs = {

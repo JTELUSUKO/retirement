@@ -1,0 +1,40 @@
+name: Yearly tax update reminder
+
+# Each November 15, by when the IRS, SSA and CMS have usually published next year's figures, open an issue with the
+# update checklist (GitHub emails it to the repo owner). Run it by hand from the Actions tab to test.
+on:
+  schedule:
+    - cron: '0 14 15 11 *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Open the reminder issue (once per year)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          next=$(( $(date -u +%Y) + 1 ))
+          title="Update willitlast.app tax figures for $next"
+          if gh issue list --state all --search "\"$title\" in:title" --json number --jq 'length' | grep -qv '^0$'; then
+            echo "Reminder for $next already exists"
+            exit 0
+          fi
+          {
+            echo "The $next tax figures are usually all published by now. Follow [YEARLY_UPDATE.md](../blob/main/YEARLY_UPDATE.md)."
+            echo
+            echo "Or ask Claude Code: **update willitlast.app for $next**."
+            echo
+            echo "- [ ] Federal brackets, deductions, capital gains (IRS Revenue Procedure for $next)"
+            echo "- [ ] 401(k), IRA and HSA limits"
+            echo "- [ ] Medicare premiums and IRMAA tiers (CMS fact sheet)"
+            echo "- [ ] State income tax rules (Tax Foundation table, regenerate)"
+            echo "- [ ] Source links, \`year\` and \`reviewed\` in src/engine/config/taxYear.ts"
+            echo "- [ ] Tests, build, deploy"
+          } > body.md
+          gh issue create --title "$title" --body-file body.md

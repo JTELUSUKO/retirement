@@ -1,7 +1,7 @@
-import { NO_INCOME_TAX_STATES, STATE_TAX_2026, type StateTaxRule } from './config/stateTax2026'
+import { NO_INCOME_TAX_STATES, STATE_TAX_RULES, type StateTaxRule } from './config/stateRules'
 import type { FilingStatus } from './types'
 
-export { NO_INCOME_TAX_STATES, STATE_TAX_2026 }
+export { NO_INCOME_TAX_STATES, STATE_TAX_RULES }
 
 export interface StateTaxInput {
   /** Two-letter code ('' = not chosen) */
@@ -16,16 +16,16 @@ export interface StateTaxInput {
   taxableSocialSecurity: number
   /** Extra retirement income the user says is exempt, per person, today's dollars */
   retirementExclusionPerPerson: number
-  /** Price level vs. 2026: brackets, deductions and the exclusion are scaled by it */
+  /** Price level vs. the tax year in TAX_CONFIG: brackets, deductions and the exclusion are scaled by it */
   priceLevel: number
 }
 
-export const stateRule = (state: string): StateTaxRule | null => STATE_TAX_2026[state] ?? null
+export const stateRule = (state: string): StateTaxRule | null => STATE_TAX_RULES[state] ?? null
 
 /**
  * Approximate state income tax for a retired year: federal ordinary income, minus exempt
  * retirement income, plus Social Security in states that tax it, minus the state standard
- * deduction and personal exemptions, through the state's 2026 brackets, minus credits.
+ * deduction and personal exemptions, through the state's brackets for the tax year, minus credits.
  * Not modeled: income-based phase-outs, local/city taxes, state-specific Social Security
  * exemptions (states that tax it are charged on the federally taxable amount).
  */

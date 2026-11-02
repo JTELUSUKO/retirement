@@ -1,4 +1,4 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import type { Plan } from './types'
 
 /**
@@ -7,11 +7,11 @@ import type { Plan } from './types'
  */
 export function healthcareCost(plan: Plan, age: number, people = plan.filingStatus === 'married' ? 2 : 1): number {
   const { preMedicareAnnual, medicareAnnual } = plan.healthcare
-  return people * (age < CONFIG_2026.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual)
+  return people * (age < TAX_CONFIG.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual)
 }
 
 /** Healthcare for one person at `age`, today's dollars (before the extra medical inflation). */
 export function healthcarePerPerson(plan: Plan, age: number): number {
   const { preMedicareAnnual, medicareAnnual } = plan.healthcare
-  return age < CONFIG_2026.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual
+  return age < TAX_CONFIG.medicare.eligibilityAge ? preMedicareAnnual : medicareAnnual
 }

@@ -1,9 +1,9 @@
-import { CONFIG_2026, federalIncomeTax, irmaaPerPersonYearly, stateIncomeTax, type FilingStatus } from '../engine'
+import { TAX_CONFIG, federalIncomeTax, irmaaPerPersonYearly, stateIncomeTax, type FilingStatus } from '../engine'
 
 // Shared by the calculator pages: the extra 2026 federal and state tax (and Medicare surcharge) caused by adding
 // retirement income such as a Roth conversion or an RMD to a household's other income.
 
-const T = CONFIG_2026.federalTax
+const T = TAX_CONFIG.federalTax
 
 export interface Household {
   status: FilingStatus
@@ -52,7 +52,7 @@ export const federalTax = (h: Household, extra: number) =>
     ordinaryIncome: h.otherIncome + extra,
     socialSecurity: h.socialSecurity,
     age: h.age,
-    year: CONFIG_2026.year,
+    year: TAX_CONFIG.year,
     status: h.status,
     priceLevel: 1,
   })
@@ -105,7 +105,7 @@ function shrinksSeniorDeduction(h: Household, before: number, after: number): bo
   const { amount, lastYear, phaseOutStart, phaseOutRate } = T.seniorDeduction
   const start = phaseOutStart[h.status]
   const fullyPhasedOut = start + amount / phaseOutRate
-  return h.age >= CONFIG_2026.medicare.eligibilityAge && CONFIG_2026.year <= lastYear && after > start && before < fullyPhasedOut
+  return h.age >= TAX_CONFIG.medicare.eligibilityAge && TAX_CONFIG.year <= lastYear && after > start && before < fullyPhasedOut
 }
 
 /** The extra tax and Medicare surcharge from adding `extra` retirement income this year. */
@@ -127,9 +127,9 @@ export function extraIncomeTax(h: Household, extra: number): ExtraIncomeTax {
 
   // Medicare premiums use income from two years earlier: income at 63 counts at 65
   const people = h.status === 'married' ? 2 : 1
-  const applies = h.age >= CONFIG_2026.medicare.eligibilityAge - 2
+  const applies = h.age >= TAX_CONFIG.medicare.eligibilityAge - 2
   const yearly = (magi: number) => (applies ? irmaaPerPersonYearly(magi, h.status, 1) * people : 0)
-  const nextTier = CONFIG_2026.irmaa.map(([single, joint]) => (h.status === 'married' ? joint : single)).find((upper) => after.magi <= upper)
+  const nextTier = TAX_CONFIG.irmaa.map(([single, joint]) => (h.status === 'married' ? joint : single)).find((upper) => after.magi <= upper)
   const irmaa = {
     applies,
     people,

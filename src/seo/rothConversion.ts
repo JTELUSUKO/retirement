@@ -1,9 +1,9 @@
-import { bracketTop, CONFIG_2026 } from '../engine'
+import { bracketTop, TAX_CONFIG } from '../engine'
 import { extraIncomeTax, incomeToReach, type ExtraIncomeTax, type Household } from './incomeTax'
 
 export type { TaxSnapshot } from './incomeTax'
 
-const T = CONFIG_2026.federalTax
+const T = TAX_CONFIG.federalTax
 /** Tax on the growth of money kept in a taxable account, as a share of that growth (simplified long-term rate). */
 const TAXABLE_GROWTH_DRAG = 0.15
 

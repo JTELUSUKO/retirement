@@ -1,5 +1,5 @@
 import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets } from './accounts'
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import { medianReturn } from './returns'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
 import { householdAt, planEndAge, socialSecurityAt, spouseOffset } from './survivor'
@@ -102,7 +102,7 @@ export function simulatePath(
   const isTaxable = bucketOf.map((b) => b === 'taxable')
   const fee = plan.assumptions.annualFee ?? 0
   const rothTarget = bucketOf.indexOf('roth')
-  const { penalty: EARLY_PENALTY, ruleOf55Age } = CONFIG_2026.federalTax.earlyWithdrawal
+  const { penalty: EARLY_PENALTY, ruleOf55Age } = TAX_CONFIG.federalTax.earlyWithdrawal
   // Rule of 55: 401(k)s can be withdrawn without the 10% penalty if you leave work at 55 or later
   const penaltyFreeEarly = pretax.filter((i) => accounts[i].type === '401k' && plan.retirementAge >= ruleOf55Age)
   const penalizedEarly = pretax.filter((i) => !penaltyFreeEarly.includes(i))
@@ -208,7 +208,7 @@ export function simulatePath(
 
   const birthYear = startYear - plan.currentAge
   // Tax brackets are in 2026 dollars; shift them if the projection starts in another year.
-  const taxIndexAtStart = (1 + plan.assumptions.inflation) ** (startYear - CONFIG_2026.year)
+  const taxIndexAtStart = (1 + plan.assumptions.inflation) ** (startYear - TAX_CONFIG.year)
 
   // Annuity bought during the projection: fixed nominal payment (or one indexed to inflation)
   let annuity: { payment: number; priceLevelAtPurchase: number; taxableShare: number } | null = null
@@ -284,7 +284,7 @@ export function simulatePath(
       const healthLevel = priceLevel * (1 + plan.healthcare.excessInflation) ** t
       // Medicare surcharges: each person 65+ pays by the household MAGI from two years earlier (retired years only)
       const lookback = years[t - 2]
-      const onMedicare = household.livingAges.filter((a) => a >= CONFIG_2026.medicare.eligibilityAge).length
+      const onMedicare = household.livingAges.filter((a) => a >= TAX_CONFIG.medicare.eligibilityAge).length
       if (lookback && lookback.magi > 0 && onMedicare > 0) {
         irmaa = irmaaPerPersonYearly(lookback.magi, magiStatus[t - 2], priceLevel * taxIndexAtStart) * onMedicare * healthLevel
       }
@@ -354,7 +354,7 @@ export function simulatePath(
         capitalGains = draw.realizedGains + dividends + purchaseGains
         const result = federalFor(ordinaryIncome, capitalGains)
         earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
-        const hsaPenalty = age < CONFIG_2026.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
+        const hsaPenalty = age < TAX_CONFIG.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
           state: plan.state,
           status: household.taxStatus,
@@ -408,7 +408,7 @@ export function simulatePath(
     let contributions = 0
     accounts.forEach((acc, i) => {
       balances[i] *= bucketOf[i] === 'cash' ? 1 + market.inflation : (1 + market.return) * (1 - fee)
-      const hsaClosed = bucketOf[i] === 'hsa' && age >= CONFIG_2026.medicare.eligibilityAge
+      const hsaClosed = bucketOf[i] === 'hsa' && age >= TAX_CONFIG.medicare.eligibilityAge
       if (!retired && !hsaClosed) {
         const added = (acc.annualContribution + acc.employerMatch) * priceLevel
         balances[i] += added

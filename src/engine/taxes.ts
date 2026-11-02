@@ -1,7 +1,7 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import type { FilingStatus } from './types'
 
-const T = CONFIG_2026.federalTax
+const T = TAX_CONFIG.federalTax
 
 /**
  * Taxable part of Social Security (IRS provisional-income test).
@@ -26,7 +26,7 @@ export interface TaxInput {
   age: number
   year: number
   status: FilingStatus
-  /** Price level vs. 2026; brackets and indexed deductions are scaled by it. */
+  /** Price level vs. the tax year in TAX_CONFIG; brackets and indexed deductions are scaled by it. */
   priceLevel: number
   /** Filers aged 65+ (defaults to everyone on the return if `age` ≥ 65) */
   seniors?: number

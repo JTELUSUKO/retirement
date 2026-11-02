@@ -1,18 +1,24 @@
+import { TAX_CONFIG } from '../engine'
+import { REVIEWED_DATE } from '../utils/taxYear'
+
 const YEAR = new Date().getFullYear()
 
-/** Official sources for the rules and figures the planner uses: [link, name, what it covers] */
-const SOURCES: [string, string, string][] = [
-  ['https://www.irs.gov/pub/irs-drop/rp-25-32.pdf', 'IRS Revenue Procedure 2025-32', '2026 tax brackets, standard and 65+ deductions, capital gains rates'],
-  ['https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors', 'IRS: Deductions for seniors', 'the $6,000 senior deduction for 2025–2028'],
-  ['https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500', 'IRS: 2026 retirement plan limits', '401(k) and IRA contribution limits'],
-  ['https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds', 'IRS: Required minimum distributions', 'RMD ages and rules'],
-  ['https://www.irs.gov/publications/p590b', 'IRS Publication 590-B', 'IRA distributions and the RMD life expectancy table'],
-  ['https://www.irs.gov/publications/p915', 'IRS Publication 915', 'how Social Security benefits are taxed'],
-  ['https://www.ssa.gov/benefits/retirement/planner/agereduction.html', 'SSA: Retirement age and benefit reduction', 'claiming before full retirement age'],
-  ['https://www.ssa.gov/benefits/retirement/planner/delayret.html', 'SSA: Delayed retirement credits', 'claiming after full retirement age'],
-  ['https://www.ssa.gov/myaccount/', 'my Social Security', 'your own benefit estimate'],
-  ['https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles', 'CMS: 2026 Medicare premiums', 'Part B and D premiums and IRMAA surcharges'],
-  ['https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/', 'Tax Foundation', '2026 state income tax rates and brackets'],
+const S = TAX_CONFIG.sources
+const Y = TAX_CONFIG.year
+
+/** Official sources for the rules and figures the planner uses (links live in the tax-year config): [source, what it covers] */
+const SOURCES: [{ url: string; name: string }, string][] = [
+  [S.revProc, `${Y} tax brackets, standard and 65+ deductions, capital gains rates`],
+  [S.seniorDeduction, 'the senior deduction'],
+  [S.planLimits, '401(k) and IRA contribution limits'],
+  [S.rmdTopics, 'RMD ages and rules'],
+  [S.pub590b, 'IRA distributions and the RMD life expectancy table'],
+  [S.pub915, 'how Social Security benefits are taxed'],
+  [S.ssaEarly, 'claiming before full retirement age'],
+  [S.ssaDelayed, 'claiming after full retirement age'],
+  [S.mySocialSecurity, 'your own benefit estimate'],
+  [S.medicarePremiums, 'Part B and D premiums and IRMAA surcharges'],
+  [S.stateTax, `${Y} state income tax rates and brackets`],
 ]
 
 /** Disclaimer, privacy statement and data sources (hidden when printing; the summary has its own). */
@@ -37,12 +43,12 @@ export function Footer() {
       </p>
       <div>
         <p>
-          <strong className="text-slate-700 dark:text-slate-300">Data sources (2026 rules, last reviewed November 2026):</strong>{' '}
+          <strong className="text-slate-700 dark:text-slate-300">Data sources ({Y} rules, last reviewed {REVIEWED_DATE}):</strong>{' '}
           Market assumptions are illustrative long-run averages. Not affiliated with or endorsed by the IRS, SSA, CMS or any
           government agency. Rules change; check the latest versions before you act.
         </p>
         <ul className="mt-1 list-disc space-y-0.5 pl-5">
-          {SOURCES.map(([url, name, what]) => (
+          {SOURCES.map(([{ url, name }, what]) => (
             <li key={url}>
               <a href={url} target="_blank" rel="noopener" className="underline underline-offset-2">
                 {name}

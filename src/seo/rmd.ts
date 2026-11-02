@@ -1,8 +1,8 @@
-import { CONFIG_2026, requiredMinimumDistribution, rmdStartAge } from '../engine'
+import { TAX_CONFIG, requiredMinimumDistribution, rmdStartAge } from '../engine'
 import { extraIncomeTax, type ExtraIncomeTax, type Household } from './incomeTax'
 
-const YEAR = CONFIG_2026.year
-const TABLE = CONFIG_2026.rmd.uniformLifetimeTable
+const YEAR = TAX_CONFIG.year
+const TABLE = TAX_CONFIG.rmd.uniformLifetimeTable
 
 export interface RmdInputs extends Omit<Household, 'age'> {
   birthYear: number
@@ -22,12 +22,12 @@ export interface RmdYear {
 }
 
 export interface RmdResult {
-  /** Age reached in 2026 */
+  /** Age reached in the tax year */
   age: number
   startAge: number
   /** Year of the first RMD */
   firstYear: number
-  /** RMD for 2026 (0 before the start age) */
+  /** RMD for the tax year (0 before the start age) */
   rmd: number
   divisor: number | null
   /** RMD as a share of the balance */

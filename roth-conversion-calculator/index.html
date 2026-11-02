@@ -3,28 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roth Conversion Calculator (2026): Tax Cost, Bracket Room and Break-Even</title>
+    <title>Roth Conversion Calculator ({{YEAR}}): Tax Cost, Bracket Room and Break-Even</title>
     <meta
       name="description"
-      content="Free 2026 Roth conversion calculator: see the extra federal and state tax, how much you can convert before the next bracket, Medicare IRMAA surcharges and when converting pays off."
+      content="Free {{YEAR}} Roth conversion calculator: see the extra federal and state tax, how much you can convert before the next bracket, Medicare IRMAA surcharges and when converting pays off."
     />
     <link rel="canonical" href="https://willitlast.app/roth-conversion-calculator/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Will It Last?" />
-    <meta property="og:title" content="Roth Conversion Calculator (2026)" />
+    <meta property="og:title" content="Roth Conversion Calculator ({{YEAR}})" />
     <meta property="og:description" content="How much tax does a Roth conversion cost this year, and does it pay off? Free, private, no sign-up." />
     <meta property="og:url" content="https://willitlast.app/roth-conversion-calculator/" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        "name": "Roth Conversion Calculator (2026)",
+        "name": "Roth Conversion Calculator ({{YEAR}})",
         "url": "https://willitlast.app/roth-conversion-calculator/",
         "applicationCategory": "FinanceApplication",
         "operatingSystem": "Any",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "description": "Estimate the extra federal and state income tax from a Roth conversion in 2026, the room left in your tax bracket, Medicare IRMAA surcharges and the break-even future tax rate."
+        "description": "Estimate the extra federal and state income tax from a Roth conversion in {{YEAR}}, the room left in your tax bracket, Medicare IRMAA surcharges and the break-even future tax rate."
       }
     </script>
   </head>
@@ -50,11 +50,11 @@
 
       <main class="space-y-10">
         <section class="space-y-3">
-          <h1 class="text-3xl font-semibold">Roth conversion calculator (2026)</h1>
+          <h1 class="text-3xl font-semibold">Roth conversion calculator ({{YEAR}})</h1>
           <p class="max-w-3xl text-slate-700 dark:text-slate-300">
             See how much extra tax a Roth conversion adds this year, how much more you can convert before the next tax
             bracket, whether it could raise your Medicare premiums, and the future tax rate at which converting pays off.
-            It uses the 2026 federal brackets, the new senior deduction, Social Security taxation and state income tax.
+            It uses the {{YEAR}} federal brackets, the new senior deduction, Social Security taxation and state income tax.
             Free, no sign-up, and nothing you enter leaves your browser.
           </p>
         </section>
@@ -87,12 +87,12 @@
             </p>
             <ul class="list-disc space-y-1 pl-6">
               <li><strong>Make more of your Social Security taxable.</strong> Up to 85% of benefits can be taxed as income rises, so each converted dollar can add more than a dollar of taxable income.</li>
-              <li><strong>Shrink the senior deduction.</strong> For 2025–2028, people 65 and older get an extra deduction of up to $6,000 each, reduced by 6% of income above $75,000 (single) or $150,000 (married filing jointly).</li>
+              <li><strong>Shrink the senior deduction.</strong> For {{SENIOR_YEARS}}, people 65 and older get an extra deduction of up to {{SENIOR_AMOUNT}} each, reduced by 6% of income above {{SENIOR_START_SINGLE}} (single) or {{SENIOR_START_JOINT}} (married filing jointly).</li>
               <li><strong>Add state income tax</strong>, unless your state has no income tax or exempts retirement income at your age.</li>
             </ul>
             <p>The calculator above includes all of these.</p>
-            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">2026 federal income tax brackets</h3>
-            <!--BRACKETS_2026-->
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{YEAR}} federal income tax brackets</h3>
+            <!--BRACKETS-->
           </section>
 
           <section class="space-y-3">
@@ -120,8 +120,8 @@
               premiums at 65. Crossing a tier by even one dollar triggers the full surcharge for that tier, so it pays to
               know where the lines are.
             </p>
-            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">2026 IRMAA income tiers (per person)</h3>
-            <!--IRMAA_2026-->
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{YEAR}} IRMAA income tiers (per person)</h3>
+            <!--IRMAA_TIERS-->
           </section>
 
           <section class="space-y-3">
@@ -166,21 +166,21 @@
             <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Sources</h2>
             <p>
               Figures and rules on this page come from these official and independent sources. Tax rules change, so check
-              the latest versions before you act. Last reviewed November 1, 2026.
+              the latest versions before you act. Last reviewed {{REVIEWED}}.
             </p>
             <ul class="list-disc space-y-1 pl-6">
-              <li><a href="https://www.irs.gov/pub/irs-drop/rp-25-32.pdf" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Revenue Procedure 2025-32 (PDF)</a>: 2026 tax brackets and standard deductions</li>
-              <li><a href="https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Tax deductions for working Americans and seniors</a>: the $6,000 senior deduction for 2025–2028 and its phase-out</li>
-              <li><a href="https://www.irs.gov/publications/p590a" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Publication 590-A</a>: contributions to IRAs, including conversions to a Roth IRA</li>
-              <li><a href="https://www.irs.gov/publications/p590b" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Publication 590-B</a>: IRA distributions, the five-year rule and required minimum distributions</li>
-              <li><a href="https://www.irs.gov/retirement-plans/roth-iras" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Roth IRAs</a></li>
-              <li><a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Exceptions to tax on early distributions</a>: the 10% additional tax before 59½</li>
-              <li><a href="https://www.irs.gov/publications/p915" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Publication 915</a>: how Social Security benefits are taxed</li>
-              <li><a href="https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Estimated taxes</a></li>
-              <li><a href="https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">CMS: 2026 Medicare Parts A &amp; B premiums and deductibles</a>: 2026 IRMAA income tiers and surcharges</li>
-              <li><a href="https://www.ssa.gov/benefits/medicare/medicare-premiums.html" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Social Security Administration: Medicare premiums</a>: how IRMAA uses income from two years earlier</li>
-              <li><a href="https://www.healthcare.gov/income-and-household-information/income/" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">HealthCare.gov: What income to include</a>: income that affects marketplace premium credits</li>
-              <li><a href="https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Tax Foundation: 2026 state income tax rates and brackets</a></li>
+              <!--SOURCE revProc: {{YEAR}} tax brackets and standard deductions-->
+              <!--SOURCE seniorDeduction: the {{SENIOR_AMOUNT}} senior deduction for {{SENIOR_YEARS}} and its phase-out-->
+              <!--SOURCE pub590a: contributions to IRAs, including conversions to a Roth IRA-->
+              <!--SOURCE pub590b: IRA distributions, the five-year rule and required minimum distributions-->
+              <!--SOURCE rothIras: -->
+              <!--SOURCE earlyDistributions: the 10% additional tax before 59½-->
+              <!--SOURCE pub915: how Social Security benefits are taxed-->
+              <!--SOURCE estimatedTaxes: -->
+              <!--SOURCE medicarePremiums: {{YEAR}} IRMAA income tiers and surcharges-->
+              <!--SOURCE ssaMedicare: how IRMAA uses income from two years earlier-->
+              <!--SOURCE acaIncome: income that affects marketplace premium credits-->
+              <!--SOURCE stateTax: -->
             </ul>
           </section>
         </article>
@@ -189,8 +189,8 @@
       <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500 dark:border-slate-800">
         <p>
           <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial,
-          tax, investment or legal advice. Figures use 2026 federal rules (IRS Rev. Proc. 2025-32, the One Big Beautiful
-          Bill Act senior deduction, CMS 2026 IRMAA tiers) and 2026 state income tax rules, simplified. Calculations may
+          tax, investment or legal advice. Figures use {{YEAR}} federal rules ({{REV_PROC}}, the senior
+          deduction, CMS {{YEAR}} IRMAA tiers) and {{YEAR}} state income tax rules, simplified. Calculations may
           contain errors or differ from official figures; we accept no responsibility or liability for them. Consult a
           qualified tax professional before converting. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
         </p>

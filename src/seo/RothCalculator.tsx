@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
+import { NO_INCOME_TAX_STATES, TAX_CONFIG, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
@@ -197,7 +197,7 @@ export function RothCalculator() {
               ) : (
                 'No income surcharge (IRMAA)'
               )}
-              {r.irmaa.people > 1 ? ' for the two of you' : ''}, at 2026 tiers.
+              {r.irmaa.people > 1 ? ' for the two of you' : ''}, at {TAX_CONFIG.year} tiers.
               {Number.isFinite(r.irmaa.roomInTier) && (
                 <>
                   {' '}You could add about <strong className="tabular-nums">{formatUSD(r.irmaa.roomInTier)}</strong> more income

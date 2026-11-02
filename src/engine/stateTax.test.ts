@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { STATE_TAX_2026 } from './config/stateTax2026'
+import { STATE_TAX_RULES } from './config/stateRules'
 import { projectPlan } from './projection'
 import { describeStateRule, stateIncomeTax, type StateTaxInput } from './stateTax'
 import { basePlan } from './testFixtures'
@@ -12,7 +12,7 @@ const input = (extra: Partial<StateTaxInput>): StateTaxInput => ({
 
 describe('state income tax (2026)', () => {
   it('has 41 states plus DC with an income tax', () => {
-    expect(Object.keys(STATE_TAX_2026)).toHaveLength(42)
+    expect(Object.keys(STATE_TAX_RULES)).toHaveLength(42)
   })
 
   it('charges nothing in no-income-tax states or when no state is chosen', () => {

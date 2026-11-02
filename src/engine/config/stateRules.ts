@@ -19,7 +19,7 @@ export interface StateTaxRule {
 
 export const NO_INCOME_TAX_STATES: Record<string, string> = { AK: "Alaska", FL: "Florida", NH: "New Hampshire", NV: "Nevada", SD: "South Dakota", TN: "Tennessee", TX: "Texas", WA: "Washington", WY: "Wyoming" }
 
-export const STATE_TAX_2026: Record<string, StateTaxRule> = {
+export const STATE_TAX_RULES: Record<string, StateTaxRule> = {
   AL: {
     name: "Alabama",
     brackets: { single: [[0, 0.02], [500, 0.04], [3000, 0.05]], married: [[0, 0.02], [1000, 0.04], [6000, 0.05]] },

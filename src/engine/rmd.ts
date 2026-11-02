@@ -1,6 +1,6 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 
-const { startAgeBorn1951to1959, startAgeBorn1960Plus, uniformLifetimeTable } = CONFIG_2026.rmd
+const { startAgeBorn1951to1959, startAgeBorn1960Plus, uniformLifetimeTable } = TAX_CONFIG.rmd
 
 /** Age RMDs start (SECURE 2.0): 73 if born 1951–1959, 75 if born 1960 or later. */
 export function rmdStartAge(birthYear: number): number {

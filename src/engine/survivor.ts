@@ -1,8 +1,8 @@
-import { CONFIG_2026 } from './config/2026'
+import { TAX_CONFIG } from './config/taxYear'
 import { benefitAtClaimAge } from './socialSecurity'
 import type { FilingStatus, Plan } from './types'
 
-const FRA = CONFIG_2026.socialSecurity.fullRetirementAge
+const FRA = TAX_CONFIG.socialSecurity.fullRetirementAge
 /** Survivor benefits can start at 60, reduced to 71.5% (28.5% less) and rising to 100% at full retirement age. */
 const SURVIVOR_EARLIEST_AGE = 60
 const SURVIVOR_MAX_REDUCTION = 0.285

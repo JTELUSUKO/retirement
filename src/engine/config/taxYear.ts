@@ -1,11 +1,56 @@
-// US limits and rules for tax year 2026.
-// Update this file each year. Verified 2026-10-17 against:
+// US limits and rules for one tax year. This is the file to update each year (see YEARLY_UPDATE.md): the planner,
+// the calculators and the year, dates, tax tables and source links on the calculator pages all read from it.
+// Verified 2026-10-17 against:
 //   IR-2025-111 (401k/IRA limits), Rev. Proc. 2025-19 (HSA), Rev. Proc. 2025-32 (brackets, standard and
 //   65+ deductions), Schedule 1-A Part V (senior deduction), Pub. 590-B Table III (RMD divisors),
 //   IRS Social Security taxation thresholds, SSA early/late claiming rules.
 
-export const CONFIG_2026 = {
+export const TAX_CONFIG = {
   year: 2026,
+  /** When these figures were last checked against the sources (ISO date; shown on the pages as "last reviewed"). */
+  reviewed: '2026-11-01',
+  /**
+   * Official sources for this year's figures, linked from the planner footer and the calculator pages.
+   * Several URLs name the year (e.g. Rev. Proc. 2025-32, the CMS 2026 fact sheet): replace them each year.
+   */
+  sources: {
+    revProc: { url: 'https://www.irs.gov/pub/irs-drop/rp-25-32.pdf', name: 'IRS Revenue Procedure 2025-32 (PDF)' },
+    seniorDeduction: {
+      url: 'https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors',
+      name: 'IRS: Tax deductions for working Americans and seniors',
+    },
+    planLimits: {
+      url: 'https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500',
+      name: 'IRS: 2026 retirement plan limits',
+    },
+    rmdFaq: { url: 'https://www.irs.gov/retirement-plans/retirement-plan-and-ira-required-minimum-distributions-faqs', name: 'IRS: Required minimum distributions FAQs' },
+    rmdTopics: {
+      url: 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds',
+      name: 'IRS: Retirement topics, required minimum distributions',
+    },
+    pub590a: { url: 'https://www.irs.gov/publications/p590a', name: 'IRS Publication 590-A' },
+    pub590b: { url: 'https://www.irs.gov/publications/p590b', name: 'IRS Publication 590-B' },
+    pub915: { url: 'https://www.irs.gov/publications/p915', name: 'IRS Publication 915' },
+    rothIras: { url: 'https://www.irs.gov/retirement-plans/roth-iras', name: 'IRS: Roth IRAs' },
+    earlyDistributions: {
+      url: 'https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-exceptions-to-tax-on-early-distributions',
+      name: 'IRS: Exceptions to tax on early distributions',
+    },
+    estimatedTaxes: { url: 'https://www.irs.gov/businesses/small-businesses-self-employed/estimated-taxes', name: 'IRS: Estimated taxes' },
+    medicarePremiums: {
+      url: 'https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles',
+      name: 'CMS: 2026 Medicare Parts A & B premiums and deductibles',
+    },
+    ssaMedicare: { url: 'https://www.ssa.gov/benefits/medicare/medicare-premiums.html', name: 'Social Security Administration: Medicare premiums' },
+    ssaEarly: { url: 'https://www.ssa.gov/benefits/retirement/planner/agereduction.html', name: 'SSA: Retirement age and benefit reduction' },
+    ssaDelayed: { url: 'https://www.ssa.gov/benefits/retirement/planner/delayret.html', name: 'SSA: Delayed retirement credits' },
+    mySocialSecurity: { url: 'https://www.ssa.gov/myaccount/', name: 'my Social Security' },
+    acaIncome: { url: 'https://www.healthcare.gov/income-and-household-information/income/', name: 'HealthCare.gov: What income to include' },
+    stateTax: {
+      url: 'https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/',
+      name: 'Tax Foundation: 2026 state income tax rates and brackets',
+    },
+  },
   contributionLimits: {
     k401: 24_500,
     k401CatchUp50: 8_000,
@@ -68,7 +113,7 @@ export const CONFIG_2026 = {
      * Temporary senior deduction (OBBBA): $6,000 per person 65+, tax years 2025–2028; each person's
      * $6,000 is reduced by 6% of MAGI above the threshold (Schedule 1-A Part V). Not indexed.
      */
-    seniorDeduction: { amount: 6_000, lastYear: 2028, phaseOutStart: { single: 75_000, married: 150_000 }, phaseOutRate: 0.06 },
+    seniorDeduction: { amount: 6_000, firstYear: 2025, lastYear: 2028, phaseOutStart: { single: 75_000, married: 150_000 }, phaseOutRate: 0.06 },
     /**
      * Long-term capital gains and qualified dividends (Rev. Proc. 2025-32 §3.03): 0% up to the first amount of
      * taxable income, 15% up to the second, 20% above. Indexed.

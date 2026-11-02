@@ -1,5 +1,7 @@
-# Convert the parsed Tax Foundation 2026 table into a TypeScript config file, with sanity checks.
+# Convert the parsed Tax Foundation table for a tax year into a TypeScript config file, with sanity checks.
+# Usage: gen_state_tax.py tables.json src/engine/config/stateRules.ts YEAR
 import json, re, sys
+YEAR = sys.argv[3]
 tables = json.load(open(sys.argv[1]))
 rows = max(tables, key=len)[1:]
 CODES = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY','Washington DC':'DC'}
@@ -37,12 +39,12 @@ for c, s in taxed.items():
         b = s[k]; assert b, (c, k)
         assert all(b[i][0] < b[i+1][0] for i in range(len(b)-1)), (c, k, b)
         assert all(0 <= rt < 0.15 for _, rt in b) and b[-1][1] > 0, (c, k, b)
-# Retirement-income treatment (sources: Kiplinger / 401(k) Specialist, 2026) and Social Security taxation
+# Retirement-income treatment (sources: Kiplinger / 401(k) Specialist; re-check each year) and Social Security taxation
 TAXES_SS = {'CO','CT','MN','MT','NM','RI','UT','VT'}
 EXEMPT_RETIREMENT = {'IL': 0, 'IA': 55, 'MS': 59, 'PA': 59}   # value = minimum age (approx.)
 def fmt(v): return str(int(v)) if v == int(v) else str(v)
-out = ['// Generated from the Tax Foundation table "State Individual Income Tax Rates and Brackets, 2026"',
-       '// (taxfoundation.org/data/all/state/state-income-tax-rates-2026/). Do not edit by hand: regenerate.',
+out = [f'// Generated from the Tax Foundation table "State Individual Income Tax Rates and Brackets, {YEAR}"',
+       f'// (taxfoundation.org/data/all/state/state-income-tax-rates-{YEAR}/). Do not edit by hand: regenerate.',
        '// Brackets: [threshold, rate] = rate applies to taxable income above threshold.',
        '// Deductions/exemptions are subtracted from income; "credit" amounts are subtracted from tax.', '',
        "export type FilingKey = 'single' | 'married'", '',
@@ -58,7 +60,7 @@ out = ['// Generated from the Tax Foundation table "State Individual Income Tax 
        '  exemptRetirementIncomeFromAge: number | null',
        '}', '',
        'export const NO_INCOME_TAX_STATES: Record<string, string> = { ' + ', '.join(c + ': ' + json.dumps(states[c]['name']) for c in none) + ' }', '',
-       'export const STATE_TAX_2026: Record<string, StateTaxRule> = {']
+       'export const STATE_TAX_RULES: Record<string, StateTaxRule> = {']
 for c in sorted(taxed):
     s = taxed[c]
     std = {k: (v if t == 'amount' else 0) for k, (t, v) in zip(('single','married'), s['std'])}

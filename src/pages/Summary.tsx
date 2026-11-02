@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
 import {
+  TAX_CONFIG,
   applyScenario,
   householdSocialSecurityMonthly,
   spouseOffset,
@@ -379,8 +380,8 @@ export function Summary() {
               Surplus income is reinvested.
             </li>
             <li>
-              Federal income tax uses 2026 brackets and deductions, indexed to inflation, and taxes up to 85% of Social Security.
-              State income tax uses each state’s 2026 brackets, deductions and full retirement-income exemptions; partial
+              Federal income tax uses {TAX_CONFIG.year} brackets and deductions, indexed to inflation, and taxes up to 85% of Social Security.
+              State income tax uses each state’s {TAX_CONFIG.year} brackets, deductions and full retirement-income exemptions; partial
               exemptions use the amount you entered.
             </li>
             <li>
@@ -389,7 +390,7 @@ export function Summary() {
               compounded return.
             </li>
             <li>
-              Medicare income surcharges (IRMAA, CMS 2026 tiers) are charged per person 65+ from income two years
+              Medicare income surcharges (IRMAA, CMS {TAX_CONFIG.year} tiers) are charged per person 65+ from income two years
               earlier. Optional Roth conversions fill a chosen federal bracket.
             </li>
             <li>
