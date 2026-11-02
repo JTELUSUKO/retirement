@@ -1,5 +1,4 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
-import { SCROLL_REGION } from '../components/styles'
 import { useMemo, useState, type ReactNode } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
@@ -25,6 +24,7 @@ import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
 import { PRIMARY, SECONDARY } from '../components/styles'
+import { ScrollRegion } from '../components/ScrollRegion'
 
 const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits)}%`
@@ -158,7 +158,7 @@ export function Summary() {
               <div key={label} className="rounded-md border border-slate-200 p-3">
                 <div className="text-xs text-slate-600">{label}</div>
                 <div className="mt-1 text-lg font-semibold">{value}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">{note}</div>
+                <div className="text-xs text-muted">{note}</div>
               </div>
             ))}
           </div>
@@ -178,7 +178,7 @@ export function Summary() {
         {scenarios.length > 0 && (
           <Section title="Scenarios">
             {/* Wide tables scroll sideways on phones instead of widening the page */}
-            <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Scenarios table">
+            <ScrollRegion label="Scenarios table" className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
@@ -214,7 +214,7 @@ export function Summary() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           </Section>
         )}
 
@@ -277,7 +277,7 @@ export function Summary() {
           {plan.accounts.length === 0 ? (
             <p className="text-sm text-slate-600">None</p>
           ) : (
-            <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Accounts table">
+            <ScrollRegion label="Accounts table" className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
@@ -307,7 +307,7 @@ export function Summary() {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           )}
 
           {(plan.incomeStreams.length > 0 || a.enabled) && (
@@ -335,7 +335,7 @@ export function Summary() {
         </Section>
 
         <Section title="Milestones (typical returns, today's dollars)">
-          <div className={`overflow-x-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Milestones table">
+          <ScrollRegion label="Milestones table" className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr>
@@ -352,11 +352,11 @@ export function Summary() {
                   <tr key={y.age}>
                     <td className={td}>
                       {ageCell(plan, y.age)}
-                      {y.age === plan.retirementAge && <span className="text-slate-500 dark:text-slate-400"> · retire</span>}
+                      {y.age === plan.retirementAge && <span className="text-muted"> · retire</span>}
                     </td>
                     <td className={`${td} ${num}`}>{formatUSD(y.startBalanceReal)}</td>
                     {y.age < plan.retirementAge ? (
-                      <td colSpan={3} className={`${td} text-center text-slate-500 dark:text-slate-400`}>Working and saving</td>
+                      <td colSpan={3} className={`${td} text-center text-muted`}>Working and saving</td>
                     ) : (
                       <>
                         <td className={`${td} ${num}`}>{formatUSD(y.spending / y.priceLevel)}</td>
@@ -369,7 +369,7 @@ export function Summary() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         </Section>
 
         <Section title="How this was calculated">

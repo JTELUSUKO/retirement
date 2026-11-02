@@ -11,9 +11,9 @@ export const SECONDARY =
 
 /** Big teal link to the planner at the end of each calculator. White on teal-700 is about 5.5:1 in both modes. */
 export const CALL_TO_ACTION =
-  'block rounded-lg bg-teal-700 px-4 py-3 text-center font-medium text-white hover:bg-teal-800 dark:bg-teal-700 dark:hover:bg-teal-800'
+  'block rounded-lg bg-teal-700 px-4 py-3 text-center font-medium text-white hover:bg-teal-800'
 
-/** A box that scrolls (long tables): focusable, so keyboard users can scroll it too. Give it role="region" and a label. */
+/** Focus outline for scrollable boxes (see ScrollRegion). */
 export const SCROLL_REGION = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600'
 
 /**

@@ -53,7 +53,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
         onMouseEnter={() => setOpen(true)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] leading-none font-semibold text-slate-500 hover:border-teal-600 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 dark:border-slate-500 dark:text-slate-400"
+        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] leading-none font-semibold text-muted hover:border-teal-600 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 dark:border-slate-500"
       >
         i
       </button>

@@ -20,7 +20,8 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
   ['compare scenarios', async (page) => {
     await loadExample(page)
     await page.goto('./#compare')
-    await expect(page.locator('#root')).toContainText(/Chance money lasts/i, { timeout: 15_000 })
+    // Text only the Compare page has (the plan page also says "Chance money lasts")
+    await expect(page.locator('#root')).toContainText('Each scenario is your plan with a few changes', { timeout: 15_000 })
   }],
   ['summary', async (page) => {
     await loadExample(page)
@@ -44,6 +45,7 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
   ['RMD calculator (first RMD year note)', async (page) => {
     await page.goto('./rmd-calculator/')
     await fill(page, 'Year you were born', String(TAX_CONFIG.year - TAX_CONFIG.rmd.startAgeBorn1951to1959))
+    await expect(page.locator('section[aria-label="Results"]')).toContainText('This is your first RMD')
   }],
   ['How long will my money last', async (page) => {
     await page.goto('./how-long-will-my-money-last/')

@@ -69,7 +69,7 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
         </InfoTip>
       </h3>
       {!done ? (
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{sims.error ? `✕ ${sims.error}` : 'Testing a few changes…'}</p>
+        <p className="mt-1 text-sm text-muted">{sims.error ? `✕ ${sims.error}` : 'Testing a few changes…'}</p>
       ) : helpful.length === 0 ? (
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           None of the usual changes (retiring later, spending less, claiming Social Security later, guardrails) adds more
@@ -124,7 +124,7 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
       {done && sims.error ? (
         <p className="mt-2 text-xs text-red-600 dark:text-red-400">✕ Couldn’t update these for your latest changes: {sims.error}</p>
       ) : (
-        sims.pending && done && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Updating…</p>
+        sims.pending && done && <p className="mt-2 text-xs text-muted">Updating…</p>
       )}
     </section>
   )

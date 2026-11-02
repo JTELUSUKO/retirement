@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { TAX_CONFIG, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
-import { CALL_TO_ACTION, SCROLL_REGION } from '../components/styles'
+import { CALL_TO_ACTION } from '../components/styles'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
 import { rmdCalculator, RMD_DEFAULTS, type RmdInputs } from './rmd'
+import { ScrollRegion } from '../components/ScrollRegion'
 
 const YEAR = TAX_CONFIG.year
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
@@ -174,7 +175,7 @@ export function RmdCalculator() {
                 {tax.irmaa.people > 1 ? ' for the two of you' : ''} two years from now, at {YEAR} tiers.
               </p>
             )}
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs text-muted">
               Federal and {YEAR} state rules, simplified. Withholding from the RMD can cover this tax.
             </p>
           </div>
@@ -187,10 +188,10 @@ export function RmdCalculator() {
               Projected at a {pct(inputs.annualReturn)} return, taking only the minimum each year. Actual RMDs use each
               December 31 balance.
             </p>
-            <div className={`mt-2 max-h-96 overflow-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Your RMDs year by year">
+            <ScrollRegion label="Your RMDs year by year" className="mt-2 max-h-96 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-slate-900">
-                  <tr className="text-left text-slate-500 dark:text-slate-400">
+                  <tr className="text-left text-muted">
                     <th className="py-1 pr-2 font-normal">Year</th>
                     <th className="py-1 pr-2 font-normal">Age</th>
                     <th className="py-1 pr-2 text-right font-normal">Start balance</th>
@@ -210,7 +211,7 @@ export function RmdCalculator() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           </div>
         )}
 

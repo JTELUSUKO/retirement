@@ -68,7 +68,7 @@ function Section({
   const panelId = `section-${id}`
   return (
     <fieldset className="space-y-3">
-      <legend className="flex w-full items-center text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-400 uppercase">
+      <legend className="flex w-full items-center text-xs font-semibold tracking-wide text-muted uppercase">
         <button
           type="button"
           aria-expanded={open}
@@ -86,7 +86,7 @@ function Section({
           {children}
         </div>
       ) : (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{summary}</p>
+        <p className="text-sm text-muted">{summary}</p>
       )}
     </fieldset>
   )
@@ -137,7 +137,7 @@ export function PlanForm() {
           {modeButton('basic', 'Basic')}
           {modeButton('advanced', 'Advanced')}
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-muted">
           {advanced
             ? 'All settings: survivor planning, other income, annuity, long-term care, Roth conversions, healthcare and assumptions.'
             : `Just the essentials. Healthcare costs and investment assumptions use sensible defaults${activeAdvanced.length ? `; also in effect: ${activeAdvanced.join(', ')}` : ''}. Switch to Advanced to change them.`}
@@ -195,7 +195,7 @@ export function PlanForm() {
         info="Each savings account and how it’s taxed: pre-tax 401(k)/IRA (taxed when withdrawn), Roth (tax-free), HSA (tax-free for healthcare), taxable brokerage (gains taxed when sold) and cash."
       >
         {plan.accounts.length === 0 && (
-          <p className="text-sm text-slate-500 dark:text-slate-400">No accounts yet. Add your 401(k), IRA, Roth, HSA, brokerage or savings.</p>
+          <p className="text-sm text-muted">No accounts yet. Add your 401(k), IRA, Roth, HSA, brokerage or savings.</p>
         )}
         {plan.accounts.map((acc) => (
           <div key={acc.id} className="space-y-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -423,7 +423,7 @@ export function PlanForm() {
                 onChange={(v) => updateAssumptions({ annualFee: v })}
               />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted">
               Mix presets use illustrative long-run assumptions: stocks 8.5% average with 17% volatility, bonds 4.5% with
               6%. Type your own numbers to override.
             </p>

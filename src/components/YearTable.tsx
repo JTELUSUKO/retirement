@@ -3,7 +3,8 @@ import { BUCKETS, spouseOffset, type PercentileYear, type Plan, type YearResult 
 import { BUCKET_COLOR, BUCKET_LABEL } from '../utils/buckets'
 import { formatUSD } from '../utils/format'
 import { ageCell } from '../utils/labels'
-import { SCROLL_REGION, tabClass } from './styles'
+import { tabClass } from './styles'
+import { ScrollRegion } from './ScrollRegion'
 
 interface Props {
   averageYears: YearResult[]
@@ -40,11 +41,11 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
         {tab('accounts', 'By account type')}
         {tab('simulated', 'Simulation range')}
       </div>
-      <div className={`mt-3 max-h-96 overflow-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Year-by-year table">
+      <ScrollRegion label="Year-by-year table" className="mt-3 max-h-96 overflow-auto">
         <table className="w-full text-right text-sm tabular-nums">
           {view === 'average' ? (
             <>
-              <thead className="sticky top-0 bg-white text-slate-500 dark:text-slate-400 dark:bg-slate-900">
+              <thead className="sticky top-0 bg-white text-muted dark:bg-slate-900">
                 <tr>
                   <th className={`${th} text-left`}>{ageHead}</th>
                   <th className={th}>Start balance (today's $)</th>
@@ -81,7 +82,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
             </>
           ) : view === 'accounts' ? (
             <>
-              <thead className="sticky top-0 bg-white text-slate-500 dark:text-slate-400 dark:bg-slate-900">
+              <thead className="sticky top-0 bg-white text-muted dark:bg-slate-900">
                 <tr>
                   <th className={`${th} text-left`}>{ageHead}</th>
                   {buckets.map((b) => (
@@ -102,7 +103,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
                     {buckets.map((b) => (
                       <td key={b} className={td}>{formatUSD(y.startByBucketReal[b])}</td>
                     ))}
-                    <td className={`${td} text-slate-500 dark:text-slate-400`}>
+                    <td className={`${td} text-muted`}>
                       {BUCKETS.filter((b) => y.withdrawalsByBucket[b] > 0.5)
                         .map((b) => BUCKET_LABEL[b].split(' ')[0])
                         .join(', ') || '—'}
@@ -113,7 +114,7 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
             </>
           ) : (
             <>
-              <thead className="sticky top-0 bg-white text-slate-500 dark:text-slate-400 dark:bg-slate-900">
+              <thead className="sticky top-0 bg-white text-muted dark:bg-slate-900">
                 <tr>
                   <th className={`${th} text-left`}>{ageHead}</th>
                   <th className={th}>Poor (10th)</th>
@@ -138,8 +139,8 @@ export function YearTable({ averageYears, simulatedYears, plan }: Props) {
             </>
           )}
         </table>
-      </div>
-      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+      </ScrollRegion>
+      <p className="mt-2 text-xs text-muted">
         {
           {
             average: 'Start balance is in today’s dollars; other columns are in future dollars for that year.',

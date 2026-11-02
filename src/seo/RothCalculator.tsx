@@ -143,7 +143,7 @@ export function RothCalculator() {
           <p className="text-sm text-slate-600 dark:text-slate-400">Conversion that brings this year’s taxable income to the top of each federal bracket.</p>
           <table className="mt-2 w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-500 dark:text-slate-400">
+              <tr className="text-left text-muted">
                 <th className="py-1 font-normal">Up to the top of</th>
                 <th className="py-1 text-right font-normal">Convert</th>
                 <th className="py-1" />
@@ -218,7 +218,7 @@ export function RothCalculator() {
               {formatUSD(r.compare.earlyPenalty)}). Paying the tax from other savings avoids it.
             </p>
           )}
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-xs text-muted">
             Assumes the same return in both cases, withdrawal of the traditional IRA at your later tax rate, and money kept in
             a taxable account losing 15% of its growth to tax.
           </p>

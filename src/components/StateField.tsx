@@ -27,7 +27,7 @@ export function StateField() {
           ))}
         </select>
       </label>
-      <p className="text-xs text-slate-500 dark:text-slate-400">{describeStateRule(plan.state)}</p>
+      <p className="text-xs text-muted">{describeStateRule(plan.state)}</p>
       {showExclusion && (
         <div>
           <NumberField

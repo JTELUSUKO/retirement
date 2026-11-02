@@ -21,6 +21,7 @@ import { ageLabel, endLabel } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
 import { SECONDARY } from '../components/styles'
+import { ScrollRegion } from '../components/ScrollRegion'
 
 const cell = 'px-3 py-2 align-middle'
 const select =
@@ -107,10 +108,10 @@ export function Scenarios() {
             </button>
           ))}
         </div>
-        {full && <p className="text-xs text-slate-500 dark:text-slate-400">Remove a scenario to add another.</p>}
+        {full && <p className="text-xs text-muted">Remove a scenario to add another.</p>}
       </section>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <ScrollRegion label="Scenario comparison table" className="overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -146,7 +147,7 @@ export function Scenarios() {
           </thead>
           <tbody>
             <tr>
-              <th scope="row" className={`${cell} text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400`}>
+              <th scope="row" className={`${cell} text-left text-xs font-semibold uppercase tracking-wide text-muted`}>
                 Changes
               </th>
             </tr>
@@ -253,7 +254,7 @@ export function Scenarios() {
             )}
             <tr className="border-t border-slate-100 dark:border-slate-800">
               <th scope="row" className={`${cell} text-left font-normal text-slate-600 dark:text-slate-400`}>Stress test</th>
-              <td className={`${cell} text-right text-slate-500 dark:text-slate-400`}>None</td>
+              <td className={`${cell} text-right text-muted`}>None</td>
               {plan.scenarios.map((s) => (
                 <td key={s.id} className={cell}>
                   <div className={mark(s.stress !== 'none')}>
@@ -273,7 +274,7 @@ export function Scenarios() {
             </tr>
 
             <tr>
-              <th scope="row" className={`${cell} pt-5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400`}>
+              <th scope="row" className={`${cell} pt-5 text-left text-xs font-semibold uppercase tracking-wide text-muted`}>
                 Results
               </th>
             </tr>
@@ -305,12 +306,12 @@ export function Scenarios() {
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
 
       {chartSeries.length > 1 && (
         <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="font-medium">Median savings by age</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Typical-market outcome for each column, in today's dollars. Dashed lines mark retirement ages.</p>
+          <p className="text-sm text-muted">Typical-market outcome for each column, in today's dollars. Dashed lines mark retirement ages.</p>
           <ScenarioChart series={chartSeries} retirementAges={retirementAges} />
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
             {chartSeries.map((s) => (
@@ -324,9 +325,9 @@ export function Scenarios() {
       )}
 
       {plan.scenarios.length === 0 && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">Add a scenario above to see it next to your plan.</p>
+        <p className="text-sm text-muted">Add a scenario above to see it next to your plan.</p>
       )}
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted">
         Money amounts are in today’s dollars. Best value in each row is in bold. Stress tests apply to every one of the
         1,000 simulated markets.
         {[plan, ...scenarioPlans].some((p) => survivorDeathAgeOf(p) > 0) &&

@@ -61,7 +61,7 @@ function IncomeCard({ stream, married }: { stream: IncomeStream; married: boolea
         {lifetime ? (
           <div className="text-sm">
             <span className="text-slate-600 dark:text-slate-400">Until</span>
-            <div className="mt-1 py-2 text-slate-500 dark:text-slate-400">For life</div>
+            <div className="mt-1 py-2 text-muted">For life</div>
           </div>
         ) : (
           <NumberField label="Until age" min={AGE_LIMITS.min} max={AGE_LIMITS.max} value={stream.endAge!} onChange={(v) => set({ endAge: v })} />
@@ -99,7 +99,7 @@ function IncomeCard({ stream, married }: { stream: IncomeStream; married: boolea
         )}
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-xs text-muted">
         {stream.inflationAdjusted
           ? 'Amount in today’s dollars; it rises with inflation.'
           : 'Fixed dollar amount actually paid each year; its buying power shrinks with inflation.'}{' '}
@@ -119,7 +119,7 @@ export function IncomeList() {
       <button type="button" onClick={addIncome} className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-400">
         + Add income (annuity, pension, part-time work, rental)
       </button>
-      <p className="text-xs text-slate-500 dark:text-slate-400">Counted from your retirement age; income before then is assumed to be part of today’s budget.</p>
+      <p className="text-xs text-muted">Counted from your retirement age; income before then is assumed to be part of today’s budget.</p>
     </div>
   )
 }

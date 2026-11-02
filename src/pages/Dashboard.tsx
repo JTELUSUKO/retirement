@@ -43,7 +43,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   )
   if (!mcResult) {
     return (
-      <section className="h-fit rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:text-slate-400 dark:border-slate-800 dark:bg-slate-900">
+      <section className="h-fit rounded-lg border border-slate-200 bg-white p-6 text-sm text-muted dark:border-slate-800 dark:bg-slate-900">
         {sims.error ? `✕ The simulation failed: ${sims.error}` : 'Running 1,000 simulated markets…'}
       </section>
     )
@@ -146,7 +146,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Range of outcomes by age</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           Balance at the start of each age across {mc.runs.toLocaleString()} simulated markets and inflation paths, in
           today's dollars
         </p>
@@ -155,7 +155,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
       <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="font-medium">Savings by account type</h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-muted">
           With typical returns, in today's dollars. Healthcare is paid from your HSA first; other spending and income tax come from cash → taxable → pre-tax → Roth → HSA. Required minimum distributions (RMDs) start at{' '}
           {rmdAge}; any you don't spend are reinvested in taxable.
         </p>

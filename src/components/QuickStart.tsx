@@ -88,7 +88,7 @@ export function QuickStart() {
           ))}
         </select>
       </label>
-      <p className="text-sm text-slate-500 dark:text-slate-400">{describeStateRule(draft.state)}</p>
+      <p className="text-sm text-muted">{describeStateRule(draft.state)}</p>
     </>,
     <>
       <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -97,7 +97,7 @@ export function QuickStart() {
         have. You can add employer matches and more detail later.
       </p>
       <div className="space-y-2">
-        <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-[1fr_8rem_8rem]">
+        <div className="grid grid-cols-2 gap-3 text-xs text-muted sm:grid-cols-[1fr_8rem_8rem]">
           <span className="hidden sm:block">Account</span>
           <span>Balance</span>
           <span>You add / yr</span>

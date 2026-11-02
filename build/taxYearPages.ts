@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import type { Plugin } from 'vite'
 import { STATE_RULES_YEAR } from '../src/engine/config/stateRules.ts'
+import { SCROLL_REGION } from '../src/components/styles.ts'
 import { REVIEWED_DATE, TAX_CONFIG } from '../src/engine/config/taxYear.ts'
 
 // Fills the HTML pages from the tax-year config at build time, so a yearly update is one file
@@ -26,9 +27,10 @@ const T = TAX_CONFIG.federalTax
 
 const usd = (n: number) => `$${n.toLocaleString('en-US')}`
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-// Focusable (tabindex) so keyboard users can scroll it sideways on a phone
+// Focusable (tabindex) so keyboard users can scroll it sideways on a phone. These pages have no script to check
+// whether the table overflows, so the region is always focusable.
 const table = (head: string[], rows: string[][], label: string) =>
-  `<div class="overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" tabindex="0" role="region" aria-label="${label}"><table class="w-full text-sm"><thead><tr>${head
+  `<div class="overflow-x-auto ${SCROLL_REGION}" tabindex="0" role="region" aria-label="${escapeHtml(label)}"><table class="w-full text-sm"><thead><tr>${head
     .map((h) => `<th class="border-b border-slate-300 py-1 pr-3 text-left font-medium dark:border-slate-700">${h}</th>`)
     .join('')}</tr></thead><tbody>${rows
     .map((r) => `<tr>${r.map((c) => `<td class="border-b border-slate-100 py-1 pr-3 tabular-nums dark:border-slate-800">${c}</td>`).join('')}</tr>`)

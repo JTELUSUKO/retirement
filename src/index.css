@@ -9,6 +9,17 @@
   }
 }
 
+/*
+ * Muted text (helper notes, labels, captions): slate-500 in light mode, slate-400 in dark mode, so it stays above
+ * 4.5:1 contrast on both backgrounds. Always the light colour inside .paper. Use this instead of text-slate-500.
+ */
+@utility text-muted {
+  color: var(--color-slate-500);
+  @variant dark {
+    color: var(--color-slate-400);
+  }
+}
+
 body {
   @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
 }

@@ -25,7 +25,7 @@ export function StatCard({ label, value, detail, tone = 'default', info }: Props
         {info && <InfoTip label={label}>{info}</InfoTip>}
       </div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-      {detail && <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{detail}</div>}
+      {detail && <div className="mt-1 text-xs text-muted">{detail}</div>}
     </div>
   )
 }

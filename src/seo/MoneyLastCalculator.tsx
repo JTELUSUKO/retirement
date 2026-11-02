@@ -1,9 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { MIX_PRESETS } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
-import { CALL_TO_ACTION, SCROLL_REGION } from '../components/styles'
+import { CALL_TO_ACTION } from '../components/styles'
 import { formatUSD } from '../utils/format'
 import { moneyLast, MONEY_LAST_DEFAULTS, type MoneyLastInputs } from './moneyLast'
+import { ScrollRegion } from '../components/ScrollRegion'
 
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
 /** Ages past this read as "past 110": the table and the IRS tables stop there. */
@@ -76,7 +77,7 @@ export function MoneyLastCalculator() {
           info="Long-run US inflation has averaged around 3% a year. Spending rises with it."
         />
         {r && (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted">
             This mix assumes an average return of {pct(r.mean)} a year with {pct(r.volatility)} volatility (illustrative
             long-run figures), before taxes and fees.
           </p>
@@ -115,7 +116,7 @@ export function MoneyLastCalculator() {
               <Row label="Lasts at least this long in half the markets">{yearsText(r.simulated.medianYears)}</Row>
               <Row label="Lasts at least this long in 9 of 10 markets">{yearsText(r.simulated.poorYears)}</Row>
             </dl>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs text-muted">
               A bad stretch early in retirement does the most damage, because you’re selling while prices are down. That’s
               why the simulated range is wide.
             </p>
@@ -127,16 +128,16 @@ export function MoneyLastCalculator() {
               <Row label="With typical returns">{formatUSD(r.spendingThatLasts.typical)} a year</Row>
               <Row label="In 9 of 10 simulated markets">{formatUSD(r.spendingThatLasts.ninetyPercent)} a year</Row>
             </dl>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">In today’s dollars, rising with inflation, from {formatUSD(inputs.savings)}.</p>
+            <p className="mt-2 text-xs text-muted">In today’s dollars, rising with inflation, from {formatUSD(inputs.savings)}.</p>
           </div>
 
           <div className={card}>
             <h2 className="font-medium">Year by year, with typical returns</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">In today’s dollars. Spending comes out at the start of each year.</p>
-            <div className={`mt-2 max-h-96 overflow-auto ${SCROLL_REGION}`} tabIndex={0} role="region" aria-label="Year by year, with typical returns">
+            <ScrollRegion label="Year by year, with typical returns" className="mt-2 max-h-96 overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-slate-900">
-                  <tr className="text-left text-slate-500 dark:text-slate-400">
+                  <tr className="text-left text-muted">
                     <th className="py-1 pr-2 font-normal">Age</th>
                     <th className="py-1 pr-2 text-right font-normal">Start</th>
                     <th className="py-1 pr-2 text-right font-normal">Spending</th>
@@ -154,7 +155,7 @@ export function MoneyLastCalculator() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           </div>
 
           <a
