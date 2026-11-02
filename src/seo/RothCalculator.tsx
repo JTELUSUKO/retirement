@@ -1,11 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { CONFIG_2026, NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
+import { NO_INCOME_TAX_STATES, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { ALL_STATES } from '../utils/states'
 import { formatUSD } from '../utils/format'
 import { rothConversion, type RothInputs } from './rothConversion'
 
-const SENIOR_PHASE_OUT = CONFIG_2026.federalTax.seniorDeduction.phaseOutStart
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
 
 const DEFAULTS: RothInputs = {
@@ -40,16 +39,12 @@ export function RothCalculator() {
   const set = (patch: Partial<RothInputs>) => setInputs((s) => ({ ...s, ...patch }))
   const r = useMemo(() => rothConversion(inputs), [inputs])
   const ahead = r.compare.convert - r.compare.dontConvert
-  // Why the federal rate on the conversion can exceed the bracket
+  // Costs on top of the bracket rate, explained under the result
   const federalRate = inputs.conversion > 0 ? r.extraFederal / inputs.conversion : 0
-  const taxableSs = (t: typeof r.before, conversion: number) => t.magi - inputs.otherIncome - conversion
-  const reasons =
-    federalRate > r.topBracket + 0.005
-      ? [
-          taxableSs(r.after, inputs.conversion) > taxableSs(r.before, 0) + 1 && 'makes more of your Social Security taxable',
-          inputs.age >= 65 && r.after.magi > SENIOR_PHASE_OUT[inputs.status] && 'shrinks the new senior deduction',
-        ].filter((x): x is string => Boolean(x))
-      : []
+  const alsoCosts = [
+    r.alsoCosts.socialSecurity && 'makes more of your Social Security taxable',
+    r.alsoCosts.seniorDeduction && 'shrinks the new senior deduction',
+  ].filter((x): x is string => Boolean(x))
 
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
@@ -137,18 +132,20 @@ export function RothCalculator() {
           <dl className="mt-3 border-t border-slate-200 pt-2 text-sm dark:border-slate-800">
             <Row label="Federal income tax">{formatUSD(r.extraFederal)}</Row>
             <Row label="State income tax">{inputs.state ? formatUSD(r.extraState) : 'not included'}</Row>
-            <Row label="Federal bracket of the last dollar converted">{pct(r.topBracket, 0)}</Row>
-            <Row label={`Room left in the ${pct(r.topBracket, 0)} bracket`}>
+            <Row label="Federal bracket of the last dollar converted">
+              {r.topBracket === 0 ? '0% (covered by deductions)' : pct(r.topBracket, 0)}
+            </Row>
+            <Row label={r.topBracket === 0 ? 'Room left before any federal tax' : `Room left in the ${pct(r.topBracket, 0)} bracket`}>
               {Number.isFinite(r.roomInBracket) ? formatUSD(r.roomInBracket) : 'top bracket'}
             </Row>
             <Row label="Income before → after (AGI)">
               {formatUSD(r.before.magi)} → {formatUSD(r.after.magi)}
             </Row>
           </dl>
-          {reasons.length > 0 && (
+          {alsoCosts.length > 0 && (
             <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-              Your federal rate on this conversion ({pct(federalRate)}) is above your {pct(r.topBracket, 0)} bracket because each
-              converted dollar also {reasons.join(' and ')}.
+              Besides your bracket rate, each converted dollar also {alsoCosts.join(' and ')}. That’s included above: your
+              federal tax on this conversion works out to {pct(federalRate)}.
             </p>
           )}
         </div>
@@ -185,18 +182,29 @@ export function RothCalculator() {
         {r.irmaa.applies && (
           <div className={`${card} ${r.irmaa.extraYearly > 0 ? 'border-amber-400 dark:border-amber-500' : ''}`}>
             <h3 className="font-medium">Medicare premiums two years from now</h3>
-            {r.irmaa.extraYearly > 0 ? (
-              <p className="mt-1 text-sm">
-                This income is likely to add an income surcharge (IRMAA) of about{' '}
-                <strong className="tabular-nums">{formatUSD(r.irmaa.extraYearly)}</strong> to Medicare Part B and D premiums
-                {r.irmaa.people > 1 ? ' for the two of you' : ''} for one year, using 2026 income tiers.
-              </p>
-            ) : (
-              <p className="mt-1 text-sm">
-                No income surcharge (IRMAA) at 2026 tiers. You could add about{' '}
-                <strong className="tabular-nums">{formatUSD(r.irmaa.roomBeforeFirstTier)}</strong> more income before the first tier.
-              </p>
-            )}
+            <p className="mt-1 text-sm">
+              {r.irmaa.extraYearly > 0 ? (
+                <>
+                  This conversion is likely to add an income surcharge (IRMAA) of about{' '}
+                  <strong className="tabular-nums">{formatUSD(r.irmaa.extraYearly)}</strong> a year
+                </>
+              ) : r.irmaa.afterYearly > 0 ? (
+                <>
+                  Your income is already in a surcharge (IRMAA) tier, about{' '}
+                  <strong className="tabular-nums">{formatUSD(r.irmaa.afterYearly)}</strong> a year; this conversion doesn’t
+                  move you to a higher one
+                </>
+              ) : (
+                'No income surcharge (IRMAA)'
+              )}
+              {r.irmaa.people > 1 ? ' for the two of you' : ''}, at 2026 tiers.
+              {Number.isFinite(r.irmaa.roomInTier) && (
+                <>
+                  {' '}You could add about <strong className="tabular-nums">{formatUSD(r.irmaa.roomInTier)}</strong> more income
+                  before the next tier.
+                </>
+              )}
+            </p>
           </div>
         )}
 
@@ -212,7 +220,7 @@ export function RothCalculator() {
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Converting comes out ahead if your tax rate when you withdraw is above{' '}
             <strong className="text-slate-900 dark:text-slate-100">{pct(r.compare.breakEvenRate)}</strong>.
-            {inputs.payTaxFrom === 'savings'
+            {inputs.payTaxFrom === 'savings' && inputs.annualReturn > 0
               ? ' Paying the tax from other savings lowers this, because the full amount keeps growing tax-free.'
               : ''}
           </p>

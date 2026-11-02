@@ -6,6 +6,9 @@ const MARGIN = 8
 /**
  * A small ⓘ button that shows an explanation on hover, keyboard focus or tap, and closes with Esc or a click
  * elsewhere. The text is linked to the button for screen readers.
+ *
+ * Keep it outside a field's <label>, or after the field inside it: a <label> labels its first button or input, so an
+ * ⓘ placed before the field would take the field's name (screen readers then read the field as unlabeled).
  */
 export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false)
@@ -44,7 +47,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
         onClick={(e) => {
-          e.preventDefault() // inside a <label>: don't focus the input
+          e.preventDefault() // inside a <label> (after its field): don't focus the field
           setOpen((o) => !o)
         }}
         onMouseEnter={() => setOpen(true)}

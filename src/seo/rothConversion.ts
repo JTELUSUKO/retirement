@@ -1,4 +1,4 @@
-import { CONFIG_2026, federalIncomeTax, irmaaPerPersonYearly, stateIncomeTax, type FilingStatus } from '../engine'
+import { bracketTop, CONFIG_2026, federalIncomeTax, irmaaPerPersonYearly, stateIncomeTax, type FilingStatus } from '../engine'
 
 const T = CONFIG_2026.federalTax
 /** Tax on the growth of money kept in a taxable account, as a share of that growth (simplified long-term rate). */
@@ -32,6 +32,7 @@ export interface TaxSnapshot {
   /** Adjusted gross income, which is also the MAGI Medicare uses for IRMAA */
   magi: number
   taxableOrdinary: number
+  taxableSocialSecurity: number
 }
 
 export interface RothResult {
@@ -43,28 +44,37 @@ export interface RothResult {
   extraTax: number
   /** extraTax ÷ conversion */
   effectiveRate: number
-  /** Federal bracket the last converted dollar falls in */
+  /** Federal bracket the last converted dollar falls in (0 when it's all covered by deductions) */
   topBracket: number
   /** Conversion that can still be added before the next federal bracket (Infinity in the top bracket) */
   roomInBracket: number
+  /** Costs on top of the bracket rate that this conversion triggers */
+  alsoCosts: { socialSecurity: boolean; seniorDeduction: boolean }
   /** Conversion that fills each bracket from this year's other income (0 if already past it) */
   fillTo: { rate: number; amount: number }[]
-  /** Medicare surcharge two years later (only when you'll be 65+ by then) */
-  irmaa: { applies: boolean; people: number; extraYearly: number; roomBeforeFirstTier: number }
+  /**
+   * Medicare income surcharge (IRMAA) two years later, for everyone on the return (only when you'll be 65+ by then).
+   * Yearly amounts at 2026 tiers; roomInTier is income that can be added before the next tier (Infinity in the top one).
+   */
+  irmaa: { applies: boolean; people: number; beforeYearly: number; afterYearly: number; extraYearly: number; roomInTier: number }
   /** After-tax value of the converted money after `years` */
   compare: { convert: number; dontConvert: number; breakEvenRate: number; earlyPenalty: number }
 }
 
-function taxes(inputs: RothInputs, conversion: number): TaxSnapshot {
-  const ordinaryIncome = inputs.otherIncome + conversion
-  const fed = federalIncomeTax({
-    ordinaryIncome,
+const federal = (inputs: RothInputs, conversion: number) =>
+  federalIncomeTax({
+    ordinaryIncome: inputs.otherIncome + conversion,
     socialSecurity: inputs.socialSecurity,
     age: inputs.age,
     year: CONFIG_2026.year,
     status: inputs.status,
     priceLevel: 1,
   })
+
+function taxes(inputs: RothInputs, conversion: number): TaxSnapshot {
+  const ordinaryIncome = inputs.otherIncome + conversion
+  const fed = federal(inputs, conversion)
+  // No capital gains here, so AGI is ordinary income plus taxable Social Security
   const taxableSs = fed.agi - ordinaryIncome
   const state = stateIncomeTax({
     state: inputs.state,
@@ -77,29 +87,38 @@ function taxes(inputs: RothInputs, conversion: number): TaxSnapshot {
     retirementExclusionPerPerson: 0,
     priceLevel: 1,
   })
-  return { federal: fed.tax, state, magi: fed.agi, taxableOrdinary: fed.taxableOrdinary }
+  return { federal: fed.tax, state, magi: fed.agi, taxableOrdinary: fed.taxableOrdinary, taxableSocialSecurity: taxableSs }
 }
 
-/**
- * Federal bracket rate for a taxable ordinary income (the rate of its last dollar). Within $2 of a bracket's top
- * still counts as that bracket, since "fill the bracket" amounts are rounded up to whole dollars.
- */
+/** Within this many dollars of a bracket's top still counts as that bracket ("fill" amounts are rounded up). */
+const ROUNDING = 2
+
+/** Federal bracket of the last dollar of taxable ordinary income; rate 0 (top 0) while deductions cover it all. */
 function bracketOf(taxableOrdinary: number, status: FilingStatus): { rate: number; top: number } {
-  for (const [top, rate] of T.brackets[status]) if (taxableOrdinary <= top + 2) return { rate, top }
+  if (taxableOrdinary <= ROUNDING) return { rate: 0, top: 0 }
+  for (const [top, rate] of T.brackets[status]) if (taxableOrdinary <= top + ROUNDING) return { rate, top }
   return { rate: 0.37, top: Infinity }
 }
 
-/** Smallest conversion that brings taxable ordinary income up to `target` (0 if it's already there). */
-function conversionToReach(inputs: RothInputs, target: number): number {
-  if (taxes(inputs, 0).taxableOrdinary >= target) return 0
+/** Smallest conversion that brings taxable ordinary income above `target` (0 if `baseTaxable` already is). */
+function conversionToReach(inputs: RothInputs, target: number, baseTaxable: number): number {
+  if (baseTaxable >= target) return 0
   let lo = 0
   let hi = target + inputs.socialSecurity + 100_000
   for (let i = 0; i < 60; i++) {
     const mid = (lo + hi) / 2
-    if (taxes(inputs, mid).taxableOrdinary >= target) hi = mid
+    if (federal(inputs, mid).taxableOrdinary >= target) hi = mid
     else lo = mid
   }
   return Math.ceil(lo)
+}
+
+/** Whether income from `before` to `after` falls in the senior deduction's phase-out range (65+, 2025–2028). */
+function shrinksSeniorDeduction(inputs: RothInputs, before: number, after: number): boolean {
+  const { amount, lastYear, phaseOutStart, phaseOutRate } = T.seniorDeduction
+  const start = phaseOutStart[inputs.status]
+  const fullyPhasedOut = start + amount / phaseOutRate
+  return inputs.age >= CONFIG_2026.medicare.eligibilityAge && CONFIG_2026.year <= lastYear && after > start && before < fullyPhasedOut
 }
 
 export function rothConversion(inputs: RothInputs): RothResult {
@@ -110,24 +129,32 @@ export function rothConversion(inputs: RothInputs): RothResult {
   const extraTax = extraFederal + extraState
 
   const { rate: topBracket, top } = bracketOf(after.taxableOrdinary, inputs.status)
-  const roomInBracket = top === Infinity ? Infinity : Math.max(conversionToReach(inputs, top) - inputs.conversion, 0)
+  // At 0%, the room is what's left of the deductions (until the first taxable dollar)
+  const roomInBracket =
+    top === Infinity ? Infinity : Math.max(conversionToReach(inputs, Math.max(top, 1), before.taxableOrdinary) - inputs.conversion, 0)
 
-  const fillTo = [0.12, 0.22, 0.24].map((rate) => {
-    const bracket = T.brackets[inputs.status].find(([, r]) => r === rate)!
-    return { rate, amount: conversionToReach(inputs, bracket[0]) }
-  })
+  const fillTo = [0.12, 0.22, 0.24].map((rate) => ({
+    rate,
+    amount: conversionToReach(inputs, bracketTop(rate, inputs.status, 1), before.taxableOrdinary),
+  }))
+
+  const alsoCosts = {
+    socialSecurity: after.taxableSocialSecurity > before.taxableSocialSecurity + 1,
+    seniorDeduction: shrinksSeniorDeduction(inputs, before.magi, after.magi),
+  }
 
   // Medicare premiums use income from two years earlier: a conversion at 63 counts at 65
   const people = inputs.status === 'married' ? 2 : 1
   const applies = inputs.age >= CONFIG_2026.medicare.eligibilityAge - 2
-  const firstTier = (inputs.status === 'married' ? CONFIG_2026.irmaa[0][1] : CONFIG_2026.irmaa[0][0])
+  const yearly = (magi: number) => (applies ? irmaaPerPersonYearly(magi, inputs.status, 1) * people : 0)
+  const nextTier = CONFIG_2026.irmaa.map(([single, joint]) => (inputs.status === 'married' ? joint : single)).find((upper) => after.magi <= upper)
   const irmaa = {
     applies,
     people,
-    extraYearly: applies
-      ? (irmaaPerPersonYearly(after.magi, inputs.status, 1) - irmaaPerPersonYearly(before.magi, inputs.status, 1)) * people
-      : 0,
-    roomBeforeFirstTier: Math.max(firstTier - after.magi, 0),
+    beforeYearly: yearly(before.magi),
+    afterYearly: yearly(after.magi),
+    extraYearly: yearly(after.magi) - yearly(before.magi),
+    roomInTier: nextTier === undefined || nextTier === Infinity ? Infinity : nextTier - after.magi,
   }
 
   const growth = (1 + inputs.annualReturn) ** inputs.years
@@ -159,6 +186,7 @@ export function rothConversion(inputs: RothInputs): RothResult {
     effectiveRate: c > 0 ? extraTax / c : 0,
     topBracket,
     roomInBracket,
+    alsoCosts,
     fillTo,
     irmaa,
     compare,

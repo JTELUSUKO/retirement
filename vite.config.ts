@@ -2,6 +2,7 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import { CONFIG_2026 } from './src/engine/config/2026.ts'
 
@@ -69,8 +70,8 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       input: {
-        main: new URL('./index.html', import.meta.url).pathname,
-        roth: new URL('./roth-conversion-calculator/index.html', import.meta.url).pathname,
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        roth: fileURLToPath(new URL('./roth-conversion-calculator/index.html', import.meta.url)),
       },
     },
   },

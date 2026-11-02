@@ -1,10 +1,12 @@
 import { missingEssentials, type Plan } from '../engine'
+import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
 
 /** Shown instead of results until the essentials are filled in. */
 export function GettingStarted({ plan, onPlanTab = true }: { plan: Plan; onPlanTab?: boolean }) {
   const missing = missingEssentials(plan)
   const setGuide = useUiPrefs((s) => s.setGuide)
+  const loadExample = usePlanStore((s) => s.loadExample)
   return (
     <section className="h-fit rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400">
       <h2 className="font-medium text-slate-900 dark:text-slate-100">Add your numbers to see results</h2>
@@ -17,19 +19,29 @@ export function GettingStarted({ plan, onPlanTab = true }: { plan: Plan; onPlanT
         ))}
       </ul>
       <p className="mt-3">
-        Then add your accounts, Social Security estimate and any other income. Or click <strong>Load example</strong> to
-        explore with sample numbers.
+        Then add your accounts, Social Security estimate and any other income. Or load an example to explore with sample
+        numbers.
       </p>
-      <button
-        type="button"
-        onClick={() => {
-          setGuide('open')
-          window.location.hash = '#plan'
-        }}
-        className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
-      >
-        Use the guided setup
-      </button>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setGuide('open')
+            window.location.hash = '#plan'
+          }}
+          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
+        >
+          Use the guided setup
+        </button>
+        {/* Loads here, so the Compare and Summary tabs show results straight away (Undo is offered on My plan) */}
+        <button
+          type="button"
+          onClick={loadExample}
+          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          Load example
+        </button>
+      </div>
     </section>
   )
 }

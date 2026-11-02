@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { InfoTip } from './InfoTip'
 
 interface Props {
@@ -29,6 +29,14 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(false)
   const id = useId()
+  const input = useRef<HTMLInputElement>(null)
+  // Focusing swaps "450,000" for "450000", which drops the selection. When the whole value was selected (Tab into the
+  // field), select it again so typing replaces it instead of appending to it.
+  const reselect = useRef(false)
+  useLayoutEffect(() => {
+    if (editing && reselect.current) input.current?.select()
+    reselect.current = false
+  }, [editing])
 
   const zeroAllowed = min === undefined || min <= 0
   const parse = (raw: string) => {
@@ -60,6 +68,7 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
       >
         {prefix && <span className="pl-3 text-slate-500">{prefix}</span>}
         <input
+          ref={input}
           id={id}
           type="text"
           inputMode="decimal"
@@ -69,7 +78,9 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
           value={editing ? text : value === 0 ? '' : prefix === '$' ? value.toLocaleString('en-US', { maximumFractionDigits: 2 }) : String(value)}
           placeholder={placeholder}
           aria-invalid={invalid}
-          onFocus={() => {
+          onFocus={(e) => {
+            const el = e.currentTarget
+            reselect.current = el.value !== '' && el.selectionStart === 0 && el.selectionEnd === el.value.length
             setText(value === 0 ? '' : String(value))
             setEditing(true)
           }}

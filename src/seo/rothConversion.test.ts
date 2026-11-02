@@ -95,4 +95,34 @@ describe('Roth conversion calculator', () => {
     expect(r.effectiveRate).toBe(0)
     expect(r.compare.breakEvenRate).toBe(0)
   })
+
+  it('labels a conversion covered by deductions as 0%, with the deduction room left', () => {
+    // Single, no other income: the $16,100 standard deduction covers a $10,000 conversion
+    const r = rothConversion({ ...base, otherIncome: 0, conversion: 10_000 })
+    expect(r.extraFederal).toBe(0)
+    expect(r.topBracket).toBe(0)
+    expect(r.roomInBracket).toBeGreaterThanOrEqual(6_099)
+    expect(r.roomInBracket).toBeLessThanOrEqual(6_101)
+  })
+
+  it('reports a Medicare surcharge you already pay, even when the conversion stays in the same tier', () => {
+    // Single, $150,000 MAGI: already in the second tier ($137,000–$171,000)
+    const r = rothConversion({ ...base, age: 63, otherIncome: 150_000, conversion: 5_000 })
+    expect(r.irmaa.extraYearly).toBe(0)
+    expect(r.irmaa.afterYearly).toBeGreaterThan(0)
+    expect(r.irmaa.roomInTier).toBe(171_000 - 155_000)
+  })
+
+  it('flags extra costs on top of the bracket even when the average rate is below the top bracket', () => {
+    // A conversion spanning 12% and 22% while making Social Security taxable
+    const r = rothConversion({ ...base, age: 67, otherIncome: 20_000, socialSecurity: 30_000, conversion: 60_000 })
+    expect(r.alsoCosts.socialSecurity).toBe(true)
+  })
+
+  it('does not blame the senior deduction once it is already fully phased out', () => {
+    const r = rothConversion({ ...base, age: 67, otherIncome: 200_000, conversion: 20_000 })
+    expect(r.alsoCosts.seniorDeduction).toBe(false)
+    expect(rothConversion({ ...base, age: 67, otherIncome: 70_000, conversion: 20_000 }).alsoCosts.seniorDeduction).toBe(true)
+    expect(rothConversion({ ...base, age: 60, otherIncome: 70_000, conversion: 20_000 }).alsoCosts.seniorDeduction).toBe(false)
+  })
 })
