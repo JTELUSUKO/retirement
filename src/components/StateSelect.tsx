@@ -132,10 +132,17 @@ export function StateSelect({ label, value, onChange, emptyLabel }: {
               onMouseEnter={() => setActive(i)}
               className={`flex cursor-pointer items-center justify-between gap-2 px-3 py-1.5 ${i === active ? 'bg-teal-50 dark:bg-teal-950' : ''} ${o.code ? '' : 'text-muted'}`}
             >
-              <span>
-                {o.name}
-                {NO_INCOME_TAX_STATES[o.code] && <span className="text-muted"> · no income tax</span>}
-              </span>
+              {/* States with no income tax stand out in green, with a badge (words too, not just colour) */}
+              {NO_INCOME_TAX_STATES[o.code] ? (
+                <span className="flex items-center gap-2 font-medium text-emerald-800 dark:text-emerald-300">
+                  {o.name}
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
+                    No income tax
+                  </span>
+                </span>
+              ) : (
+                <span>{o.name}</span>
+              )}
               {o.code === value && (
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="text-teal-700 dark:text-teal-300">
                   <path d="M20 6 9 17l-5-5" />
