@@ -22,7 +22,7 @@ import type { SimTask } from '../sim/tasks'
 import { useSimulations } from '../sim/useSimulation'
 import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
-import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
+import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel, scenarioName } from '../utils/labels'
 import { PRIMARY, SECONDARY } from '../components/styles'
 import { watchOuts } from '../utils/watchOuts'
 import { WatchOutList } from '../components/WatchOuts'
@@ -267,7 +267,7 @@ export function Summary({
                   </tr>
                   {scenarios.map(({ scenario, result }) => (
                     <tr key={scenario.id}>
-                      <td className={`${td} font-medium`}>{scenario.name}</td>
+                      <td className={`${td} font-medium`}>{scenarioName(scenario)}</td>
                       <td className={`${td} text-slate-600`}>{describeScenario(plan, scenario)}</td>
                       {result.issues.length > 0 ? (
                         <td colSpan={3} className={`${td} text-right text-red-700`}>{result.issues.join(' ')}</td>

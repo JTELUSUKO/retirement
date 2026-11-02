@@ -112,3 +112,6 @@ export function activeAdvancedSettings(plan: Plan): string[] {
   if (plan.rothConversion.enabled) active.push('Roth conversions')
   return active
 }
+
+/** A scenario's name, or "Scenario N" (its colour slot) while the name is empty */
+export const scenarioName = (s: { name: string; slot: number }) => s.name.trim() || `Scenario ${s.slot}`

@@ -17,11 +17,12 @@ import {
 import type { SimTask } from '../sim/tasks'
 import { useSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { ageLabel, endLabel } from '../utils/labels'
+import { ageLabel, endLabel, scenarioName } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
 import { SECONDARY } from '../components/styles'
 import { ScrollRegion } from '../components/ScrollRegion'
+import { Icon } from '../components/Icons'
 
 const cell = 'px-3 py-2 align-middle'
 const select =
@@ -46,7 +47,7 @@ export function Scenarios() {
   // Valid columns only; color slot 0 = your plan, scenarios keep their own slot
   const columns = [
     { key: 'base', name: 'Your plan', slot: 0 },
-    ...plan.scenarios.map((sc) => ({ key: sc.id, name: sc.name, slot: sc.slot })),
+    ...plan.scenarios.map((sc) => ({ key: sc.id, name: scenarioName(sc), slot: sc.slot })),
   ]
   const chartSeries: ScenarioSeries[] = columns.flatMap((c, i) => {
     const mc = results[i]?.monteCarlo
@@ -126,16 +127,21 @@ export function Scenarios() {
                 <th key={s.id} scope="col" className={`${cell} min-w-44 text-right`}>
                   <div className="flex items-center gap-1">
                     <span className="h-0.5 w-3 shrink-0" style={{ background: scenarioColor(s.slot) }} aria-hidden />
+                    {/* The name is editable in place; a pencil shows that, and an emptied name goes back to "Scenario N" */}
                     <input
-                      className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-right font-medium hover:border-slate-300 focus:border-slate-300 dark:hover:border-slate-700"
+                      className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-right font-medium placeholder:text-slate-500 hover:border-slate-300 focus:border-slate-300 dark:hover:border-slate-700 dark:placeholder:text-slate-400"
                       value={s.name}
+                      placeholder={scenarioName({ ...s, name: '' })}
                       aria-label="Scenario name"
+                      title="Rename this scenario"
                       onChange={(e) => updateScenario(s.id, { name: e.target.value })}
+                      onBlur={() => !s.name.trim() && updateScenario(s.id, { name: scenarioName({ ...s, name: '' }) })}
                     />
+                    <Icon name="pencil" size={13} className="text-muted" />
                     <button
                       type="button"
                       className="px-1 text-slate-400 hover:text-red-600"
-                      aria-label={`Remove ${s.name}`}
+                      aria-label={`Remove ${scenarioName(s)}`}
                       onClick={() => removeScenario(s.id)}
                     >
                       ✕
@@ -159,7 +165,7 @@ export function Scenarios() {
                   <div className={mark(changed(s, 'retirementAge'))}>
                     <NumberField
                       hideLabel
-                      label={`${s.name}: retire at`}
+                      label={`${scenarioName(s)}: retire at`}
                       min={AGE_LIMITS.min}
                       max={AGE_LIMITS.max}
                       value={scenarioPlans[i].retirementAge}
@@ -179,7 +185,7 @@ export function Scenarios() {
                   <div className={mark(changed(s, 'annualSpending'))}>
                     <NumberField
                       hideLabel
-                      label={`${s.name}: yearly spending`}
+                      label={`${scenarioName(s)}: yearly spending`}
                       prefix="$"
                       min={0}
                       step={1000}
@@ -198,7 +204,7 @@ export function Scenarios() {
                   <div className={mark(changed(s, 'socialSecurityClaimAge'))}>
                     <NumberField
                       hideLabel
-                      label={`${s.name}: claim Social Security at`}
+                      label={`${scenarioName(s)}: claim Social Security at`}
                       min={earliestClaimAge}
                       max={latestClaimAge}
                       value={scenarioPlans[i].socialSecurityClaimAge}
@@ -218,7 +224,7 @@ export function Scenarios() {
                   <div className={mark(changed(s, 'annuityEnabled'))}>
                     <select
                       className={select}
-                      aria-label={`${s.name}: annuity`}
+                      aria-label={`${scenarioName(s)}: annuity`}
                       value={scenarioPlans[i].annuityPurchase.enabled ? 'yes' : 'no'}
                       onChange={(e) => setOverride(s, 'annuityEnabled', e.target.value === 'yes', plan.annuityPurchase.enabled)}
                     >
@@ -240,7 +246,7 @@ export function Scenarios() {
                     <div className={mark(changed(s, 'survivorDeathAge'))}>
                       <NumberField
                         hideLabel
-                        label={`${s.name}: one of you dies at`}
+                        label={`${scenarioName(s)}: one of you dies at`}
                         placeholder="Both live"
                         min={0}
                         max={AGE_LIMITS.max}
@@ -260,7 +266,7 @@ export function Scenarios() {
                   <div className={mark(s.stress !== 'none')}>
                     <select
                       className={select}
-                      aria-label={`${s.name}: stress test`}
+                      aria-label={`${scenarioName(s)}: stress test`}
                       value={s.stress}
                       onChange={(e) => updateScenario(s.id, { stress: e.target.value as StressTest })}
                     >
