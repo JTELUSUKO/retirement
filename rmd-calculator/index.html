@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RMD Calculator (2026): Required Minimum Distribution, Deadline and Tax</title>
+    <meta
+      name="description"
+      content="Free 2026 RMD calculator: your required minimum distribution from an IRA or 401(k), the deadline, the IRS life expectancy factor, the tax it adds and your RMDs year by year."
+    />
+    <link rel="canonical" href="https://willitlast.app/rmd-calculator/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Will It Last?" />
+    <meta property="og:title" content="RMD Calculator (2026)" />
+    <meta property="og:description" content="How much must you withdraw from your IRA or 401(k) this year, by when, and what tax will it add? Free, private, no sign-up." />
+    <meta property="og:url" content="https://willitlast.app/rmd-calculator/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "RMD Calculator (2026)",
+        "url": "https://willitlast.app/rmd-calculator/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Figure your 2026 required minimum distribution from an IRA or 401(k) with the IRS Uniform Lifetime Table, the deadline, the federal and state tax it adds and a year-by-year RMD projection."
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <a href="../" class="text-lg font-semibold">Will It Last?</a>
+        <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href="../roth-conversion-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Roth conversion calculator</a>
+          <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Free retirement planner</a>
+        </nav>
+      </header>
+
+      <div role="note" aria-label="Disclaimer" class="mb-8 rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">
+        <p class="font-bold">⚠ For educational purposes only. This is NOT financial, investment, tax or legal advice.</p>
+        <p class="mt-1 font-semibold">
+          Results are estimates based on your inputs and simplified assumptions, not guarantees. Calculations may contain
+          errors or differ from other tools and official figures, and we accept no responsibility for them or for any
+          decision you make. Talk to a qualified, licensed professional before making any financial decision.
+          <a href="../#terms" class="underline underline-offset-2">Read the full disclaimer and terms</a>.
+        </p>
+      </div>
+
+      <main class="space-y-10">
+        <section class="space-y-3">
+          <h1 class="text-3xl font-semibold">RMD calculator (2026)</h1>
+          <p class="max-w-3xl text-slate-700 dark:text-slate-300">
+            Find your 2026 required minimum distribution (RMD) from a traditional IRA, 401(k) or 403(b): how much you must
+            withdraw, by when, how much tax it adds and what your RMDs could look like in the years ahead. It uses the IRS
+            Uniform Lifetime Table and the SECURE 2.0 start ages. Free, no sign-up, and nothing you enter leaves your browser.
+          </p>
+        </section>
+
+        <div id="calculator">
+          <noscript><p class="rounded-md border border-slate-300 p-4">The calculator needs JavaScript. The guide below works without it.</p></noscript>
+        </div>
+
+        <article class="max-w-3xl space-y-8 leading-relaxed text-slate-700 dark:text-slate-300">
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">What is a required minimum distribution?</h2>
+            <p>
+              A required minimum distribution (RMD) is the least you must withdraw each year from tax-deferred retirement
+              accounts, such as traditional IRAs, SEP and SIMPLE IRAs, 401(k)s and 403(b)s, once you reach a certain age.
+              The withdrawal is taxed as ordinary income. You can always take more than the minimum, but not less.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">When RMDs start</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Born 1951–1959:</strong> RMDs start the year you turn 73.</li>
+              <li><strong>Born 1960 or later:</strong> RMDs start the year you turn 75 (SECURE 2.0).</li>
+              <li><strong>First RMD:</strong> due by April 1 of the following year. Waiting means taking two RMDs in the same tax year.</li>
+              <li><strong>Every later RMD:</strong> due by December 31 of each year.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">How an RMD is figured</h2>
+            <p>
+              Take the account balance on <strong>December 31 of last year</strong> and divide it by the life expectancy
+              factor for the age you reach <strong>this year</strong>, from the IRS Uniform Lifetime Table. For example, at 75
+              with $500,000: $500,000 ÷ 24.6 = $20,325. The factor shrinks each year, so the share you must take grows.
+            </p>
+            <p>
+              If your <strong>spouse is your sole beneficiary and more than 10 years younger</strong>, you use the IRS Joint Life
+              and Last Survivor table instead, which gives a smaller RMD. This calculator uses the Uniform Lifetime Table.
+            </p>
+            <h3 class="pt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">IRS Uniform Lifetime Table</h3>
+            <!--UNIFORM_TABLE-->
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Rules to know</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Missing an RMD is costly.</strong> The amount not taken can owe a 25% excise tax, reduced to 10% if you correct it in time (generally within two years).</li>
+              <li><strong>IRAs can be combined; 401(k)s can’t.</strong> Figure each IRA’s RMD separately, but you can take the total from any one or more of your IRAs. 403(b)s can be combined with each other the same way. Each 401(k) or 457(b) plan’s RMD must come from that plan.</li>
+              <li><strong>Roth accounts have no RMDs for the owner.</strong> That includes Roth IRAs and, since 2024, Roth 401(k) and 403(b) accounts. Beneficiaries do have RMDs.</li>
+              <li><strong>Still working?</strong> You can usually delay RMDs from your current employer’s plan until you retire, unless you own 5% or more of the business. This doesn’t apply to IRAs.</li>
+              <li><strong>An RMD can’t be rolled over or converted to a Roth.</strong> Take the RMD first; you can convert more after that.</li>
+              <li><strong>Give it to charity tax-free.</strong> From age 70½, a qualified charitable distribution (QCD) sent straight from an IRA to a charity counts toward your RMD and isn’t taxable income, up to a yearly limit.</li>
+              <li><strong>Inherited IRAs follow different rules</strong>, including the 10-year rule for most non-spouse beneficiaries. This calculator is for your own accounts.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Can I take my RMD in pieces?</h3>
+            <p>Yes. You can take it all at once or spread it over the year, as long as the total is out by the deadline.</p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Should I have tax withheld from my RMD?</h3>
+            <p>
+              You can ask the account provider to withhold federal (and often state) tax from the RMD. Withholding can help you
+              avoid an underpayment penalty without making quarterly estimated payments.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How can I lower future RMDs?</h3>
+            <p>
+              Converting part of a traditional IRA to a Roth before RMDs start lowers the balance future RMDs are figured
+              from, at the cost of tax now. The <a href="../roth-conversion-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Roth conversion calculator</a>
+              shows that trade-off for a single year. Qualified charitable distributions also reduce the taxable part of an RMD.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What doesn’t this calculator include?</h3>
+            <p>
+              It doesn’t cover the Joint Life table for a much younger spouse, inherited IRAs, the still-working exception,
+              QCDs or the 2-RMD year if you delay your first one. The tax estimate is one year of simplified federal and state
+              income tax. For a full plan, use the <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">free retirement planner</a>.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Sources</h2>
+            <p>
+              Figures and rules on this page come from these official and independent sources. Tax rules change, so check
+              the latest versions before you act. Last reviewed November 1, 2026.
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><a href="https://www.irs.gov/retirement-plans/retirement-plan-and-ira-required-minimum-distributions-faqs" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Required minimum distributions FAQs</a>: start age, deadlines, the excise tax, Roth accounts, the still-working exception and combining accounts</li>
+              <li><a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Retirement topics, required minimum distributions</a></li>
+              <li><a href="https://www.irs.gov/publications/p590b" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Publication 590-B</a>: how to figure an RMD, the Uniform Lifetime Table, the Joint Life table, qualified charitable distributions and inherited IRAs</li>
+              <li><a href="https://www.irs.gov/pub/irs-drop/rp-25-32.pdf" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Revenue Procedure 2025-32 (PDF)</a>: 2026 tax brackets and standard deductions</li>
+              <li><a href="https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS: Tax deductions for working Americans and seniors</a>: the $6,000 senior deduction for 2025–2028</li>
+              <li><a href="https://www.irs.gov/publications/p915" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">IRS Publication 915</a>: how Social Security benefits are taxed</li>
+              <li><a href="https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">CMS: 2026 Medicare Parts A &amp; B premiums and deductibles</a>: 2026 IRMAA income tiers</li>
+              <li><a href="https://www.ssa.gov/benefits/medicare/medicare-premiums.html" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Social Security Administration: Medicare premiums</a>: how IRMAA uses income from two years earlier</li>
+              <li><a href="https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Tax Foundation: 2026 state income tax rates and brackets</a></li>
+            </ul>
+          </section>
+        </article>
+      </main>
+
+      <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500 dark:border-slate-800">
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial,
+          tax, investment or legal advice. Figures use the IRS Uniform Lifetime Table (Publication 590-B), the SECURE 2.0
+          RMD start ages, 2026 federal tax rules (IRS Rev. Proc. 2025-32, the senior deduction, CMS 2026 IRMAA tiers) and 2026 state income tax rules, simplified. Calculations may
+          contain errors or differ from official figures; we accept no responsibility or liability for them. Consult a
+          qualified tax professional before acting. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
+        </p>
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, cookies, tracking or analytics.
+          What you enter stays in your browser.
+        </p>
+        <p>Not affiliated with the IRS, SSA, CMS or any government agency. © willitlast.app. All rights reserved.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/seo/rmdPage.tsx"></script>
+  </body>
+</html>

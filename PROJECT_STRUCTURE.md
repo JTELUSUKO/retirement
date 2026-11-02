@@ -112,10 +112,15 @@ retirement/
 │   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
 │   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
 │   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
-│   │   ├── rothConversion.ts    # Roth conversion math on the engine: extra tax, bracket room, IRMAA, break-even
+│   │   ├── incomeTax.ts         # Shared: extra federal/state tax, bracket room and IRMAA from added retirement income
+│   │   ├── rothConversion.ts    # Roth conversion math: fill-a-bracket amounts, convert-vs-not break-even
 │   │   ├── rothConversion.test.ts
-│   │   ├── RothCalculator.tsx   # The interactive calculator
-│   │   └── roth.tsx             # Entry for roth-conversion-calculator/index.html
+│   │   ├── RothCalculator.tsx   # The interactive Roth calculator
+│   │   ├── rothPage.tsx         # Entry for roth-conversion-calculator/index.html
+│   │   ├── rmd.ts               # RMD math: this year's RMD, deadline, year-by-year projection, tax on the RMD
+│   │   ├── rmd.test.ts
+│   │   ├── RmdCalculator.tsx    # The interactive RMD calculator
+│   │   └── rmdPage.tsx          # Entry for rmd-calculator/index.html
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
@@ -129,6 +134,8 @@ retirement/
 ├── roth-conversion-calculator/
 │   └── index.html               # Calculator page: guide text in plain HTML (crawlable), calculator mounts in #calculator.
 │                                #   <!--BRACKETS_2026--> and <!--IRMAA_2026--> are filled from engine/config at build time
+├── rmd-calculator/
+│   └── index.html               # RMD page; <!--UNIFORM_TABLE--> is filled from engine/config at build time
 ├── vite.config.ts               # Vite + Tailwind + Vitest config. `base` = "/retirement/" for Pages, or `BASE_PATH` env.
 │                                #   Lists each HTML page under build.rolldownOptions.input; fills the tax tables
 ├── package.json                 # Scripts: dev, build, test, lint, preview
@@ -391,7 +398,11 @@ tax tables are plain HTML in `<name>/index.html`; only the calculator itself is 
 2. Add `<name>/index.html` (title, meta description, canonical URL, the disclaimer banner, the guide text) and an entry
    script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator.
 3. Add the page to `build.rolldownOptions.input` in `vite.config.ts`, to `public/sitemap.xml`, and link it from the
-   planner's footer (`Footer.tsx`).
+   planner's footer (`Footer.tsx`) and the other calculator pages' header nav.
+4. Add a `/<name>/*` rule with `Cache-Control: … no-transform` to `public/_headers`, so Cloudflare doesn't add its
+   analytics script to the page.
+
+Tax on added retirement income (a conversion, an RMD) comes from `src/seo/incomeTax.ts`, so every page agrees.
 
 ## Deployment
 

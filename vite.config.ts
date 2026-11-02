@@ -44,6 +44,15 @@ function taxTables(): Plugin {
     range(i ? brackets.single[i - 1][0] : 0, upper),
     range(i ? brackets.married[i - 1][0] : 0, brackets.married[i][0]),
   ])
+  // Uniform Lifetime Table as three side-by-side age/factor column pairs
+  const life = Object.entries(CONFIG_2026.rmd.uniformLifetimeTable)
+  const third = Math.ceil(life.length / 3)
+  const lifeRows = life.slice(0, third).map((_, i) =>
+    [0, 1, 2].flatMap((col) => {
+      const entry = life[i + col * third]
+      return entry ? [entry[0], entry[1].toFixed(1)] : ['', '']
+    }),
+  )
   const tiers = CONFIG_2026.irmaa
   const irmaaRows = tiers.map(([single, joint, partB, partD], i) => [
     range(i ? tiers[i - 1][0] : 0, single).replace('$0 – ', 'Up to '),
@@ -58,6 +67,11 @@ function taxTables(): Plugin {
           '<!--BRACKETS_2026-->',
           table(['Rate', 'Single (taxable income)', 'Married filing jointly'], bracketRows) +
             `<p class="text-sm">Taxable income is income after the standard deduction: ${usd(standardDeduction.single)} single, ${usd(standardDeduction.married)} married filing jointly, plus extra amounts for those 65 and older.</p>`,
+        )
+        .replace(
+          '<!--UNIFORM_TABLE-->',
+          table(['Age', 'Factor', 'Age', 'Factor', 'Age', 'Factor'], lifeRows) +
+            '<p class="text-sm">Divide last December 31’s balance by the factor for the age you reach this year. Ages above 110 use the age-110 factor.</p>',
         )
         .replace(
           '<!--IRMAA_2026-->',
@@ -75,6 +89,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         roth: fileURLToPath(new URL('./roth-conversion-calculator/index.html', import.meta.url)),
+        rmd: fileURLToPath(new URL('./rmd-calculator/index.html', import.meta.url)),
       },
     },
   },
