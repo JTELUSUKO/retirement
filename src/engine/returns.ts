@@ -26,6 +26,9 @@ export function mixReturns(stockShare: number): { mean: number; volatility: numb
   return { mean, volatility: Math.sqrt(variance) }
 }
 
+/** "60% stocks / 40% bonds" */
+export const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
+
 /** Investment-mix presets offered in the form (stock share). */
 export const MIX_PRESETS = [1, 0.8, 0.6, 0.4, 0.2]
 

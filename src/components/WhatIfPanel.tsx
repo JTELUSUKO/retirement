@@ -1,11 +1,10 @@
 import { useDeferredValue, useId, useMemo, useState, type ReactNode } from 'react'
-import { benefitAtClaimAge, MIX_PRESETS, mixReturns, mixShare, TAX_CONFIG, validatePlan, type MonteCarloResult, type Plan } from '../engine'
+import { benefitAtClaimAge, mixLabel, MIX_PRESETS, mixReturns, mixShare, TAX_CONFIG, validatePlan, type MonteCarloResult, type Plan } from '../engine'
 import type { SimTask } from '../sim/tasks'
 import { useSimulation } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { endLabel } from '../utils/labels'
-import { mixLabel } from '../utils/levers'
 import { Icon, type IconName } from './Icons'
 import { PRIMARY, SECONDARY } from './styles'
 import { SuccessGauge } from './SuccessGauge'
@@ -49,7 +48,7 @@ function Slider({ icon, label, value, display, was, min, max, step, onChange, mi
   /** The value as shown (also read out by screen readers) */
   display: string
   /** The plan's value, shown while the slider is moved away from it */
-  was: string | null
+  was: string | null | false
   min: number
   max: number
   step: number
@@ -93,22 +92,26 @@ function Slider({ icon, label, value, display, was, min, max, step, onChange, mi
 
 /**
  * Sliders for the biggest levers, with a dial that follows them. A sandbox: nothing changes in the plan until Apply.
- * `mc` is the simulation of `resultPlan`, which can lag a moment behind the saved plan the sliders start from.
+ * `plan` must be the plan `mc` was computed for (it can lag a moment behind the saved plan while results update).
  */
-export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCarloResult }) {
-  const plan = usePlanStore((s) => s.plan)
+export function WhatIfPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult }) {
   const update = usePlanStore((s) => s.update)
   const addScenario = usePlanStore((s) => s.addScenario)
-  const full = plan.scenarios.length >= MAX_SCENARIOS
+  const full = usePlanStore((s) => s.plan.scenarios.length >= MAX_SCENARIOS)
   const base = useMemo(() => leversOf(plan), [plan])
-  // Slider values belong to the plan they were moved from; a form edit to any of these starts them over
-  const [draft, setDraft] = useState<{ from: Levers; levers: Levers } | null>(null)
-  const levers = draft && sameLevers(draft.from, base) ? draft.levers : base
+  // Slider values belong to the plan they were moved from; a form edit to any of these starts them over.
+  // After Apply they stay put (as applied) until the results catch up with the new plan, so nothing snaps back.
+  const [draft, setDraft] = useState<{ from: Levers; levers: Levers; applied?: boolean } | null>(null)
+  const current = (d: typeof draft) => (d && sameLevers(d.from, base) ? d : null)
+  const live = current(draft)
+  const levers = live?.levers ?? base
+  const applied = live?.applied ?? false
   const set = (patch: Partial<Levers>) => setDraft({ from: base, levers: { ...levers, ...patch } })
   const changed = !sameLevers(levers, base)
 
   // Dragging stays smooth: the simulation follows at lower priority, and the pool drops runs it falls behind on
-  const deferred = useDeferredValue(levers)
+  const deferredDraft = useDeferredValue(draft)
+  const deferred = current(deferredDraft)?.levers ?? base
   const preview = useMemo(() => ({ ...plan, ...leverPatch(plan, base, deferred) }), [plan, base, deferred])
   const issues = useMemo(() => validatePlan(preview), [preview])
   const invalid = changed && issues.length > 0
@@ -117,10 +120,11 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
     [deferred, base, preview, issues],
   )
   const sim = useSimulation(task)
-  // While the main results catch up with a form edit, the dial shows them (as updating) rather than an old preview
-  const baselineReady = resultPlan === plan
-  const previewRate = changed && !invalid && sim.data ? sim.data.successRate : mc.successRate
-  const pending = !baselineReady || (changed && !invalid && (sim.pending || levers !== deferred || !sim.data))
+  // A preview counts only once it's for the sliders as they are now (an older or failed run doesn't)
+  const previewing = changed && !invalid
+  const previewReady = previewing && !sim.pending && !sim.error && sim.data !== null && sameLevers(levers, deferred)
+  const previewRate = previewReady ? sim.data!.successRate : mc.successRate
+  const pending = previewing && !previewReady && !sim.error
   const delta = Math.round(previewRate * 100) - Math.round(mc.successRate * 100)
 
   const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
@@ -130,14 +134,13 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
   // Never down to $0 or below
   const spendMin = plan.annualSpending - Math.min(spendSteps, Math.ceil(plan.annualSpending / spendStep) - 1) * spendStep
   const spendMax = plan.annualSpending + spendSteps * spendStep
-  // Wide enough to hold the plan's value even when it's out of range (validation already flags that)
-  const retireMin = Math.min(plan.currentAge, plan.retirementAge)
-  const retireMax = Math.max(plan.currentAge, plan.lifeExpectancy - 1, plan.retirementAge)
+  // Results only show for a valid plan, so currentAge <= retirementAge < lifeExpectancy
+  const retireMax = plan.lifeExpectancy - 1
 
+  // Only the levers moved, onto the latest plan, so Apply can't undo a form edit the results haven't caught up with
   const apply = () => {
-    const latest = usePlanStore.getState().plan
-    update(leverPatch(latest, base, levers))
-    setDraft(null)
+    update(leverPatch(usePlanStore.getState().plan, base, levers))
+    setDraft({ from: base, levers, applied: true })
   }
   const compare = () => {
     const parts = [
@@ -172,7 +175,7 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
           </h2>
           <p className="mt-0.5 text-sm text-muted">Drag the sliders to see how your chances change. Nothing is saved until you apply it.</p>
         </div>
-        {changed && (
+        {changed && !applied && (
           <button type="button" onClick={() => setDraft(null)} className={`${SECONDARY} inline-flex items-center gap-1.5 px-2.5 py-1 text-xs`}>
             <Icon name="undo" size={13} />
             Reset sliders
@@ -184,13 +187,17 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
         <div className="text-center">
           <SuccessGauge
             rate={previewRate}
-            baseline={changed ? mc.successRate : undefined}
+            baseline={changed && !applied ? mc.successRate : undefined}
             label={`Chance money lasts to ${endLabel(plan)}`}
             pending={pending}
           />
           <p className="mt-1 text-xs text-muted">Chance your money lasts to {endLabel(plan)}</p>
           <p aria-live="polite" className="mt-2 h-5 text-sm font-medium tabular-nums">
-            {changed && !pending && !invalid && (
+            {applied ? (
+              <span className="text-teal-700 dark:text-teal-300">✓ Applied to your plan</span>
+            ) : sim.error && previewing ? (
+              <span className="text-red-700 dark:text-red-400">✕ The simulation failed: {sim.error}</span>
+            ) : previewReady && (
               <span className={delta > 0 ? 'text-teal-700 dark:text-teal-300' : delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-muted'}>
                 {delta > 0 ? `▲ ${delta} points` : delta < 0 ? `▼ ${-delta} points` : 'No change'} vs your plan
               </span>
@@ -204,12 +211,12 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
             label="Retire at"
             value={levers.retirementAge}
             display={`age ${levers.retirementAge}`}
-            was={levers.retirementAge !== base.retirementAge ? String(base.retirementAge) : null}
-            min={retireMin}
+            was={!applied && levers.retirementAge !== base.retirementAge ? String(base.retirementAge) : null}
+            min={plan.currentAge}
             max={retireMax}
             step={1}
             onChange={(retirementAge) => set({ retirementAge })}
-            minLabel={retireMin}
+            minLabel={plan.currentAge}
             maxLabel={retireMax}
           />
           <Slider
@@ -217,7 +224,7 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
             label="Yearly spending"
             value={levers.annualSpending}
             display={`${formatUSD(levers.annualSpending)} (${formatUSD(Math.round(levers.annualSpending / 12))}/mo)`}
-            was={levers.annualSpending !== base.annualSpending ? formatUSDCompact(base.annualSpending) : null}
+            was={!applied && levers.annualSpending !== base.annualSpending ? formatUSDCompact(base.annualSpending) : null}
             min={spendMin}
             max={spendMax}
             step={spendStep}
@@ -231,7 +238,7 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
               label="Claim Social Security at"
               value={levers.socialSecurityClaimAge}
               display={`${levers.socialSecurityClaimAge} · ${formatUSD(Math.round(benefitAtClaimAge(plan.socialSecurityAtFRA, levers.socialSecurityClaimAge)))}/mo`}
-              was={levers.socialSecurityClaimAge !== base.socialSecurityClaimAge ? String(base.socialSecurityClaimAge) : null}
+              was={!applied && levers.socialSecurityClaimAge !== base.socialSecurityClaimAge ? String(base.socialSecurityClaimAge) : null}
               min={earliestClaimAge}
               max={latestClaimAge}
               step={1}
@@ -246,7 +253,7 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
               label="Investment mix after retiring"
               value={levers.mix}
               display={mixLabel(levers.mix)}
-              was={base.mix !== null && levers.mix !== base.mix ? `${Math.round(base.mix * 100)}% stocks` : null}
+              was={!applied && base.mix !== null && levers.mix !== base.mix ? `${Math.round(base.mix * 100)}% stocks` : null}
               min={Math.min(...MIX_PRESETS)}
               max={Math.max(...MIX_PRESETS)}
               step={0.2}
@@ -258,7 +265,7 @@ export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCar
         </div>
       </div>
 
-      {changed && (
+      {changed && !applied && (
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
           {issues.length > 0 ? (
             <p role="alert" className="text-sm text-red-700 dark:text-red-400">

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { VERDICT_NOTE, verdictFor } from '../utils/levers'
+import { VERDICT_NOTE, VERDICT_WORD, verdictFor } from '../utils/levers'
 
 // Half-circle dial for the chance the money lasts. The arc is drawn left (0%) to right (100%) around (100, 100).
 const R = 80
@@ -56,7 +56,7 @@ export function SuccessGauge({ rate, baseline, label, pending }: { rate: number;
   const knob = at(pct / 100)
 
   return (
-    <figure className="flex flex-col items-center" role="img" aria-label={`${label}: ${pct}%, ${VERDICT_NOTE[verdict].slice(2).toLowerCase()}`}>
+    <figure className="flex flex-col items-center" role="img" aria-label={`${label}: ${pct}%, ${VERDICT_WORD[verdict]}`}>
       <svg viewBox="0 0 200 116" className="w-full max-w-60">
         <path d={ARC} fill="none" strokeWidth="14" strokeLinecap="round" className="stroke-slate-200 dark:stroke-slate-800" />
         <path

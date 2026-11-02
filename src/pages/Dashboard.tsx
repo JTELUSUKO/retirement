@@ -62,8 +62,9 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const ssMonthly = householdSocialSecurityMonthly(plan)
   const lasts = result.depletionAge === null
   const success = Math.round(mc.successRate * 100)
-  const successTone = ({ strong: 'good', borderline: 'warn', 'at-risk': 'bad' } as const)[verdictFor(mc.successRate)]
-  const successNote = VERDICT_NOTE[verdictFor(mc.successRate)]
+  const verdict = verdictFor(mc.successRate)
+  const successTone = ({ strong: 'good', borderline: 'warn', 'at-risk': 'bad' } as const)[verdict]
+  const successNote = VERDICT_NOTE[verdict]
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
@@ -111,7 +112,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
-      <WhatIfPanel resultPlan={resultPlan} mc={mc} />
+      <WhatIfPanel plan={resultPlan} mc={mc} />
 
       <VerdictPanel plan={resultPlan} mc={mc} />
 

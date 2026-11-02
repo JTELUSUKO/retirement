@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { MIX_PRESETS } from '../engine'
+import { mixLabel, MIX_PRESETS } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { CALL_TO_ACTION } from '../components/styles'
 import { formatUSD } from '../utils/format'
@@ -63,7 +63,7 @@ export function MoneyLastCalculator() {
           <select className={select} value={inputs.stockShare} onChange={(e) => set({ stockShare: Number(e.target.value) })}>
             {MIX_PRESETS.map((share) => (
               <option key={share} value={share}>
-                {Math.round(share * 100)}% stocks / {Math.round((1 - share) * 100)}% bonds
+                {mixLabel(share)}
               </option>
             ))}
           </select>

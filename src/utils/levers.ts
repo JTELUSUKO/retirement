@@ -1,4 +1,4 @@
-import { applyScenario, mixReturns, mixShare, planEndAge, type Plan, type Scenario } from '../engine'
+import { applyScenario, mixLabel, mixReturns, mixShare, planEndAge, type Plan, type Scenario } from '../engine'
 import { formatUSD } from './format'
 import { roundSpending, SCENARIO_PRESETS } from './scenarioPresets'
 
@@ -89,7 +89,6 @@ export function leverVariants(plan: Plan): Lever[] {
 
 /** Stock share of the balanced mix tested against more cautious ones */
 const BALANCED = 0.6
-export const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
 
 /** "Spend 10% more" check for plans that already look strong. */
 export function spendMoreVariant(plan: Plan): Lever {
@@ -110,6 +109,9 @@ export function verdictFor(successRate: number): Verdict {
 
 /** Short verdict label, e.g. next to the success rate */
 export const VERDICT_NOTE: Record<Verdict, string> = { strong: '✓ Strong', borderline: '⚠ Borderline', 'at-risk': '✕ At risk' }
+
+/** The verdict as a plain word (no symbol), for screen-reader text */
+export const VERDICT_WORD: Record<Verdict, string> = { strong: 'strong', borderline: 'borderline', 'at-risk': 'at risk' }
 
 /** "a" or "an" before a spoken percentage: an 8%, an 11%, an 18%, an 80–89%, but a 1%, a 100% */
 export const articleFor = (pct: number) => (/^(8|11|18)/.test(String(pct)) && ![1, 180].includes(pct) ? 'an' : 'a')
