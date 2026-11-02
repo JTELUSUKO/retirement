@@ -108,3 +108,9 @@ export function bracketTop(rate: number, status: FilingStatus, priceLevel: numbe
   const bracket = T.brackets[status].find(([, r]) => Math.abs(r - rate) < 1e-9)
   return bracket ? bracket[0] * priceLevel : 0
 }
+
+/** Federal bracket rate of the last dollar of taxable ordinary income (0 when none is taxable), indexed. */
+export function marginalRate(taxableOrdinary: number, status: FilingStatus, priceLevel: number): number {
+  if (taxableOrdinary <= 0) return 0
+  return T.brackets[status].find(([top]) => taxableOrdinary <= top * priceLevel)![1]
+}

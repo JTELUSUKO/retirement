@@ -4,7 +4,7 @@ import type { SimTask } from '../sim/tasks'
 import { useSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { endLabel } from '../utils/labels'
-import { articleFor, leverVariants, spendMoreVariant, verdictFor, withArticle, type Lever } from '../utils/levers'
+import { articleFor, leverVariants, patchFor, spendMoreVariant, verdictFor, withArticle, type Lever } from '../utils/levers'
 import { InfoTip } from './InfoTip'
 import { SECONDARY } from './styles'
 
@@ -101,14 +101,21 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
                     Compare
                   </button>
                 ) : (
-                  <button
-                    type="button"
-                    title="Switch the spending rule to guardrails (change it back under Advanced → Spending rule)"
-                    onClick={() => update({ spendingRule: { ...usePlanStore.getState().plan.spendingRule, type: 'guardrails' } })}
-                    className={`${SECONDARY} px-2.5 py-1 text-xs`}
-                  >
-                    Turn on
-                  </button>
+                  lever.patch && (
+                    <button
+                      type="button"
+                      title={lever.patch.title}
+                      // Only from results for the current plan: an older row could undo a newer change
+                      disabled={stale}
+                      onClick={() => {
+                        const change = patchFor(usePlanStore.getState().plan, lever.patch!)
+                        if (change) update(change)
+                      }}
+                      className={`${SECONDARY} px-2.5 py-1 text-xs`}
+                    >
+                      {lever.patch.button}
+                    </button>
+                  )
                 )}
               </li>
             )

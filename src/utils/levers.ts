@@ -1,4 +1,4 @@
-import { applyScenario, planEndAge, type Plan, type Scenario } from '../engine'
+import { applyScenario, mixReturns, mixShare, planEndAge, type Plan, type Scenario } from '../engine'
 import { formatUSD } from './format'
 import { roundSpending, SCENARIO_PRESETS } from './scenarioPresets'
 
@@ -10,6 +10,23 @@ export interface Lever {
   plan: Plan
   /** The Compare-page scenario this lever tested, so "Compare" adds exactly that change (even if the plan moved on) */
   change?: Change
+  /** Otherwise: the change to make to the latest plan, with its button text and tooltip (plain data: levers go to the workers) */
+  patch?: LeverPatch & { button: string; title: string }
+}
+
+type LeverPatch =
+  | { kind: 'guardrails' }
+  | { kind: 'mix'; fromShare: number; returnPostRetirement: number; volatilityPostRetirement: number }
+
+/**
+ * The plan change a lever's button makes, applied to the latest plan; null when the latest plan no longer has what
+ * was tested (a mix changed since, which the button must not overwrite).
+ */
+export function patchFor(latest: Plan, patch: LeverPatch): Partial<Plan> | null {
+  if (patch.kind === 'mix' && mixShare(latest.assumptions.returnPostRetirement, latest.assumptions.volatilityPostRetirement) !== patch.fromShare) return null
+  return patch.kind === 'guardrails'
+    ? { spendingRule: { ...latest.spendingRule, type: 'guardrails' } }
+    : { assumptions: { ...latest.assumptions, returnPostRetirement: patch.returnPostRetirement, volatilityPostRetirement: patch.volatilityPostRetirement } }
 }
 
 type Change = Omit<Scenario, 'id' | 'slot'>
@@ -42,10 +59,37 @@ export function leverVariants(plan: Plan): Lever[] {
       key: 'guardrails',
       label: 'Be willing to trim spending after bad markets (guardrails)',
       plan: { ...plan, spendingRule: { ...plan.spendingRule, type: 'guardrails' } },
+      patch: {
+        kind: 'guardrails',
+        button: 'Turn on',
+        title: 'Switch the spending rule to guardrails (change it back under Advanced → Spending rule)',
+      },
+    })
+  }
+  // A cautious mix after retiring: test a balanced one (more stocks means bigger ups and downs along the way)
+  const share = mixShare(plan.assumptions.returnPostRetirement, plan.assumptions.volatilityPostRetirement)
+  if (share !== null && share < BALANCED) {
+    const m = mixReturns(BALANCED)
+    const mix = { returnPostRetirement: m.mean, volatilityPostRetirement: m.volatility }
+    levers.push({
+      key: 'mix',
+      label: `Invest ${mixLabel(BALANCED)} after retiring instead of ${mixLabel(share)} (bigger ups and downs)`,
+      plan: { ...plan, assumptions: { ...plan.assumptions, ...mix } },
+      patch: {
+        kind: 'mix',
+        fromShare: share,
+        ...mix,
+        button: 'Use',
+        title: 'Change the mix after retiring (change it back under Assumptions)',
+      },
     })
   }
   return levers
 }
+
+/** Stock share of the balanced mix tested against more cautious ones */
+const BALANCED = 0.6
+const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
 
 /** "Spend 10% more" check for plans that already look strong. */
 export function spendMoreVariant(plan: Plan): Lever {

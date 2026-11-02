@@ -24,6 +24,8 @@ import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel } from '../utils/labels'
 import { PRIMARY, SECONDARY } from '../components/styles'
+import { watchOuts } from '../utils/watchOuts'
+import { WatchOutList } from '../components/WatchOuts'
 import { ScrollRegion } from '../components/ScrollRegion'
 
 const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
@@ -181,6 +183,8 @@ export function Summary({
   }
 
   const det = base.projection!
+  // With the plan the results were computed for (the same as `plan` once ready, said explicitly)
+  const watch = watchOuts(sims.dataTasks![0]!.plan, det)
   const mc = base.monteCarlo!
   const success = Math.round(base.successRate * 100)
   const verdict = success >= 85 ? '✓ Strong' : success >= 70 ? '⚠ Borderline' : '✕ At risk'
@@ -225,6 +229,13 @@ export function Summary({
             {formatUSDCompact(base.leftTypical)} in typical markets, {formatUSDCompact(base.leftPoor)} in poor markets.
           </p>
         </Section>
+
+        {watch.length > 0 && (
+          <Section title="Watch-outs">
+            <WatchOutList items={watch} className="space-y-1" paper />
+            <p className="text-xs text-slate-600">From the typical-returns path. Educational only, not tax advice.</p>
+          </Section>
+        )}
 
         <Section title="Range of outcomes">
           <p className="text-xs text-slate-600">Savings at the start of each age across {mc.runs.toLocaleString()} simulated markets, in today's dollars.</p>

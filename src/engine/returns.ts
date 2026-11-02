@@ -28,3 +28,12 @@ export function mixReturns(stockShare: number): { mean: number; volatility: numb
 
 /** Investment-mix presets offered in the form (stock share). */
 export const MIX_PRESETS = [1, 0.8, 0.6, 0.4, 0.2]
+
+/** The preset stock share with this return and volatility, or null for a custom mix. */
+export function mixShare(mean: number, volatility: number): number | null {
+  const share = MIX_PRESETS.find((w) => {
+    const m = mixReturns(w)
+    return Math.abs(m.mean - mean) < 5e-4 && Math.abs(m.volatility - volatility) < 5e-4
+  })
+  return share ?? null
+}

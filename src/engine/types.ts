@@ -239,6 +239,8 @@ export interface YearResult {
   stateTax: number
   /** Taxable income after deductions. */
   taxableIncome: number
+  /** Federal bracket of the last dollar of ordinary income (0 when none is taxable), retired years only */
+  federalBracket: number
 }
 
 export interface ProjectionResult {

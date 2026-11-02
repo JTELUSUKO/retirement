@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, MIX_PRESETS, mixReturns, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
+import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, MIX_PRESETS, mixReturns, mixShare, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs, type FormMode } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from '../utils/labels'
@@ -21,10 +21,7 @@ function MixSelect({ label, mean, volatility, onPick }: {
   volatility: number
   onPick: (m: { mean: number; volatility: number }) => void
 }) {
-  const current = MIX_PRESETS.find((w) => {
-    const m = mixReturns(w)
-    return Math.abs(m.mean - mean) < 5e-4 && Math.abs(m.volatility - volatility) < 5e-4
-  })
+  const current = mixShare(mean, volatility) ?? undefined
   return (
     <label className="block text-sm">
       <span className="text-slate-600 dark:text-slate-400">{label}</span>

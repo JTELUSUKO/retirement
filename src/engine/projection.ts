@@ -10,7 +10,7 @@ import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
 import { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'
-import { bracketTop, federalIncomeTax, taxableSocialSecurity } from './taxes'
+import { bracketTop, federalIncomeTax, marginalRate, taxableSocialSecurity } from './taxes'
 import type { FilingStatus, Plan, ProjectionResult, TaxBucket, YearResult } from './types'
 
 /** Guardrail raises only restore earlier cuts: spending never goes above the plan. */
@@ -325,6 +325,8 @@ export function simulatePath(
     let federalTax = 0
     let stateTax = 0
     let taxableIncome = 0
+    let federalBracket = 0
+    let taxableOrdinary = 0
     let capitalGains = 0
     let earlyWithdrawalPenalty = 0
     let magi = 0
@@ -368,6 +370,7 @@ export function simulatePath(
           priceLevel: taxPriceLevel,
         })
         taxableIncome = result.taxableIncome
+        taxableOrdinary = result.taxableOrdinary
         magi = result.agi
         federalTax = result.tax + hsaPenalty + earlyWithdrawalPenalty
         stateTax = state
@@ -391,6 +394,7 @@ export function simulatePath(
         if (settled) break
         draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age, conversion)
       }
+      federalBracket = marginalRate(taxableOrdinary, household.taxStatus, taxPriceLevel)
     }
     magiStatus[t] = household.taxStatus
     balances.splice(0, balances.length, ...draw.balances)
@@ -454,6 +458,7 @@ export function simulatePath(
       magi: retired ? magi : 0,
       stateTax,
       taxableIncome,
+      federalBracket,
     })
   }
 

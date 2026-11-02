@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { examplePlan } from '../store/planStore'
-import { applyScenario } from '../engine'
-import { articleFor, leverVariants, spendMoreVariant, verdictFor, withArticle } from './levers'
+import { applyScenario, mixReturns } from '../engine'
+import { articleFor, leverVariants, patchFor, spendMoreVariant, verdictFor, withArticle } from './levers'
 import { SCENARIO_PRESETS } from './scenarioPresets'
 
 describe('levers', () => {
@@ -17,6 +17,26 @@ describe('levers', () => {
   it('skips levers that don’t apply', () => {
     const plan = { ...examplePlan, socialSecurityClaimAge: 70, spendingRule: { ...examplePlan.spendingRule, type: 'guardrails' as const } }
     expect(leverVariants(plan).map((l) => l.key)).toEqual(['later', 'spend-less'])
+  })
+
+  it('tests a balanced mix after retiring only when the plan uses a more cautious preset', () => {
+    const withMix = (share: number) => {
+      const m = mixReturns(share)
+      return { ...examplePlan, assumptions: { ...examplePlan.assumptions, returnPostRetirement: m.mean, volatilityPostRetirement: m.volatility } }
+    }
+    const mix = leverVariants(withMix(0.4)).find((l) => l.key === 'mix')!
+    expect(mix.label).toBe('Invest 60% stocks / 40% bonds after retiring instead of 40% stocks / 60% bonds (bigger ups and downs)')
+    expect(mix.plan.assumptions.returnPostRetirement).toBeCloseTo(mixReturns(0.6).mean)
+    expect(patchFor(withMix(0.4), mix.patch!)!.assumptions!.volatilityPostRetirement).toBeCloseTo(mixReturns(0.6).volatility)
+    // The mix changed since it was tested: the button leaves it alone
+    expect(patchFor(withMix(0.8), mix.patch!)).toBeNull()
+    // Already balanced or more, or a custom mix (the example plan): not tested
+    for (const plan of [withMix(0.6), withMix(1), examplePlan]) expect(leverVariants(plan).map((l) => l.key)).not.toContain('mix')
+  })
+
+  it('can be sent to a simulation worker (no functions)', () => {
+    const plan = { ...examplePlan, assumptions: { ...examplePlan.assumptions, ...{ returnPostRetirement: mixReturns(0.4).mean, volatilityPostRetirement: mixReturns(0.4).volatility } } }
+    for (const lever of [...leverVariants(plan), spendMoreVariant(plan)]) expect(() => structuredClone(lever)).not.toThrow()
   })
 
   it('checks spending 10% more for strong plans', () => {

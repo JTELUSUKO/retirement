@@ -3,6 +3,7 @@ import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { VerdictPanel } from '../components/VerdictPanel'
+import { WatchOuts } from '../components/WatchOuts'
 import { verdictFor } from '../utils/levers'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart, ProbabilityChart } from '../components/LazyCharts'
@@ -106,6 +107,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       </div>
 
       <VerdictPanel plan={resultPlan} mc={mc} />
+
+      <WatchOuts plan={plan} result={result} />
 
       {mc.guardrails && (
         <p className="text-sm text-slate-600 dark:text-slate-400">

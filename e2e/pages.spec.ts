@@ -47,6 +47,10 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await page.getByRole('button', { name: /example/i }).first().click()
   await expect(page.getByText(/chance your money lasts/i).first()).toBeVisible({ timeout: 30_000 })
   await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
+  // Each change is tested in a worker; the example plan has some that help
+  await expect(page.locator('section[aria-labelledby="verdict-heading"]')).toContainText('points)', { timeout: 30_000 })
+  // The example plan has low-tax years before RMDs
+  await expect(page.getByRole('region', { name: 'Watch-outs' })).toContainText('Converting some pre-tax savings to Roth')
   await expectFitsScreen(page)
   for (const tab of ['compare', 'summary', 'terms']) {
     await page.goto(`./#${tab}`)
@@ -160,6 +164,7 @@ test('printer icon opens the print / save-as-PDF dialog', async ({ page }) => {
   await expect(page).toHaveURL(/#summary$/)
   await expect.poll(printCalls, { timeout: 30_000 }).toBe(1)
   await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1)
+  await expect(page.locator('.paper')).toContainText('Converting some pre-tax savings to Roth')
 
   // On the ready summary: the dialog opens straight from the click
   await icon.click()
