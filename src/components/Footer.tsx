@@ -60,6 +60,8 @@ export function Footer() {
       </div>
       <p>
         <strong className="text-slate-700 dark:text-slate-300">Free calculators:</strong>{' '}
+        <a href="how-long-will-my-money-last/" className="underline underline-offset-2">How long will my money last?</a>
+        {' · '}
         <a href="roth-conversion-calculator/" className="underline underline-offset-2">Roth conversion calculator</a>
         {' · '}
         <a href="rmd-calculator/" className="underline underline-offset-2">RMD calculator</a>

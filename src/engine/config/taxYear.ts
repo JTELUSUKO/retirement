@@ -47,6 +47,12 @@ export const TAX_CONFIG = {
     ssaEarly: { url: 'https://www.ssa.gov/benefits/retirement/planner/agereduction.html', name: 'SSA: Retirement age and benefit reduction' },
     ssaDelayed: { url: 'https://www.ssa.gov/benefits/retirement/planner/delayret.html', name: 'SSA: Delayed retirement credits' },
     mySocialSecurity: { url: 'https://www.ssa.gov/myaccount/', name: 'my Social Security' },
+    lifeExpectancy: { url: 'https://www.ssa.gov/oact/population/longevity.html', name: 'SSA: Life expectancy calculator' },
+    ssaPlanning: {
+      url: 'https://www.ssa.gov/benefits/retirement/planner/otherthings.html',
+      name: 'SSA: Important things to consider when planning for retirement',
+    },
+    cpi: { url: 'https://www.bls.gov/cpi/', name: 'U.S. Bureau of Labor Statistics: Consumer Price Index' },
     acaIncome: { url: 'https://www.healthcare.gov/income-and-household-information/income/', name: 'HealthCare.gov: What income to include' },
     // Follows the state rules' own year (stateRules.ts), which is regenerated when the Tax Foundation table is out
     stateTax: {

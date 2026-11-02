@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How Long Will My Money Last? Retirement Savings Calculator</title>
+    <meta
+      name="description"
+      content="Free calculator: how long will your retirement savings last at your spending? See the age your money runs out, the chance it lasts in 1,000 simulated markets, and how much you can spend."
+    />
+    <link rel="canonical" href="https://willitlast.app/how-long-will-my-money-last/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Will It Last?" />
+    <meta property="og:title" content="How long will my money last?" />
+    <meta property="og:description" content="See how long your savings last at your spending, the chance they last in 1,000 simulated markets, and how much you can spend. Free, private, no sign-up." />
+    <meta property="og:url" content="https://willitlast.app/how-long-will-my-money-last/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "How Long Will My Money Last? Calculator",
+        "url": "https://willitlast.app/how-long-will-my-money-last/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Any",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Estimate how many years retirement savings last at a given spending level, the age they run out, the chance they last across 1,000 simulated markets, and the spending that lasts to a chosen age."
+      }
+    </script>
+  </head>
+  <body>
+    <div class="mx-auto max-w-6xl px-4 py-8">
+      <header class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <a href="../" class="text-lg font-semibold">Will It Last?</a>
+        <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <a href="../rmd-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">RMD calculator</a>
+          <a href="../roth-conversion-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Roth conversion calculator</a>
+          <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">Free retirement planner</a>
+        </nav>
+      </header>
+
+      <div role="note" aria-label="Disclaimer" class="mb-8 rounded-md border-2 border-amber-500 bg-amber-100 px-4 py-3 text-sm text-amber-950 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-100">
+        <p class="font-bold">⚠ For educational purposes only. This is NOT financial, investment, tax or legal advice.</p>
+        <p class="mt-1 font-semibold">
+          Results are estimates based on your inputs and simplified assumptions, not guarantees. Calculations may contain
+          errors or differ from other tools and official figures, and we accept no responsibility for them or for any
+          decision you make. Talk to a qualified, licensed professional before making any financial decision.
+          <a href="../#terms" class="underline underline-offset-2">Read the full disclaimer and terms</a>.
+        </p>
+      </div>
+
+      <main class="space-y-10">
+        <section class="space-y-3">
+          <h1 class="text-3xl font-semibold">How long will my money last?</h1>
+          <p class="max-w-3xl text-slate-700 dark:text-slate-300">
+            Enter your savings and what you plan to spend each year to see how many years your money lasts, the age it could
+            run out, the chance it lasts across 1,000 simulated markets, and how much you could spend for it to last as long
+            as you need. Free, no sign-up, and nothing you enter leaves your browser.
+          </p>
+        </section>
+
+        <div id="calculator">
+          <noscript><p class="rounded-md border border-slate-300 p-4">The calculator needs JavaScript. The guide below works without it.</p></noscript>
+        </div>
+
+        <article class="max-w-3xl space-y-8 leading-relaxed text-slate-700 dark:text-slate-300">
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">What decides how long your money lasts</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Your withdrawal rate:</strong> the first year’s spending as a share of your savings. It matters more than anything else.</li>
+              <li><strong>Investment returns</strong>, which depend on your mix of stocks and bonds.</li>
+              <li><strong>Inflation</strong>, which raises what you spend each year.</li>
+              <li><strong>The order of returns.</strong> Losses early in retirement hurt far more than the same losses later, because you’re selling investments while prices are down. This is called sequence-of-returns risk.</li>
+              <li><strong>How long you live.</strong> Plan for longer than average: many people live into their 90s.</li>
+              <li><strong>Taxes and fees</strong>, which this calculator leaves out.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">The 4% rule</h2>
+            <p>
+              The 4% rule is a rule of thumb from 1990s research on historical US markets: spend 4% of your savings in the
+              first year, raise that amount with inflation each year after, and the money lasted at least 30 years in most
+              historical periods. It’s a starting point, not a guarantee. It assumes a 30-year retirement, a mix of stocks and
+              bonds, and no fees or taxes, and future markets may be worse than the past.
+            </p>
+            <p>
+              The calculator above shows the chance your own spending lasts in 1,000 simulated markets, so you can see how much
+              cushion your plan has instead of relying on one number.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Ways to make your money last longer</h2>
+            <ul class="list-disc space-y-1 pl-6">
+              <li><strong>Spend a little less</strong>, especially in the first years. Small cuts early make a big difference.</li>
+              <li><strong>Be flexible.</strong> Trimming spending after a bad market year, and restoring it after good ones, raises the chance your money lasts.</li>
+              <li><strong>Delay Social Security.</strong> Each year you wait past full retirement age, up to 70, raises your benefit for life.</li>
+              <li><strong>Cover basics with guaranteed income</strong>, such as Social Security, a pension or an annuity, so savings only pay for the rest.</li>
+              <li><strong>Work a little longer</strong> or part time: more saving, fewer years to fund.</li>
+              <li><strong>Keep fees low and withdraw tax-smart.</strong> Both leave more invested.</li>
+            </ul>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Frequently asked questions</h2>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">How much do I need to retire?</h3>
+            <p>
+              A quick estimate: take the yearly spending your savings must cover (after Social Security and any pension) and
+              divide by a withdrawal rate. For example, $40,000 ÷ 4% = $1,000,000. Use the calculator to see how likely that
+              amount is to last for your age and mix.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Does this include Social Security?</h3>
+            <p>
+              No. Enter only the spending your savings must cover. Get your own Social Security estimate from my Social
+              Security (linked below), or use the <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">free retirement planner</a>, which includes it.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What about taxes?</h3>
+            <p>
+              Withdrawals from traditional IRAs and 401(k)s are taxed as income, so you may need to withdraw more than you
+              spend. Roth withdrawals are generally tax-free. The <a href="../rmd-calculator/" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">RMD calculator</a>
+              and the <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">retirement planner</a> estimate taxes; this page doesn’t.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What’s a good chance of success?</h3>
+            <p>
+              There’s no single right number. A higher chance means more cushion against bad markets but less spending today;
+              a lower one means spending more now and being ready to cut back if markets disappoint. Many people pair a
+              reasonable chance with a willingness to adjust.
+            </p>
+            <h3 class="font-semibold text-slate-900 dark:text-slate-100">What doesn’t this calculator include?</h3>
+            <p>
+              Taxes, investment fees, Social Security, pensions, one-time expenses, healthcare costs and spending that changes
+              over time. The <a href="../" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">free retirement planner</a> covers all of these.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Sources</h2>
+            <p>
+              Return assumptions are illustrative long-run averages for stocks and bonds, not predictions. Last reviewed
+              {{REVIEWED}}.
+            </p>
+            <ul class="list-disc space-y-1 pl-6">
+              <!--SOURCE lifeExpectancy: estimate how long you may live-->
+              <!--SOURCE ssaPlanning: what to consider when planning for retirement-->
+              <!--SOURCE mySocialSecurity: your own Social Security benefit estimate-->
+              <!--SOURCE ssaDelayed: how waiting to claim raises your benefit-->
+              <!--SOURCE cpi: inflation data-->
+              <!--SOURCE pub590b: how IRA and 401(k) withdrawals are taxed-->
+            </ul>
+          </section>
+        </article>
+      </main>
+
+      <footer class="mt-16 space-y-3 border-t border-slate-200 pt-6 text-xs leading-relaxed text-slate-500 dark:border-slate-800">
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Important:</strong> This is an educational tool, not financial,
+          tax, investment or legal advice. Results use illustrative long-run market assumptions and simulated markets, before
+          taxes and fees. Past returns don’t guarantee future results, and your actual results will differ. Calculations may
+          contain errors or differ from other tools; we accept no responsibility or liability for them. Consult a qualified,
+          licensed professional before making financial decisions. <a href="../#terms" class="underline underline-offset-2">Full disclaimer and terms</a>.
+        </p>
+        <p>
+          <strong class="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, cookies, tracking or analytics.
+          What you enter stays in your browser.
+        </p>
+        <p>Not affiliated with the IRS, SSA, CMS or any government agency. © willitlast.app. All rights reserved.</p>
+      </footer>
+    </div>
+    <script type="module" src="/src/seo/moneyLastPage.tsx"></script>
+  </body>
+</html>

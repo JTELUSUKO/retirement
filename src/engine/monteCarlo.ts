@@ -27,7 +27,7 @@ export interface MonteCarloOptions {
  * Draw a yearly return from a lognormal distribution with the given arithmetic
  * mean and standard deviation. Lognormal keeps returns above -100%.
  */
-function lognormalReturn(mean: number, volatility: number, z: number): number {
+export function lognormalReturn(mean: number, volatility: number, z: number): number {
   const sigma2 = Math.log(1 + volatility ** 2 / (1 + mean) ** 2)
   const mu = Math.log(1 + mean) - sigma2 / 2
   return Math.exp(mu + Math.sqrt(sigma2) * z) - 1

@@ -120,7 +120,13 @@ retirement/
 │   │   ├── rmd.ts               # RMD math: this year's RMD, deadline, year-by-year projection, tax on the RMD
 │   │   ├── rmd.test.ts
 │   │   ├── RmdCalculator.tsx    # The interactive RMD calculator
-│   │   └── rmdPage.tsx          # Entry for rmd-calculator/index.html
+│   │   ├── rmdPage.tsx          # Entry for rmd-calculator/index.html
+│   │   ├── moneyLast.ts         # How long savings last: typical path, 1,000 simulated markets (the planner's market
+│   │   │                        #   model), spending that lasts to an age
+│   │   ├── moneyLast.test.ts
+│   │   ├── MoneyLastCalculator.tsx
+│   │   ├── moneyLastPage.tsx    # Entry for how-long-will-my-money-last/index.html
+│   │   └── pages.test.ts        # Guards: tokens filled, no typed-in tax years, no-transform header for every page
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
@@ -136,6 +142,8 @@ retirement/
 │                                #   {{YEAR}}-style tokens, tax tables and <!--SOURCE key: …--> links are filled at build time
 ├── rmd-calculator/
 │   └── index.html               # RMD page (same tokens, plus <!--UNIFORM_TABLE-->)
+├── how-long-will-my-money-last/
+│   └── index.html               # "How long will my money last?" page
 ├── build/
 │   └── taxYearPages.ts          # Build plugin: the list of pages, filling their tokens from TAX_CONFIG, sitemap.xml,
 │                                #   and the "next year's figures are due" warning from November 15
