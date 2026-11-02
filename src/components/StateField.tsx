@@ -1,5 +1,5 @@
-import { describeStateRule, NO_INCOME_TAX_STATES, stateRule } from '../engine'
-import { ALL_STATES } from '../utils/states'
+import { describeStateRule, stateRule } from '../engine'
+import { StateSelect } from './StateSelect'
 import { usePlanStore } from '../store/planStore'
 import { NumberField } from './NumberField'
 
@@ -11,22 +11,7 @@ export function StateField() {
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm">
-        <span className="text-slate-600 dark:text-slate-400">State you’ll live in during retirement</span>
-        <select
-          className="mt-1 w-full rounded-md border border-slate-500 bg-white px-3 py-2 dark:border-slate-500 dark:bg-slate-900"
-          value={plan.state}
-          onChange={(e) => update({ state: e.target.value })}
-        >
-          <option value="">Choose a state…</option>
-          {ALL_STATES.map(([code, name]) => (
-            <option key={code} value={code}>
-              {name}
-              {NO_INCOME_TAX_STATES[code] ? ' (no income tax)' : ''}
-            </option>
-          ))}
-        </select>
-      </label>
+      <StateSelect label="State you’ll live in during retirement" value={plan.state} onChange={(state) => update({ state })} emptyLabel="Choose a state…" />
       <p className="text-xs text-muted">{describeStateRule(plan.state)}</p>
       {showExclusion && (
         <div>

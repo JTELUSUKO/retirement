@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { NO_INCOME_TAX_STATES, TAX_CONFIG, type FilingStatus } from '../engine'
+import { TAX_CONFIG, type FilingStatus } from '../engine'
 import { NumberField, PercentField } from '../components/NumberField'
 import { CALL_TO_ACTION } from '../components/styles'
-import { ALL_STATES } from '../utils/states'
+import { StateSelect } from '../components/StateSelect'
 import { formatUSD } from '../utils/format'
 import { rothConversion, ROTH_DEFAULTS, type RothInputs } from './rothConversion'
 
@@ -44,18 +44,7 @@ export function RothCalculator() {
             <option value="single">Single</option>
           </select>
         </label>
-        <label className="block text-sm">
-          <span className="text-slate-600 dark:text-slate-400">State</span>
-          <select className={select} value={inputs.state} onChange={(e) => set({ state: e.target.value })}>
-            <option value="">Leave out state tax</option>
-            {ALL_STATES.map(([code, name]) => (
-              <option key={code} value={code}>
-                {name}
-                {NO_INCOME_TAX_STATES[code] ? ' (no income tax)' : ''}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StateSelect label="State" value={inputs.state} onChange={(state) => set({ state })} emptyLabel="Leave out state tax" />
         <NumberField
           label="Your age this year"
           value={inputs.age}

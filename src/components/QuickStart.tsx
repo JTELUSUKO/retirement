@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { AGE_LIMITS, TAX_CONFIG, describeStateRule, NO_INCOME_TAX_STATES, validatePlan, type Plan } from '../engine'
+import { AGE_LIMITS, TAX_CONFIG, describeStateRule, validatePlan, type Plan } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL } from '../utils/labels'
-import { ALL_STATES } from '../utils/states'
+import { StateSelect } from './StateSelect'
 import { applySavings, isBlankPlan, QUICK_ACCOUNT_TYPES, savingsFromPlan, type QuickSavings } from '../utils/quickStart'
 import { NumberField } from './NumberField'
 import { PRIMARY, SECONDARY } from './styles'
@@ -76,18 +76,7 @@ export function QuickStart() {
       ))}
     </>,
     <>
-      <label className="block text-sm">
-        <span className="text-slate-600 dark:text-slate-400">State you’ll live in during retirement</span>
-        <select className={select} value={draft.state} onChange={(e) => set({ state: e.target.value })}>
-          <option value="">Not sure yet (skip state tax)</option>
-          {ALL_STATES.map(([code, name]) => (
-            <option key={code} value={code}>
-              {name}
-              {NO_INCOME_TAX_STATES[code] ? ' (no income tax)' : ''}
-            </option>
-          ))}
-        </select>
-      </label>
+      <StateSelect label="State you’ll live in during retirement" value={draft.state} onChange={(state) => set({ state })} emptyLabel="Not sure yet (skip state tax)" />
       <p className="text-sm text-muted">{describeStateRule(draft.state)}</p>
     </>,
     <>

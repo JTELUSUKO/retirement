@@ -110,6 +110,26 @@ test('RMD calculator', async ({ page }) => {
   await expectFitsScreen(page)
 })
 
+test('state picker: type to filter, pick from the list or leave with a single match', async ({ page }) => {
+  await page.goto('./rmd-calculator/')
+  const state = page.getByRole('combobox', { name: 'State' })
+  await state.click()
+  await state.fill('carolina')
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveText(['North Carolina', 'South Carolina'])
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await expect(state).toHaveValue('South Carolina')
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  // A single match is picked on leaving the field; text matching nothing goes back to the last state
+  await state.fill('tex')
+  await page.keyboard.press('Tab')
+  await expect(state).toHaveValue('Texas')
+  await state.fill('xyz')
+  await expect(page.getByRole('listbox')).toContainText('No state matches')
+  await page.keyboard.press('Tab')
+  await expect(state).toHaveValue('Texas')
+})
+
 test('How long will my money last calculator', async ({ page }) => {
   const expected = moneyLast(MONEY_LAST_DEFAULTS)
   await page.goto('./how-long-will-my-money-last/')
