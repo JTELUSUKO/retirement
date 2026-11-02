@@ -1,5 +1,20 @@
 const YEAR = new Date().getFullYear()
 
+/** Official sources for the rules and figures the planner uses: [link, name, what it covers] */
+const SOURCES: [string, string, string][] = [
+  ['https://www.irs.gov/pub/irs-drop/rp-25-32.pdf', 'IRS Revenue Procedure 2025-32', '2026 tax brackets, standard and 65+ deductions, capital gains rates'],
+  ['https://www.irs.gov/newsroom/one-big-beautiful-bill-act-tax-deductions-for-working-americans-and-seniors', 'IRS: Deductions for seniors', 'the $6,000 senior deduction for 2025–2028'],
+  ['https://www.irs.gov/newsroom/401k-limit-increases-to-24500-for-2026-ira-limit-increases-to-7500', 'IRS: 2026 retirement plan limits', '401(k) and IRA contribution limits'],
+  ['https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds', 'IRS: Required minimum distributions', 'RMD ages and rules'],
+  ['https://www.irs.gov/publications/p590b', 'IRS Publication 590-B', 'IRA distributions and the RMD life expectancy table'],
+  ['https://www.irs.gov/publications/p915', 'IRS Publication 915', 'how Social Security benefits are taxed'],
+  ['https://www.ssa.gov/benefits/retirement/planner/agereduction.html', 'SSA: Retirement age and benefit reduction', 'claiming before full retirement age'],
+  ['https://www.ssa.gov/benefits/retirement/planner/delayret.html', 'SSA: Delayed retirement credits', 'claiming after full retirement age'],
+  ['https://www.ssa.gov/myaccount/', 'my Social Security', 'your own benefit estimate'],
+  ['https://www.cms.gov/newsroom/fact-sheets/2026-medicare-parts-b-premiums-deductibles', 'CMS: 2026 Medicare premiums', 'Part B and D premiums and IRMAA surcharges'],
+  ['https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/', 'Tax Foundation', '2026 state income tax rates and brackets'],
+]
+
 /** Disclaimer, privacy statement and data sources (hidden when printing; the summary has its own). */
 export function Footer() {
   return (
@@ -20,13 +35,23 @@ export function Footer() {
         this device; clearing your browser data erases it, so use Export to keep a copy. (Our hosting provider, like any
         web host, keeps standard server logs of page visits.)
       </p>
-      <p>
-        <strong className="text-slate-700 dark:text-slate-300">Data sources (2026 rules, last updated October 2026):</strong>{' '}
-        IRS (tax brackets, deductions, contribution limits, RMD tables), Social Security Administration (claiming and
-        survivor rules), CMS (Medicare premiums and IRMAA), and the Tax Foundation (state income tax). Market assumptions
-        are illustrative long-run averages. Not affiliated with or endorsed by the IRS, SSA, CMS or any government
-        agency.
-      </p>
+      <div>
+        <p>
+          <strong className="text-slate-700 dark:text-slate-300">Data sources (2026 rules, last reviewed November 2026):</strong>{' '}
+          Market assumptions are illustrative long-run averages. Not affiliated with or endorsed by the IRS, SSA, CMS or any
+          government agency. Rules change; check the latest versions before you act.
+        </p>
+        <ul className="mt-1 list-disc space-y-0.5 pl-5">
+          {SOURCES.map(([url, name, what]) => (
+            <li key={url}>
+              <a href={url} target="_blank" rel="noopener" className="underline underline-offset-2">
+                {name}
+              </a>
+              : {what}
+            </li>
+          ))}
+        </ul>
+      </div>
       <p>
         <strong className="text-slate-700 dark:text-slate-300">Free calculators:</strong>{' '}
         <a href="roth-conversion-calculator/" className="underline underline-offset-2">Roth conversion calculator</a>

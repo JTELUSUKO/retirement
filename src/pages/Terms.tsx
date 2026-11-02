@@ -123,7 +123,8 @@ export function Terms() {
 
       <Section title="11. Third-party information and links">
         <p>
-          Figures come from public sources such as the IRS, Social Security Administration, CMS and the Tax Foundation.
+          Figures come from public sources such as the IRS, Social Security Administration, CMS and the Tax Foundation,
+          listed with links at the bottom of each page.
           Links to other sites are for convenience only; we don’t control or endorse them.
         </p>
       </Section>
