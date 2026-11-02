@@ -94,9 +94,8 @@ const TOKENS: Record<string, string> = {
   SENIOR_START_JOINT: usd(senior.phaseOutStart.married),
 }
 
-/** The logo: the browser-tab icon itself, under the site's base path (set when the build starts). */
-let base = '/'
-const logo = () => `<img src="${base}favicon.svg" alt="" width="26" height="26" class="shrink-0">`
+/** The logo: the browser-tab icon itself. Vite adds the base path, as it does for the icon link (pages fill in first). */
+const LOGO = '<img src="/favicon.svg" alt="" width="26" height="26" class="shrink-0">'
 
 export function fillPage(html: string): string {
   const sources: Record<string, { url: string; name: string }> = TAX_CONFIG.sources
@@ -111,7 +110,7 @@ export function fillPage(html: string): string {
       return `<li><a href="${source.url}" target="_blank" rel="noopener" class="text-teal-700 underline underline-offset-2 dark:text-teal-400">${escapeHtml(source.name)}</a>${what}</li>`
     })
     .replace(/\{\{(\w+)\}\}/g, (match, token: string) => {
-      if (token === 'LOGO') return logo()
+      if (token === 'LOGO') return LOGO
       if (!(token in TOKENS)) throw new Error(`Unknown page token ${match}`)
       return TOKENS[token]
     })
@@ -144,9 +143,6 @@ function sitemap(): string {
 export function taxYearPages(): Plugin {
   return {
     name: 'tax-year-pages',
-    configResolved(config) {
-      base = config.base
-    },
     buildStart() {
       if (!updateDue()) return
       const message = `Tax figures are for ${Y}; ${Y + 1} figures are due. See YEARLY_UPDATE.md.`
@@ -154,7 +150,7 @@ export function taxYearPages(): Plugin {
       if (process.env.GITHUB_ACTIONS) console.log(`::warning title=Yearly tax update::${message}`)
       this.warn(message)
     },
-    transformIndexHtml: fillPage,
+    transformIndexHtml: { order: 'pre', handler: fillPage },
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: sitemap() })
     },

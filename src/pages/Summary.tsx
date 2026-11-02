@@ -1,5 +1,5 @@
 import { DisclaimerBanner } from '../components/Disclaimer'
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode, type RefObject } from 'react'
 import { GettingStarted } from '../components/GettingStarted'
 import { ProbabilityChart } from '../components/LazyCharts'
 import {
@@ -91,38 +91,44 @@ export function Summary({
   const ready = !sims.pending && sims.error === null && sims.dataTasks === tasks && sims.data !== null
   const evaluations = (ready ? sims.data : null) as PlanEvaluation[] | null
   const blank = missingEssentials(plan).length > 0
+  // A finished run that failed (an older error is ignored while a newer run is still going)
+  const failed = !sims.pending && sims.error !== null
+  // One rule for both print paths: results for this plan, with the chart drawn (it loads separately)
+  const canPrint = useCallback(() => !blank && ready && chartReady(), [blank, ready])
   useEffect(() => {
     if (!printNowRef) return
     printNowRef.current = () => {
-      if (blank || !ready || !chartReady()) return false
+      if (!canPrint()) return false
       window.print()
       return true
     }
     return () => {
       printNowRef.current = null
     }
-  }, [printNowRef, blank, ready])
+  }, [printNowRef, canPrint])
 
   useEffect(() => {
     if (!print) return
     // Nothing to print (no plan yet) or the results failed: drop the request, the page shows why
-    if (blank || sims.error !== null) {
+    if (blank || failed) {
       onPrintDone?.()
       return
     }
     if (!ready) return
-    // The chart loads separately; wait for it (up to 5 s) so the PDF isn't missing it
+    // Wait for the chart (up to 5 s). If it never draws, drop the request instead of printing a report without it;
+    // the Print button still works
     let frame = 0
     const started = performance.now()
     const tryPrint = () => {
-      if (chartReady() || performance.now() - started > 5000) {
+      if (canPrint()) {
         onPrintDone?.()
         window.print()
-      } else frame = requestAnimationFrame(tryPrint)
+      } else if (performance.now() - started > 5000) onPrintDone?.()
+      else frame = requestAnimationFrame(tryPrint)
     }
     frame = requestAnimationFrame(tryPrint)
     return () => cancelAnimationFrame(frame)
-  }, [print, ready, blank, sims.error, onPrintDone])
+  }, [print, ready, blank, failed, canPrint, onPrintDone])
 
   // Captured once when the page opens
   const [today] = useState(() => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))

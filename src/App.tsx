@@ -14,7 +14,11 @@ const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
 
 const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms']
-const pageFromHash = (): Page => PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan'
+const pageFromHash = (): Page => {
+  // #print was briefly the printer icon's address; old links and bookmarks open the summary
+  if (window.location.hash === '#print') history.replaceState(null, '', '#summary')
+  return PAGES.find((p) => window.location.hash === `#${p}`) ?? 'plan'
+}
 
 export default function App() {
   const [page, setPage] = useState<Page>(pageFromHash)
@@ -64,13 +68,14 @@ export default function App() {
         <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan')}
           {tab('compare', 'Compare scenarios', '#compare')}
-          {/* The summary is the printable report, so it's a printer icon rather than another tab */}
+          {/* The summary is the printable report, so it's a printer icon rather than another tab. It's an action, so
+              no aria-current; it looks selected on the summary, and the page's heading says where you are */}
           <button
             type="button"
             onClick={requestPrint}
             aria-label="Print or save as PDF"
             title="Print or save as PDF"
-            className={`inline-flex items-center px-2.5 py-1.5 ${tabClass(false)}`}
+            className={`inline-flex items-center px-2.5 py-1.5 ${tabStyle('summary')}`}
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 9V3h12v6" />

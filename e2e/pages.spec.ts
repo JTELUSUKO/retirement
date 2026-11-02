@@ -170,12 +170,22 @@ test('printer icon opens the print / save-as-PDF dialog', async ({ page }) => {
   await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1, { timeout: 30_000 })
   expect(await printCalls()).toBe(0)
 
-  // Leaving before the summary is ready cancels the request: coming back later doesn't print
+  // Leaving before the summary is ready cancels the request: coming back later doesn't print. The click and the
+  // navigation happen in one script step, so the summary can't get ready in between
   await page.goto('./#plan')
-  await icon.click()
-  await page.goto('./#compare')
+  await page.evaluate(() => {
+    document.querySelector<HTMLButtonElement>('button[aria-label="Print or save as PDF"]')!.click()
+    window.location.hash = '#compare'
+  })
+  await expect(page).toHaveURL(/#compare$/)
   await page.goto('./#summary')
   await expect(page.locator('.paper svg.recharts-surface')).toHaveCount(1, { timeout: 30_000 })
-  await page.waitForTimeout(500)
+  // A pending print would fire on the next animation frame once the chart is there; wait a few
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(done)))))
   expect(await printCalls()).toBe(0)
+
+  // Old #print links open the summary
+  await page.goto('./#print')
+  await expect(page).toHaveURL(/#summary$/)
+  await expect(page.getByRole('heading', { name: 'Retirement plan summary' })).toBeVisible({ timeout: 30_000 })
 })
