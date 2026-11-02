@@ -58,9 +58,9 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await page.keyboard.press('ArrowRight')
   await expect(whatIf).toContainText('(was 65)')
   await expect(whatIf).toContainText('vs your plan', { timeout: 30_000 })
-  await expect(page.getByLabel('Retire at', { exact: true })).toHaveValue('65')
+  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
   await whatIf.getByRole('button', { name: 'Apply to my plan' }).click()
-  await expect(page.getByLabel('Retire at', { exact: true })).toHaveValue('67')
+  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
   await expect(whatIf).not.toContainText('(was')
   await expectFitsScreen(page)
   for (const tab of ['compare', 'summary', 'terms']) {

@@ -27,6 +27,7 @@ import { PRIMARY, SECONDARY } from '../components/styles'
 import { watchOuts } from '../utils/watchOuts'
 import { WatchOutList } from '../components/WatchOuts'
 import { ScrollRegion } from '../components/ScrollRegion'
+import { VERDICT_NOTE, verdictFor } from '../utils/levers'
 
 const stateName = (code: string) => stateRule(code)?.name ?? NO_INCOME_TAX_STATES[code] ?? code
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits)}%`
@@ -187,7 +188,7 @@ export function Summary({
   const watch = watchOuts(sims.dataTasks![0]!.plan, det)
   const mc = base.monteCarlo!
   const success = Math.round(base.successRate * 100)
-  const verdict = success >= 85 ? '✓ Strong' : success >= 70 ? '⚠ Borderline' : '✕ At risk'
+  const verdict = VERDICT_NOTE[verdictFor(base.successRate)]
   const ssMonthly = householdSocialSecurityMonthly(plan)
   const a = plan.annuityPurchase
   const people = plan.filingStatus === 'married' ? 2 : 1

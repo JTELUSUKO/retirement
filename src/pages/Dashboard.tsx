@@ -5,7 +5,7 @@ import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { VerdictPanel } from '../components/VerdictPanel'
 import { WhatIfPanel } from '../components/WhatIfPanel'
 import { WatchOuts } from '../components/WatchOuts'
-import { verdictFor } from '../utils/levers'
+import { VERDICT_NOTE, verdictFor } from '../utils/levers'
 import { SurvivorComparison } from '../components/SurvivorComparison'
 import { BucketChart, ProbabilityChart } from '../components/LazyCharts'
 import { GettingStarted } from '../components/GettingStarted'
@@ -63,7 +63,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
   const lasts = result.depletionAge === null
   const success = Math.round(mc.successRate * 100)
   const successTone = ({ strong: 'good', borderline: 'warn', 'at-risk': 'bad' } as const)[verdictFor(mc.successRate)]
-  const successNote = { good: '✓ Strong', warn: '⚠ Borderline', bad: '✕ At risk' }[successTone]
+  const successNote = VERDICT_NOTE[verdictFor(mc.successRate)]
   const rmdAge = result.rmdStartAge
   const retiredYears = result.years.filter((y) => y.age >= plan.retirementAge)
   const lifetimeTaxReal = retiredYears.reduce((sum, y) => sum + y.tax / y.priceLevel, 0)
@@ -111,7 +111,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
         />
       </div>
 
-      <WhatIfPanel plan={resultPlan} mc={mc} />
+      <WhatIfPanel resultPlan={resultPlan} mc={mc} />
 
       <VerdictPanel plan={resultPlan} mc={mc} />
 

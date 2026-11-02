@@ -35,7 +35,7 @@ export function StatCard({ label, value, detail, tone = 'default', info, icon }:
             <Icon name={icon} size={15} />
           </span>
         )}
-        <span className="pt-1">
+        <span className={icon ? 'pt-1' : undefined}>
           {label}
           {info && <InfoTip label={label}>{info}</InfoTip>}
         </span>

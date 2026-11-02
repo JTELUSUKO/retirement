@@ -89,7 +89,7 @@ export function leverVariants(plan: Plan): Lever[] {
 
 /** Stock share of the balanced mix tested against more cautious ones */
 const BALANCED = 0.6
-const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
+export const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
 
 /** "Spend 10% more" check for plans that already look strong. */
 export function spendMoreVariant(plan: Plan): Lever {
@@ -107,6 +107,9 @@ export function verdictFor(successRate: number): Verdict {
   const pct = Math.round(successRate * 100)
   return pct >= 85 ? 'strong' : pct >= 70 ? 'borderline' : 'at-risk'
 }
+
+/** Short verdict label, e.g. next to the success rate */
+export const VERDICT_NOTE: Record<Verdict, string> = { strong: '✓ Strong', borderline: '⚠ Borderline', 'at-risk': '✕ At risk' }
 
 /** "a" or "an" before a spoken percentage: an 8%, an 11%, an 18%, an 80–89%, but a 1%, a 100% */
 export const articleFor = (pct: number) => (/^(8|11|18)/.test(String(pct)) && ![1, 180].includes(pct) ? 'an' : 'a')

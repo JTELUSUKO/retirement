@@ -1,10 +1,11 @@
-import { useDeferredValue, useMemo, useState, type ReactNode } from 'react'
+import { useDeferredValue, useId, useMemo, useState, type ReactNode } from 'react'
 import { benefitAtClaimAge, MIX_PRESETS, mixReturns, mixShare, TAX_CONFIG, validatePlan, type MonteCarloResult, type Plan } from '../engine'
 import type { SimTask } from '../sim/tasks'
 import { useSimulation } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { endLabel } from '../utils/labels'
+import { mixLabel } from '../utils/levers'
 import { Icon, type IconName } from './Icons'
 import { PRIMARY, SECONDARY } from './styles'
 import { SuccessGauge } from './SuccessGauge'
@@ -30,20 +31,16 @@ const sameLevers = (a: Levers, b: Levers) =>
   a.socialSecurityClaimAge === b.socialSecurityClaimAge &&
   a.mix === b.mix
 
-/** The plan with the slider values */
-function withLevers(plan: Plan, l: Levers): Plan {
-  const base = leversOf(plan)
-  const mix = l.mix !== null && l.mix !== base.mix ? mixReturns(l.mix) : null
+/** Just the levers moved away from `from`, as a plan change (so it can't undo other edits to the plan) */
+function leverPatch(plan: Plan, from: Levers, l: Levers): Partial<Plan> {
+  const mix = l.mix !== null && l.mix !== from.mix ? mixReturns(l.mix) : null
   return {
-    ...plan,
-    retirementAge: l.retirementAge,
-    annualSpending: l.annualSpending,
-    socialSecurityClaimAge: l.socialSecurityClaimAge,
-    assumptions: mix ? { ...plan.assumptions, returnPostRetirement: mix.mean, volatilityPostRetirement: mix.volatility } : plan.assumptions,
+    ...(l.retirementAge !== from.retirementAge && { retirementAge: l.retirementAge }),
+    ...(l.annualSpending !== from.annualSpending && { annualSpending: l.annualSpending }),
+    ...(l.socialSecurityClaimAge !== from.socialSecurityClaimAge && { socialSecurityClaimAge: l.socialSecurityClaimAge }),
+    ...(mix && { assumptions: { ...plan.assumptions, returnPostRetirement: mix.mean, volatilityPostRetirement: mix.volatility } }),
   }
 }
-
-const mixLabel = (share: number) => `${Math.round(share * 100)}% stocks / ${Math.round((1 - share) * 100)}% bonds`
 
 function Slider({ icon, label, value, display, was, min, max, step, onChange, minLabel, maxLabel }: {
   icon: IconName
@@ -60,10 +57,11 @@ function Slider({ icon, label, value, display, was, min, max, step, onChange, mi
   minLabel: ReactNode
   maxLabel: ReactNode
 }) {
+  const id = useId()
   return (
-    <label className="block">
+    <div>
       <span className="flex items-center justify-between gap-2 text-sm">
-        <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+        <span id={id} className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300">
             <Icon name={icon} size={15} />
           </span>
@@ -80,6 +78,7 @@ function Slider({ icon, label, value, display, was, min, max, step, onChange, mi
         max={max}
         step={step}
         value={value}
+        aria-labelledby={id}
         aria-valuetext={display}
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-2 h-2 w-full cursor-pointer accent-teal-600 dark:accent-teal-400"
@@ -88,21 +87,20 @@ function Slider({ icon, label, value, display, was, min, max, step, onChange, mi
         <span>{minLabel}</span>
         <span>{maxLabel}</span>
       </span>
-    </label>
+    </div>
   )
 }
 
-const roundTo = (n: number, step: number) => Math.round(n / step) * step
-
 /**
  * Sliders for the biggest levers, with a dial that follows them. A sandbox: nothing changes in the plan until Apply.
- * `plan` must be the plan `mc` was computed for.
+ * `mc` is the simulation of `resultPlan`, which can lag a moment behind the saved plan the sliders start from.
  */
-export function WhatIfPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult }) {
+export function WhatIfPanel({ resultPlan, mc }: { resultPlan: Plan; mc: MonteCarloResult }) {
+  const plan = usePlanStore((s) => s.plan)
   const update = usePlanStore((s) => s.update)
   const addScenario = usePlanStore((s) => s.addScenario)
-  const full = usePlanStore((s) => s.plan.scenarios.length >= MAX_SCENARIOS)
-  const base = leversOf(plan)
+  const full = plan.scenarios.length >= MAX_SCENARIOS
+  const base = useMemo(() => leversOf(plan), [plan])
   // Slider values belong to the plan they were moved from; a form edit to any of these starts them over
   const [draft, setDraft] = useState<{ from: Levers; levers: Levers } | null>(null)
   const levers = draft && sameLevers(draft.from, base) ? draft.levers : base
@@ -111,25 +109,34 @@ export function WhatIfPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult }) 
 
   // Dragging stays smooth: the simulation follows at lower priority, and the pool drops runs it falls behind on
   const deferred = useDeferredValue(levers)
-  const preview = useMemo(() => withLevers(plan, deferred), [plan, deferred])
+  const preview = useMemo(() => ({ ...plan, ...leverPatch(plan, base, deferred) }), [plan, base, deferred])
   const issues = useMemo(() => validatePlan(preview), [preview])
+  const invalid = changed && issues.length > 0
   const task = useMemo<Extract<SimTask, { kind: 'monteCarlo' }> | null>(
-    () => (!sameLevers(deferred, leversOf(plan)) && issues.length === 0 ? { kind: 'monteCarlo', plan: preview } : null),
-    [deferred, plan, preview, issues],
+    () => (!sameLevers(deferred, base) && issues.length === 0 ? { kind: 'monteCarlo', plan: preview } : null),
+    [deferred, base, preview, issues],
   )
   const sim = useSimulation(task)
-  const previewRate = changed && sim.data ? sim.data.successRate : mc.successRate
-  const pending = changed && (sim.pending || levers !== deferred || !sim.data)
+  // While the main results catch up with a form edit, the dial shows them (as updating) rather than an old preview
+  const baselineReady = resultPlan === plan
+  const previewRate = changed && !invalid && sim.data ? sim.data.successRate : mc.successRate
+  const pending = !baselineReady || (changed && !invalid && (sim.pending || levers !== deferred || !sim.data))
   const delta = Math.round(previewRate * 100) - Math.round(mc.successRate * 100)
 
   const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
+  // Spending moves in whole steps from the plan's own amount, so the plan's value is always on the slider
   const spendStep = plan.annualSpending >= 20000 ? 1000 : 100
-  const spendMin = Math.max(spendStep, roundTo(plan.annualSpending * 0.5, spendStep))
-  const spendMax = Math.max(spendMin + spendStep, roundTo(plan.annualSpending * 1.5, spendStep))
-  const retireMax = Math.max(plan.currentAge, plan.lifeExpectancy - 1)
+  const spendSteps = Math.max(1, Math.floor((plan.annualSpending * 0.5) / spendStep))
+  // Never down to $0 or below
+  const spendMin = plan.annualSpending - Math.min(spendSteps, Math.ceil(plan.annualSpending / spendStep) - 1) * spendStep
+  const spendMax = plan.annualSpending + spendSteps * spendStep
+  // Wide enough to hold the plan's value even when it's out of range (validation already flags that)
+  const retireMin = Math.min(plan.currentAge, plan.retirementAge)
+  const retireMax = Math.max(plan.currentAge, plan.lifeExpectancy - 1, plan.retirementAge)
 
   const apply = () => {
-    update(withLevers(usePlanStore.getState().plan, levers))
+    const latest = usePlanStore.getState().plan
+    update(leverPatch(latest, base, levers))
     setDraft(null)
   }
   const compare = () => {
@@ -183,7 +190,7 @@ export function WhatIfPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult }) 
           />
           <p className="mt-1 text-xs text-muted">Chance your money lasts to {endLabel(plan)}</p>
           <p aria-live="polite" className="mt-2 h-5 text-sm font-medium tabular-nums">
-            {changed && !pending && issues.length === 0 && (
+            {changed && !pending && !invalid && (
               <span className={delta > 0 ? 'text-teal-700 dark:text-teal-300' : delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-muted'}>
                 {delta > 0 ? `▲ ${delta} points` : delta < 0 ? `▼ ${-delta} points` : 'No change'} vs your plan
               </span>
@@ -198,11 +205,11 @@ export function WhatIfPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult }) 
             value={levers.retirementAge}
             display={`age ${levers.retirementAge}`}
             was={levers.retirementAge !== base.retirementAge ? String(base.retirementAge) : null}
-            min={plan.currentAge}
+            min={retireMin}
             max={retireMax}
             step={1}
             onChange={(retirementAge) => set({ retirementAge })}
-            minLabel={plan.currentAge}
+            minLabel={retireMin}
             maxLabel={retireMax}
           />
           <Slider

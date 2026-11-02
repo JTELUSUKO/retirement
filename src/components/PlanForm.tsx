@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, MIX_PRESETS, mixReturns, mixShare, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
+import { mixLabel } from '../utils/levers'
 import { useUiPrefs, type FormMode } from '../store/uiPrefs'
 import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from '../utils/labels'
 import { Icon, type IconName } from './Icons'
@@ -33,7 +34,7 @@ function MixSelect({ label, mean, volatility, onPick }: {
       >
         {MIX_PRESETS.map((w) => (
           <option key={w} value={w}>
-            {Math.round(w * 100)}% stocks / {Math.round((1 - w) * 100)}% bonds
+            {mixLabel(w)}
           </option>
         ))}
         <option value="custom">Custom</option>
