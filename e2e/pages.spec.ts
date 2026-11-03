@@ -121,6 +121,7 @@ test('big expenses: add college, see it in the results, the lever and the summar
   await page.getByRole('button', { name: /example/i }).first().click()
   // Open by default, with its add buttons showing
   await expect(page.getByRole('button', { name: 'Big expenses', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('button', { name: 'About adding a big expense' })).toBeVisible()
   await page.getByRole('button', { name: '+ College' }).click()
   await expect(page.getByRole('combobox', { name: 'Type of college' })).toHaveValue('publicInState')
   await typeIn(page, 'Child’s age now', '15')

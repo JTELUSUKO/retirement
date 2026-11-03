@@ -89,6 +89,8 @@ export const TAX_CONFIG = {
       excessInflation: 0.01,
       years: 4,
       startChildAge: 18,
+      /** Lifetime limit on moving leftover 529 money to the beneficiary's Roth IRA (SECURE 2.0) */
+      rothRolloverLimit: 35_000,
     },
     wedding: { amount: 34_000, childAge: 30 },
   },

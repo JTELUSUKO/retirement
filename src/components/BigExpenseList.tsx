@@ -117,7 +117,7 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
               max={60}
               value={e.childAgeNow}
               onChange={(v) => set({ childAgeNow: v })}
-              info="When it happens is set by your child’s age, not yours. Use 0 for a baby."
+              info={`When ${e.kind === 'college' ? 'college starts' : e.kind === 'wedding' ? 'the wedding happens' : 'this happens'} is set by your child’s age, not yours. Use 0 for a baby.`}
             />
             <NumberField
               label={e.kind === 'college' ? 'Starts at child’s age' : 'At child’s age'}
@@ -128,7 +128,7 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
               info={
                 e.kind === 'college'
                   ? `Most students start college at ${C.startChildAge}.`
-                  : `The average age at a first wedding in the US is around ${TAX_CONFIG.bigExpenses.wedding.childAge}.`
+                  : `Starts at ${TAX_CONFIG.bigExpenses.wedding.childAge}; change it to when you expect the wedding.`
               }
             />
           </>
@@ -152,7 +152,7 @@ function ExpenseCard({ plan, expense: e }: { plan: Plan; expense: BigExpense }) 
             min={0}
             value={e.saved529}
             onChange={(v) => set({ saved529: v })}
-            info="A 529 college savings plan pays this expense first, tax-free. It grows like your investments. Money left over stays your child’s (it isn’t added to your savings); under current law up to $35,000 of it can move to the child’s Roth IRA over time."
+            info={`A 529 college savings plan pays this expense first, tax-free. It grows like your investments. Money left over stays your child’s (it isn’t added to your savings); under current law up to ${formatUSD(C.rothRolloverLimit)} of it can move to the child’s Roth IRA over time.`}
           />
           <NumberField
             label="Into the 529 / yr"
@@ -198,7 +198,7 @@ export function BigExpenseList() {
         <button type="button" className={add} onClick={() => addBigExpense('other')}>
           + Other (car, home, …)
         </button>
-        <InfoTip label="Adding a big expense">
+        <InfoTip label="adding a big expense">
           College: choose the type of school, your child’s age and any 529 savings. Wedding: a one-time cost at the age
           you choose. Other: any big cost, such as a car, a home down payment, a trip or a renovation, once or over several
           years.

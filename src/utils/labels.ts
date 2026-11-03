@@ -92,7 +92,7 @@ export function sectionSummaries(plan: Plan): Record<string, string> {
     survivor: s.enabled ? `${s.whoDies === 'you' ? 'You die' : 'Spouse dies'} at ${s.firstDeathAge}` : 'Not modeled',
     bigExpenses: plan.bigExpenses.length
       ? `${plan.bigExpenses.map((e) => e.name.trim() || 'Big expense').join(', ')} · ${formatUSDCompact(bigExpensesTotal(plan))} in today’s dollars`
-      : 'None',
+      : 'None (college, a wedding, a car…)',
     income: plan.incomeStreams.length
       ? `${plan.incomeStreams.length} source${plan.incomeStreams.length === 1 ? '' : 's'} · ${formatUSD(incomeTotal)}/yr`
       : 'None',
