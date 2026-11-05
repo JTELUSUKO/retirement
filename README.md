@@ -14,6 +14,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Approximate federal and state income tax on retirement withdrawals and Social Security (all 50 states + DC)
 - Healthcare costs before and after Medicare, paid from your HSA first
 - Other income: annuities, pensions, part-time work and rental income
+- Big expenses, before or after retiring: college (with 529 savings), a wedding, or any other large cost
 - For couples: what happens if one spouse dies first (survivor Social Security, lower spending, single filing)
 - What buying an annuity with part of your savings would do to your odds and what you leave behind
 - A year-by-year table
@@ -27,7 +28,7 @@ Your data stays in your browser. Use **Export** to save a backup file and **Impo
 about your plan. Unlike the rest of the app, it sends your plan to Anthropic when you ask a question.
 
 > **Disclaimer:** This is an educational planning aid, not financial, tax or investment advice.
-> Projections use simplified assumptions (a fixed withdrawal order, approximate state rules, no capital gains).
+> Projections use simplified assumptions (a fixed withdrawal order, approximate state rules, no local taxes).
 
 ## Run locally
 

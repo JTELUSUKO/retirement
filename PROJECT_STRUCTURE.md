@@ -43,6 +43,8 @@ retirement/
 │   │   ├── healthcare.test.ts   # Also covers HSA medical-first and non-medical tax/penalty
 │   │   ├── income.ts            # Other income streams (annuity, pension, work, rental) by age
 │   │   ├── income.test.ts
+│   │   ├── bigExpenses.ts       # Big expenses (college, wedding, other): timing by your or a child's age, cost by year
+│   │   ├── bigExpenses.test.ts
 │   │   ├── annuity.ts           # Buying an annuity: payout-rate estimate, taxable share (exclusion ratio)
 │   │   ├── annuity.test.ts
 │   │   ├── scenarios.ts         # Scenario overrides + stress tests (crash, high inflation) as market adjustments
@@ -95,6 +97,7 @@ retirement/
 │   │   ├── ScenarioChart.tsx    # Median savings by age per scenario, de-collided end labels (wide screens)
 │   │   ├── BucketChart.tsx      # Stacked balance by account type (pre-tax, Roth, taxable, cash, HSA)
 │   │   ├── IncomeList.tsx       # Other income cards (amount, ages, inflation, taxable share)
+│   │   ├── BigExpenseList.tsx   # Big expense cards (college type and 529, wedding, other)
 │   │   ├── NumberField.tsx      # Number / percent inputs (keeps typed text; money shows "450,000"; optional ⓘ)
 │   │   ├── InfoTip.tsx          # ⓘ explanation: hover, focus or tap; Esc closes; kept inside the screen
 │   │   ├── Footer.tsx           # Disclaimer, privacy statement, data sources
@@ -253,8 +256,7 @@ One row per year; the age is your age at the **start** of that year.
   59½). Rule of 55: 401(k)s are penalty-free if you retire at 55+, and are used before penalized pre-tax money.
 - **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
   plus a 20% penalty before 65.
-- **Not taxed:** Roth, cash, and taxable-account withdrawals
-  (capital gains aren't modeled; many retirees fall in the 0% capital-gains bracket).
+- **Not taxed:** Roth and cash withdrawals, and the cost-basis part of brokerage sales.
 - **Deductions:** standard deduction, the extra 65+ deduction, and the temporary $6,000 senior deduction
   (2025–2028, phased out above $75k/$150k).
 - **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
@@ -265,8 +267,8 @@ One row per year; the age is your age at the **start** of that year.
   NM, RI, UT, VT; their own exemptions aren't modeled), subtracts the state standard deduction and exemptions,
   applies the 2026 brackets and subtracts credits. Brackets are indexed with inflation (not all states do).
   Data: `config/stateRules.ts`, generated from the Tax Foundation's table for the tax year.
-- **Not modeled:** local/city tax, state income-based phase-outs, capital gains, IRMAA, credits, and taxes
-  during working years.
+- **Not modeled:** local/city tax, state income-based phase-outs, credits, and taxes during working years
+  (except on withdrawals for big expenses; see "Big expenses").
 
 ## Couples and survivors
 
@@ -311,13 +313,32 @@ One row per year; the age is your age at the **start** of that year.
 - The **long-term care stress test** (scenarios, Ask Claude) turns it on with the plan's settings, or $100K/yr for
   3 years from 85.
 
+## Big expenses
+
+- Optional costs of three kinds: **college**, **wedding** and **other** (a car, a down payment, a renovation). Each
+  starts at your age, or at a child's age for an expense tied to a child, and lasts `years` (at least one).
+- Amounts are in today's dollars and rise with inflation plus the expense's own `excessInflation`. A college type
+  (`collegeType`) uses the current figure in `TAX_CONFIG.bigExpenses`, not the amount saved when it was picked;
+  typing your own cost leaves the preset.
+- **529:** a college expense is paid from its 529 first, tax-free. The 529 grows like your investments and gets
+  `yearly529` until college starts or you retire, whichever comes first. Anything left over is the child's and isn't
+  counted.
+- **In retirement:** the cost is added to spending and paid in the usual withdrawal order. Guardrails never cut it,
+  and it never triggers a guardrail cut.
+- **Before retirement:** the cost comes out of savings in the same order. Unlike other working-year withdrawals, these
+  are taxed: pre-tax money at a flat 22% (plus the 10% penalty before 59½) and brokerage gains at a flat 15%
+  (`WORKING_YEARS_ORDINARY_RATE`, `WORKING_YEARS_GAINS_RATE`). Roth money is treated as contributions, so it's
+  tax-free. A watch-out reports what these years take from retirement accounts, because lifetime tax counts retired
+  years only.
+- Validation flags an expense that starts after the plan ends, or one with no start age.
+
 ## Healthcare
 
 - Applies only in retirement (employer coverage is assumed while working).
 - Two per-person yearly costs in today's dollars: **before Medicare** (if you retire before 65) and
   **on Medicare** (65+). Married filing jointly counts two people of the same age.
 - Costs rise with inflation **plus** an extra medical inflation rate (default 2%).
-- "Yearly spending" excludes healthcare. Not modeled yet: IRMAA surcharges, ACA subsidies, long-term care.
+- "Yearly spending" excludes healthcare. Not modeled yet: ACA subsidies.
 
 ## Scenarios
 

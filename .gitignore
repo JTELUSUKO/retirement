@@ -25,3 +25,6 @@ dist-ssr
 
 # Local scratch files (test screenshots, temp scripts)
 .tmp
+
+# Wrangler's local state
+.wrangler
