@@ -150,7 +150,7 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   const chart = page.getByRole('grid', { name: /Chance money lasts/ })
   await expect(chart).toHaveCount(0)
   await page.getByText('Try every retirement and Social Security age').click()
-  await expect(page.locator('#root')).toContainText(/All \d+ combinations ready/, { timeout: 90_000 })
+  await expect(page.locator('#root')).toContainText('Select a square to compare it', { timeout: 90_000 })
   // The ⓘ explains how to read it, by tap on a phone and by keyboard elsewhere
   const tip = page.getByRole('button', { name: 'About reading this chart' })
   if (isMobile) await tip.tap()
@@ -165,6 +165,11 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   }
   await page.keyboard.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
+  // A plain summary, and a way to jump to the closest combination that reaches strong
+  await expect(page.locator('#root')).toContainText(/Your plan \(retire 65, claim 67\): \d+%, at risk/)
+  await page.getByRole('button', { name: 'Show me' }).click()
+  await expect(page.locator('#root')).toContainText('to strong')
+  await expect(chart.getByRole('button', { pressed: true })).toBeInViewport()
   // Your plan's cell shows the same chance as the headline
   const planCell = chart.getByRole('button', { name: /your plan/ })
   await expect(planCell).toHaveCount(1)
@@ -185,6 +190,14 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
   await expect(page.locator('#root')).toContainText('Applied to your plan')
   await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 67, claim at 67/, { timeout: 30_000 })
+  // Undo survives selecting another square, puts the ages back, and says so
+  await expect(page.getByRole('button', { name: 'About undo' })).toBeVisible()
+  await chart.getByRole('button', { name: /Retire at 66, claim at 67/ }).click()
+  await expect(page.getByRole('button', { name: 'About undo' })).toBeVisible()
+  await page.getByRole('button', { name: 'Undo', exact: true }).last().click()
+  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
+  await expect(page.locator('#root')).toContainText('Your plan is back to how it was')
+  await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 65, claim at 67/, { timeout: 30_000 })
   // Retyping an age takes the results away for a moment; the chart comes back open
   await typeIn(page, 'Retire at', '40')
   await expect(page.locator('#root')).toContainText('Fix these inputs')

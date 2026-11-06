@@ -21,7 +21,7 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await loadExample(page)
     await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 60_000 })
     await page.getByText('Try every retirement and Social Security age').click()
-    await expect(page.locator('#root')).toContainText(/All \d+ combinations ready/, { timeout: 90_000 })
+    await expect(page.locator('#root')).toContainText('Select a square to compare it', { timeout: 90_000 })
     await page.getByRole('button', { name: /Retire at 67, claim at 70/ }).click()
     await expect(page.locator('#root')).toContainText('vs your plan')
   }],

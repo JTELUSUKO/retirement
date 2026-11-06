@@ -86,6 +86,11 @@ export function heatCellPatch(latest: Plan, base: Plan, cell: HeatCell): Partial
   }
 }
 
+/** Undoes `patch`: what each field it changed held in `before`, so anything else in the plan stays as it is */
+export function heatUndoPatch(patch: Partial<Plan>, before: Plan): Partial<Plan> {
+  return Object.fromEntries(Object.keys(patch).map((field) => [field, before[field as keyof Plan]]))
+}
+
 /**
  * Color bands, lowest first, in the app's verdict language: under 70% is at risk, 85% and up is strong. Teal and
  * orange rather than green and red, which many colorblind readers can't tell apart; the middle band is neutral.
@@ -103,6 +108,20 @@ export const heatBand = (rate: number) => HEAT_BANDS.find((b) => Math.round(rate
 
 /** A cell whose number is only a floor (`claimsBeforeRetiring`): no verdict color, because the true chance may be higher */
 export const HEAT_FLOOR = 'border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800'
+
+/** The combination closest to the plan's ages that reaches strong, the higher chance on a tie; null if none does */
+export function nearestStrong(grid: HeatGrid, values: Record<string, number>, plan: Plan): HeatCell | null {
+  let best: { cell: HeatCell; distance: number; pct: number } | null = null
+  for (const cell of grid.cells) {
+    const rate = values[cell.key]
+    if (!cell.plan || rate === undefined) continue
+    const pct = heatPct(rate, isHeatFloor(cell, rate))
+    if (verdictFor(pct / 100) !== 'strong') continue
+    const distance = Math.abs(cell.retirementAge - plan.retirementAge) + Math.abs(cell.claimAge - plan.socialSecurityClaimAge)
+    if (!best || distance < best.distance || (distance === best.distance && pct > best.pct)) best = { cell, distance, pct }
+  }
+  return best?.cell ?? null
+}
 
 export interface HeatCheer {
   emoji: string

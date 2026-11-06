@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor } from './heatmap'
+import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -84,6 +84,22 @@ describe('applying a cell', () => {
   })
 })
 
+describe('undoing a cell', () => {
+  it('restores everything the cell changed, including an annuity bought at retirement', () => {
+    const start = { ...plan, annuityPurchase: { ...plan.annuityPurchase, enabled: true, amount: 100_000, purchaseAge: 65 } }
+    const patch = heatCellPatch(start, start, cellOf(start, 68, 70))
+    const applied = { ...start, ...patch }
+    expect(applied.annuityPurchase.purchaseAge).toBe(68)
+    expect({ ...applied, ...heatUndoPatch(patch, start) }).toEqual(start)
+  })
+
+  it('touches only what the cell changed', () => {
+    const base = { ...plan, annuityPurchase: { ...plan.annuityPurchase, purchaseAge: 0 } }
+    const patch = heatCellPatch(base, base, cellOf(base, 65, 70))
+    expect(heatUndoPatch(patch, base)).toEqual({ socialSecurityClaimAge: 67 })
+  })
+})
+
 describe('a cell against the plan', () => {
   it('two firm numbers compare either way', () => {
     expect(heatDelta(0.8, false, 0.7, false)).toEqual({ points: 10, atLeast: false })
@@ -110,6 +126,29 @@ describe('a cell against the plan', () => {
     expect(isHeatFloor({ claimsBeforeRetiring: true }, 0.999)).toBe(true)
     expect(isHeatFloor({ claimsBeforeRetiring: true }, 1)).toBe(false)
     expect(isHeatFloor({ claimsBeforeRetiring: false }, 0.5)).toBe(false)
+  })
+})
+
+describe('closest combination that reaches strong', () => {
+  const grid = heatmapGrid(plan)
+  const key = heatKey
+
+  it('takes the fewest years of change, and the higher chance on a tie', () => {
+    const values = { [key(70, 70)]: 0.99, [key(67, 67)]: 0.86, [key(65, 69)]: 0.9, [key(66, 67)]: 0.5 }
+    const cell = nearestStrong(grid, values, plan)!
+    expect([cell.retirementAge, cell.claimAge]).toEqual([65, 69])
+  })
+
+  it('counts a floor only if the floor itself reaches strong', () => {
+    // Retire 66, claim 62 claims before retiring: 84.9% floors to 84, so it can't be promised
+    expect(nearestStrong(grid, { [key(66, 62)]: 0.849 }, plan)).toBeNull()
+    const cell = nearestStrong(grid, { [key(66, 62)]: 0.85 }, plan)!
+    expect([cell.retirementAge, cell.claimAge]).toEqual([66, 62])
+  })
+
+  it('is null when nothing reaches strong', () => {
+    expect(nearestStrong(grid, { [key(65, 67)]: 0.6 }, plan)).toBeNull()
+    expect(nearestStrong(grid, {}, plan)).toBeNull()
   })
 })
 

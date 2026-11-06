@@ -1,8 +1,10 @@
-import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { flushSync } from 'react-dom'
 import type { Plan } from '../engine'
 import { useBackgroundSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor, type HeatCell, type HeatCheer } from '../utils/heatmap'
+import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, type HeatCell, type HeatCheer } from '../utils/heatmap'
+import { VERDICT_WORD, verdictFor, type Verdict } from '../utils/levers'
 import { endLabel } from '../utils/labels'
 import { Icon } from './Icons'
 import { InfoTip } from './InfoTip'
@@ -14,7 +16,13 @@ const PLAN_RING = 'ring-2 ring-slate-900 ring-offset-1 ring-offset-white dark:ri
 const STICKY = 'sticky left-0 z-20 bg-white shadow-[0_0_0_3px_var(--color-white)] dark:bg-slate-900 dark:shadow-[0_0_0_3px_var(--color-slate-900)]'
 const STEP: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }
 
-const TRADE_OFFS = 'Every option has trade-offs, like more working years or a smaller benefit, and only you can weigh them. This is an estimate, not advice.'
+/** The color key, grouped by what the colors mean */
+const KEY_GROUPS = (['at-risk', 'borderline', 'strong'] as Verdict[]).map((verdict) => ({
+  word: VERDICT_WORD[verdict].charAt(0).toUpperCase() + VERDICT_WORD[verdict].slice(1),
+  bands: HEAT_BANDS.filter((band) => verdictFor(band.upTo / 100) === verdict),
+}))
+
+const TRADE_OFFS ='Every option has trade-offs, like more working years or a smaller benefit, and only you can weigh them. This is an estimate, not advice.'
 
 /** The emoji is decoration; the words carry the message */
 function CheerText({ cheer }: { cheer: HeatCheer }) {
@@ -40,8 +48,13 @@ function Grid({ plan }: { plan: Plan }) {
   const planKey = heatKey(plan.retirementAge, plan.socialSecurityClaimAge)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [focusKey, setFocusKey] = useState(planKey)
-  // The plan before and after Apply: the "applied" note lasts until the plan changes again
-  const [applied, setApplied] = useState<{ before: Plan; after: Plan; cheer: HeatCheer | null } | null>(null)
+  // The plan as Apply or Undo left it: their notes, and Undo itself, last until the saved plan changes again
+  const latestPlan = usePlanStore((s) => s.plan)
+  const [applied, setApplied] = useState<{ after: Plan; cheer: HeatCheer | null; undo: Partial<Plan> } | null>(null)
+  const [undone, setUndone] = useState<Plan | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+  // A cell to focus once the grid has it (Undo can return to ages the current grid doesn't show yet)
+  const pendingFocus = useRef<string | null>(null)
   const tableRef = useRef<HTMLTableElement>(null)
   const cellsByKey = useMemo(() => new Map(grid.cells.map((c) => [c.key, c])), [grid])
   const cellAt = (key: string | null) => (key === null ? null : (cellsByKey.get(key) ?? null))
@@ -85,13 +98,37 @@ function Grid({ plan }: { plan: Plan }) {
 
   const apply = (cell: HeatCell) => {
     // With newer edits waiting behind these results, the message might not hold for the plan this lands on
-    const upToDate = usePlanStore.getState().plan === plan
-    update(heatCellPatch(usePlanStore.getState().plan, plan, cell))
+    const latest = usePlanStore.getState().plan
+    const upToDate = latest === plan
+    const patch = heatCellPatch(latest, plan, cell)
+    update(patch)
     setSelectedKey(null)
     setFocusKey(cell.key)
-    setApplied({ before: plan, after: usePlanStore.getState().plan, cheer: upToDate ? cheer : null })
+    setUndone(null)
+    setApplied({ after: usePlanStore.getState().plan, cheer: upToDate ? cheer : null, undo: heatUndoPatch(patch, latest) })
     focusCell(cell.key)
   }
+  const undoApply = (undo: Partial<Plan>) => {
+    update(undo)
+    setApplied(null)
+    setUndone(usePlanStore.getState().plan)
+    // The Undo link is going away, so focus moves to the cell you're back on
+    const key = heatKey(usePlanStore.getState().plan.retirementAge, usePlanStore.getState().plan.socialSecurityClaimAge)
+    setFocusKey(key)
+    pendingFocus.current = key
+    if (cellButton(key)) {
+      focusCell(key)
+      pendingFocus.current = null
+    }
+  }
+  useEffect(() => {
+    if (pendingFocus.current && cellButton(pendingFocus.current)) {
+      focusCell(pendingFocus.current)
+      pendingFocus.current = null
+    }
+    // The grid is what brings the cell into being
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grid])
   const compare = (cell: HeatCell) => {
     addScenario({
       name: `What-if: retire ${cell.retirementAge}, SS at ${cell.claimAge}`,
@@ -126,8 +163,63 @@ function Grid({ plan }: { plan: Plan }) {
       ? heatCheer(heatPct(selectedRate, selectedIsFloor), heatPct(planRate, false), selectedIsFloor)
       : null
 
+  // The takeaway, once every number is in
+  const planIsFloor = floorOf(cellAt(planKey), planRate)
+  const planPct = planRate === undefined ? null : heatPct(planRate, planIsFloor)
+  // Judged like the headline, so the two can't disagree
+  const planVerdict = planRate === undefined ? null : verdictFor(planRate)
+  const closest = !updating && planVerdict !== 'strong' ? nearestStrong(grid, values, plan) : null
+  const closestRate = closest ? values[closest.key] : undefined
+  const selectCell = (key: string) => {
+    setSelectedKey(key)
+    setFocusKey(key)
+    setUndone(null)
+  }
+  // The cell can be off to the side, and its comparison below the fold, on a small screen
+  const showCell = (key: string) => {
+    flushSync(() => selectCell(key))
+    focusCell(key)
+    const button = cellButton(key)
+    const detail = detailRef.current
+    if (!button || !detail) return
+    button.scrollIntoView({ inline: 'center', block: 'center' })
+    // Bring up as much of the comparison as fits, without losing the cell off the top
+    const hidden = detail.getBoundingClientRect().bottom - window.innerHeight
+    if (hidden > 0) window.scrollBy(0, Math.min(hidden + 8, button.getBoundingClientRect().top - 8))
+  }
+
   return (
     <div className="mt-3 space-y-3">
+      {!error && (
+        // Stays up while recalculating, so the grid and Undo below it don't jump
+        <div className="rounded-md bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
+          <p>
+            <strong className="font-semibold">
+              Your plan (retire {plan.retirementAge}, claim {plan.socialSecurityClaimAge}):{' '}
+              {updating || planPct === null || planVerdict === null
+                ? 'calculating…'
+                : planIsFloor
+                  ? `at least ${planPct}%.`
+                  : `${planPct}%, ${VERDICT_WORD[planVerdict]}.`}
+            </strong>
+          </p>
+          {updating ? (
+            <p className="mt-0.5">Looking for the closest combination that reaches strong (85%+)…</p>
+          ) : closest && closestRate !== undefined ? (
+            <p className="mt-0.5">
+              Closest combination that reaches strong (85%+): retire {closest.retirementAge}, claim {closest.claimAge} (
+              {isHeatFloor(closest, closestRate) ? 'at least ' : ''}
+              {heatPct(closestRate, isHeatFloor(closest, closestRate))}%).{' '}
+              <button type="button" onClick={() => showCell(closest.key)} className="font-medium text-teal-700 underline underline-offset-2 dark:text-teal-300">
+                Show me
+              </button>
+            </p>
+          ) : (
+            planVerdict !== 'strong' && <p className="mt-0.5">No combination here reaches strong (85%+). Spending less may help more; see “What would help most” above.</p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-start gap-1">
         <p aria-live="polite" className="min-h-5 text-sm text-muted tabular-nums">
           {error ? (
@@ -137,7 +229,7 @@ function Grid({ plan }: { plan: Plan }) {
               Calculating… <span aria-hidden="true">{done} of {jobs.length} done</span>
             </>
           ) : (
-            `All ${jobs.length} combinations ready. Select one to see what it would change.`
+            'Select a square to compare it with your plan.'
           )}
         </p>
         <InfoTip label="reading this chart">
@@ -155,15 +247,18 @@ function Grid({ plan }: { plan: Plan }) {
         </InfoTip>
       </div>
 
+      <p className="text-xs text-muted">Each number is the % chance your money lasts. Further right is retiring later; higher up is claiming later.</p>
+
       <ScrollRegion label="Chance money lasts by retirement age and Social Security claiming age" className="overflow-x-auto pb-1">
         <table ref={tableRef} role="grid" aria-label={`Chance money lasts to ${endLabel(plan)}, by retirement age and Social Security claiming age`} className="w-full border-separate border-spacing-[3px] text-xs select-none">
           <thead>
             <tr>
               <th scope="col" className={`${STICKY} px-1 pb-1 text-left align-bottom font-medium whitespace-nowrap text-muted`}>
-                Claim at ↑
+                Claim at age ↑
               </th>
               <th scope="colgroup" colSpan={grid.retireAges.length} className="pb-1 text-left font-medium text-muted">
-                Retire at →
+                {/* Stays beside the age column while the cells scroll */}
+                <span className="sticky left-28 inline-block">Retire at age →</span>
               </th>
             </tr>
             <tr>
@@ -208,11 +303,7 @@ function Grid({ plan }: { plan: Plan }) {
                         aria-label={label}
                         aria-pressed={cell.key === selectedKey}
                         title={label}
-                        onClick={() => {
-                          setSelectedKey(cell.key)
-                          setFocusKey(cell.key)
-                          setApplied(null)
-                        }}
+                        onClick={() => selectCell(cell.key)}
                         onKeyDown={(event) => onKeyDown(event, cell)}
                         className={`h-9 w-full cursor-pointer rounded font-medium tabular-nums hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 dark:hover:brightness-125 ${color} ${cell.key === planKey ? PLAN_RING : ''} ${cell.key === selectedKey ? 'outline-2 outline-offset-1 outline-slate-900 outline-dashed dark:outline-white' : ''}`}
                       >
@@ -229,10 +320,15 @@ function Grid({ plan }: { plan: Plan }) {
       </ScrollRegion>
 
       <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-label="Color key">
-        {HEAT_BANDS.map((band) => (
-          <li key={band.label} className="flex items-center gap-1.5">
-            <span aria-hidden="true" className={`h-3 w-5 rounded-sm border border-slate-300 dark:border-slate-600 ${band.className}`} />
-            {band.label}
+        {KEY_GROUPS.map(({ word, bands }) => (
+          <li key={word} className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <span className="font-semibold">{word}:</span>
+            {bands.map((band) => (
+              <span key={band.label} className="flex items-center gap-1">
+                <span aria-hidden="true" className={`h-3 w-5 rounded-sm border border-slate-300 dark:border-slate-600 ${band.className}`} />
+                {band.label}
+              </span>
+            ))}
           </li>
         ))}
         <li className="flex items-center gap-1.5">
@@ -241,12 +337,12 @@ function Grid({ plan }: { plan: Plan }) {
         </li>
         <li className="flex items-center gap-1.5">
           <span aria-hidden="true" className={`h-3 w-5 rounded-sm ${HEAT_FLOOR}`} />
-          65+ means at least 65%
+          65+ means at least 65% (see below)
         </li>
       </ul>
 
-      <div aria-live="polite">
-        {applied && (plan === applied.before || plan === applied.after) && !selected && (
+      <div ref={detailRef} aria-live="polite" className="space-y-2">
+        {applied && latestPlan === applied.after && (
           <>
             <p className="text-sm font-medium text-teal-700 dark:text-teal-300">
               ✓ Applied to your plan.
@@ -255,11 +351,16 @@ function Grid({ plan }: { plan: Plan }) {
                   {' '}
                   <CheerText cheer={applied.cheer} />
                 </>
-              )}
+              )}{' '}
+              <button type="button" onClick={() => undoApply(applied.undo)} className="underline underline-offset-2">
+                Undo
+              </button>
+              <InfoTip label="undo">Puts your retirement and claiming ages back to what they were before you applied this, along with an annuity purchase that moved with them. Nothing else in your plan changes.</InfoTip>
             </p>
             {applied.cheer && <p className="text-xs text-muted">{TRADE_OFFS}</p>}
           </>
         )}
+        {undone && latestPlan === undone && <p className="text-sm font-medium text-muted">↩ Your plan is back to how it was.</p>}
         {selected && (
           <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800">
             <p>
@@ -316,11 +417,10 @@ function Grid({ plan }: { plan: Plan }) {
 
       <div className="space-y-1 text-xs text-muted">
         <p>
-          <strong className="font-semibold">Outlined cells with a +:</strong>{' '}
-          {plan.filingStatus === 'married' ? 'you or your spouse would claim' : 'you’d claim'} before you retire. The lower
-          benefit for claiming early is counted, but the checks that arrive before you retire aren’t, so the number is a
-          floor and the real chance may be higher. Before full retirement age, the Social Security earnings limit can also
-          withhold some of the checks of someone still working.
+          <strong className="font-semibold">Outlined squares with a +:</strong>{' '}
+          {plan.filingStatus === 'married' ? 'you or your spouse would start' : 'you’d start'} Social Security before you stop
+          working. The planner counts the smaller benefit but not the checks that arrive before you retire, so the real
+          chance may be higher. Working can also reduce those checks before full retirement age.
         </p>
         <p>
           Each combination runs 1,000 simulated markets with the rest of your plan unchanged.
@@ -343,7 +443,7 @@ export function HeatmapPanel({ plan, open, onOpenChange }: { plan: Plan; open: b
     >
       <summary className="cursor-pointer font-medium">
         Try every retirement and Social Security age
-        <span className="mt-0.5 block text-sm font-normal text-muted">See your chance of success for every combination</span>
+        <span className="mt-0.5 block text-sm font-normal text-muted">See your chance of the money lasting to {endLabel(plan)}, for each combination</span>
       </summary>
       {open && <Grid plan={plan} />}
     </details>

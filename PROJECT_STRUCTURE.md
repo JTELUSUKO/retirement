@@ -375,6 +375,9 @@ One row per year; the age is your age at the **start** of that year.
   checks properly needs the salary (for the earnings limit) and working-year taxes, which aren't modeled.
 - **Encouragement** (`heatCheer`): a proven gain gets a short message, on selecting a cell and after Apply. It praises the
   result ("moves your plan from at risk to strong"), never the choice, and comes with a note about trade-offs.
+- **Takeaway and Undo:** once every number is in, a summary gives your plan's result and the closest combination that
+  reaches strong (`nearestStrong`: fewest years of change). After Apply, **Undo** restores only what that Apply changed,
+  until the plan changes again.
 - Couples: the grid moves your claiming age; your spouse's stays fixed and you retire together.
 
 ## Printable summary
