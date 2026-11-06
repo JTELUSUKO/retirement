@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatKey, heatmapGrid } from './heatmap'
+import { HEAT_BANDS, heatBand, heatCellPatch, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -81,6 +81,35 @@ describe('applying a cell', () => {
     const applied = { ...withAnnuity, ...heatCellPatch(withAnnuity, withAnnuity, cell) }
     expect(applied.annuityPurchase.purchaseAge).toBe(68)
     expect(runMonteCarlo(applied).successRate).toBe(runMonteCarlo(cell.plan!).successRate)
+  })
+})
+
+describe('a cell against the plan', () => {
+  it('two firm numbers compare either way', () => {
+    expect(heatDelta(0.8, false, 0.7, false)).toEqual({ points: 10, atLeast: false })
+    expect(heatDelta(0.6, false, 0.7, false)).toEqual({ points: -10, atLeast: false })
+  })
+
+  it('a floor above the plan is "at least" that gain; a floor at or below it says nothing', () => {
+    expect(heatDelta(0.8, true, 0.7, false)).toEqual({ points: 10, atLeast: true })
+    expect(heatDelta(0.6, true, 0.7, false)).toBeNull()
+    expect(heatDelta(0.7, true, 0.7, false)).toBeNull()
+  })
+
+  it('below a plan that is itself a floor, a firm cell is at least that much worse; above it, nothing is proven', () => {
+    expect(heatDelta(0.6, false, 0.7, true)).toEqual({ points: -10, atLeast: true })
+    expect(heatDelta(0.8, false, 0.7, true)).toBeNull()
+    expect(heatDelta(0.8, true, 0.7, true)).toBeNull()
+  })
+
+  it('a floor rounds down, so "at least" stays true, and 100% is no floor at all', () => {
+    expect(heatPct(0.996, true)).toBe(99)
+    expect(heatPct(0.996, false)).toBe(100)
+    // 0.29 × 100 is 28.999… in floating point
+    expect(heatPct(0.29, true)).toBe(29)
+    expect(isHeatFloor({ claimsBeforeRetiring: true }, 0.999)).toBe(true)
+    expect(isHeatFloor({ claimsBeforeRetiring: true }, 1)).toBe(false)
+    expect(isHeatFloor({ claimsBeforeRetiring: false }, 0.5)).toBe(false)
   })
 })
 

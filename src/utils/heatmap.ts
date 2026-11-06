@@ -99,3 +99,24 @@ export const HEAT_BANDS = [
 
 /** The band for a success rate, judged on the rounded percentage shown */
 export const heatBand = (rate: number) => HEAT_BANDS.find((b) => Math.round(rate * 100) <= b.upTo)!
+
+/** A cell whose number is only a floor (`claimsBeforeRetiring`): no verdict color, because the true chance may be higher */
+export const HEAT_FLOOR = 'border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800'
+
+/** Whether a cell's result is only a floor: at 100% every run already succeeds, so there's nothing left to be understated */
+export const isHeatFloor = (cell: Pick<HeatCell, 'claimsBeforeRetiring'>, rate: number) => cell.claimsBeforeRetiring && rate < 1
+
+/** The percentage shown: a floor rounds down, so "at least" stays true */
+export const heatPct = (rate: number, isFloor: boolean) => (isFloor ? Math.floor(rate * 100 + 1e-9) : Math.round(rate * 100))
+
+/**
+ * A cell against the plan, in points, as far as the numbers can say. A floor above the plan is at least that much better;
+ * a firm cell below a floor plan is at least that much worse. Anything else can't be told apart.
+ */
+export function heatDelta(rate: number, cellIsFloor: boolean, planRate: number, planIsFloor: boolean): { points: number; atLeast: boolean } | null {
+  const points = heatPct(rate, cellIsFloor) - heatPct(planRate, planIsFloor)
+  if (cellIsFloor && planIsFloor) return null
+  if (cellIsFloor) return points > 0 ? { points, atLeast: true } : null
+  if (planIsFloor) return points < 0 ? { points, atLeast: true } : null
+  return { points, atLeast: false }
+}

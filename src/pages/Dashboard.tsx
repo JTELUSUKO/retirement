@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useMemo } from 'react'
+import { memo, useDeferredValue, useMemo, useState } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
 import { HeatmapPanel } from '../components/HeatmapPanel'
@@ -24,7 +24,7 @@ import { useSimulations } from '../sim/useSimulation'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { endLabel } from '../utils/labels'
 
-const Results = memo(function Results({ plan }: { plan: Plan }) {
+const Results = memo(function Results({ plan, heatmapOpen, onHeatmapOpen }: { plan: Plan; heatmapOpen: boolean; onHeatmapOpen: (open: boolean) => void }) {
   const result = useMemo(() => projectPlan(plan), [plan])
   // Simulations run in background workers: the plan, plus "without" versions for the comparison panels
   const tasks = useMemo(() => {
@@ -154,7 +154,7 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
 
       <SafeSpendingPanel plan={plan} />
 
-      <HeatmapPanel plan={plan} />
+      <HeatmapPanel plan={plan} open={heatmapOpen} onOpenChange={onHeatmapOpen} />
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
       {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}
@@ -200,6 +200,8 @@ export function Dashboard() {
   const resultsPlan = useDeferredValue(plan)
   const guide = useUiPrefs((s) => s.guide)
   const issues = validatePlan(plan)
+  // Kept here: results go away while a field is being retyped, and the heatmap should still be open when they return
+  const [heatmapOpen, setHeatmapOpen] = useState(false)
 
   // Keep Undo reachable after a Reset, which lands here because the plan is now blank
   if (guide === 'open' || (guide === 'auto' && isBlankPlan(plan))) {
@@ -232,7 +234,7 @@ export function Dashboard() {
           </ul>
         </section>
       ) : (
-        <Results plan={resultsPlan} />
+        <Results plan={resultsPlan} heatmapOpen={heatmapOpen} onHeatmapOpen={setHeatmapOpen} />
       )}
     </div>
   )

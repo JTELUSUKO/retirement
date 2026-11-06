@@ -25,8 +25,9 @@ describe('simulation tasks', () => {
 describe('a background batch', () => {
   const start = { values: { old: 1 }, done: 7, error: 'stale', forJobs: 'earlier' }
 
-  it('a failure counts as finished and keeps its message, even as the first job of a new batch', () => {
-    const failed = settleJob(start, 'jobs', { error: 'boom' })
+  it('a failure drops that earlier result, counts as finished and keeps its message, even as the first job of a new batch', () => {
+    expect(settleJob(start, 'jobs', { key: 'old', error: 'boom' }).values).toEqual({})
+    const failed = settleJob(start, 'jobs', { key: 'other', error: 'boom' })
     expect(failed).toEqual({ values: { old: 1 }, done: 1, error: 'boom', forJobs: 'jobs' })
     expect(settleJob(failed, 'jobs', { key: 'a', value: 2 })).toEqual({ values: { old: 1, a: 2 }, done: 2, error: 'boom', forJobs: 'jobs' })
   })

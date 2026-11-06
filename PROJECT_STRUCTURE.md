@@ -368,9 +368,10 @@ One row per year; the age is your age at the **start** of that year.
 - **Colors** change at the verdict's 70% and 85% lines, plus 50% and 95%. Teal and orange rather than green and red,
   for colorblind readers; every cell also shows its number. Selecting a cell shows its gain or loss against the plan,
   with **Apply** (only the moved ages, onto the latest plan) and **Compare**.
-- **Marked `*`, benefits starting before you retire (yours or your spouse's):** Social Security only counts in retired
-  years (`projection.ts`), so those checks are missed, though the lower benefit is applied. Those cells understate the
-  chance, and selecting one says so.
+- **Outlined with a `+`, benefits starting before you retire (yours or your spouse's):** Social Security only counts in
+  retired years (`projection.ts`), so those checks are missed, though the lower benefit is applied. The number is a
+  floor, so these cells get no verdict color, and against the plan they only report a gain, as "at least". Counting the
+  checks properly needs the salary (for the earnings limit) and working-year taxes, which aren't modeled.
 - Couples: the grid moves your claiming age; your spouse's stays fixed and you retire together.
 
 ## Printable summary

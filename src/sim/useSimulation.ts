@@ -55,11 +55,15 @@ export interface BatchState<R> {
 export function settleJob<R>(
   state: BatchState<R> & { forJobs: unknown },
   jobs: unknown,
-  outcome: { key: string; value: R } | { error: string },
+  outcome: { key: string; value: R } | { key: string; error: string },
 ): BatchState<R> & { forJobs: unknown } {
   const same = state.forJobs === jobs
+  // A failed job drops its earlier result, which would otherwise pass for this batch's
+  const values = { ...state.values }
+  if ('value' in outcome) values[outcome.key] = outcome.value
+  else delete values[outcome.key]
   return {
-    values: 'value' in outcome ? { ...state.values, [outcome.key]: outcome.value } : state.values,
+    values,
     done: (same ? state.done : 0) + 1,
     error: 'error' in outcome ? outcome.error : same ? state.error : null,
     forJobs: jobs,
@@ -83,7 +87,7 @@ export function useBackgroundSimulations<T extends SimTask>(jobs: { key: string;
         })
         .catch((err) => {
           if (err instanceof Superseded || !active) return
-          setState((s) => settleJob(s, jobs, { error: err instanceof Error ? err.message : String(err) }))
+          setState((s) => settleJob(s, jobs, { key, error: err instanceof Error ? err.message : String(err) }))
         })
     }
     return () => {
@@ -92,7 +96,8 @@ export function useBackgroundSimulations<T extends SimTask>(jobs: { key: string;
     }
   }, [jobs, group])
 
-  return { values: state.values, done: state.forJobs === jobs ? state.done : 0, error: state.error }
+  const current = state.forJobs === jobs
+  return { values: state.values, done: current ? state.done : 0, error: current ? state.error : null }
 }
 
 /** Single-task version of useSimulations (pass a memoized task). */

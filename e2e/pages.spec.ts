@@ -155,7 +155,7 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   const planCell = chart.getByRole('button', { name: /your plan/ })
   await expect(planCell).toHaveCount(1)
   await expect(planCell).toHaveAttribute('aria-label', /Retire at 65, claim at 67: \d+% chance/)
-  const planPct = (await planCell.innerText()).replace('*', '')
+  const planPct = await planCell.innerText()
   await expect(headline).toContainText(`${planPct}%`)
   // Arrow keys move inside the chart
   await planCell.focus()
@@ -169,6 +169,12 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
   await expect(page.locator('#root')).toContainText('Applied to your plan')
   await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 67, claim at 67/, { timeout: 30_000 })
+  // Retyping an age takes the results away for a moment; the chart comes back open
+  await typeIn(page, 'Retire at', '40')
+  await expect(page.locator('#root')).toContainText('Fix these inputs')
+  await expect(chart).toHaveCount(0)
+  await typeIn(page, 'Retire at', '67')
+  await expect(chart).toBeVisible({ timeout: 30_000 })
   await expectFitsScreen(page)
 })
 

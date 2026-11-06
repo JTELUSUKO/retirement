@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from '
 import type { Plan } from '../engine'
 import { useBackgroundSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatKey, heatmapGrid, type HeatCell } from '../utils/heatmap'
+import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor, type HeatCell } from '../utils/heatmap'
 import { endLabel } from '../utils/labels'
 import { Icon } from './Icons'
 import { ScrollRegion } from './ScrollRegion'
@@ -88,18 +88,24 @@ function Grid({ plan }: { plan: Plan }) {
     window.location.hash = '#compare'
   }
 
+  const floorOf = (cell: HeatCell | null, rate: number | undefined) => cell !== null && rate !== undefined && isHeatFloor(cell, rate)
   const describe = (cell: HeatCell, rate: number | undefined) =>
     [
-      `Retire at ${cell.retirementAge}, claim at ${cell.claimAge}: ${rate === undefined ? 'calculating' : `${Math.round(rate * 100)}% chance`}`,
+      `Retire at ${cell.retirementAge}, claim at ${cell.claimAge}: ${rate === undefined ? 'calculating' : `${floorOf(cell, rate) ? 'at least ' : ''}${heatPct(rate, floorOf(cell, rate))}% chance`}`,
       cell.key === planKey && 'your plan',
-      cell.claimsBeforeRetiring && 'benefits start before retiring, see the note below',
+      floorOf(cell, rate) && 'benefits start before retiring, see the note below',
     ]
       .filter(Boolean)
       .join(', ')
 
-  const selectedRate = selected ? values[selected.key] : undefined
+  // While a new batch runs, the selected cell's number may still be the old plan's
+  const selectedRate = selected && !updating ? values[selected.key] : undefined
+  const selectedIsFloor = floorOf(selected, selectedRate)
   const planRate = values[planKey]
-  const delta = !updating && selectedRate !== undefined && planRate !== undefined ? Math.round(selectedRate * 100) - Math.round(planRate * 100) : null
+  const delta =
+    !updating && selectedRate !== undefined && planRate !== undefined
+      ? heatDelta(selectedRate, selectedIsFloor, planRate, floorOf(cellAt(planKey), planRate))
+      : null
 
   return (
     <div className="mt-3 space-y-3">
@@ -152,7 +158,12 @@ function Grid({ plan }: { plan: Plan }) {
                     )
                   }
                   const rate = values[cell.key]
-                  const color = rate === undefined ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' : heatBand(rate).className
+                  const color =
+                    rate === undefined
+                      ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                      : isHeatFloor(cell, rate)
+                        ? HEAT_FLOOR
+                        : heatBand(rate).className
                   const label = describe(cell, rate)
                   return (
                     <td key={cell.key} className="p-0">
@@ -171,8 +182,8 @@ function Grid({ plan }: { plan: Plan }) {
                         onKeyDown={(event) => onKeyDown(event, cell)}
                         className={`h-9 w-full cursor-pointer rounded font-medium tabular-nums hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 dark:hover:brightness-125 ${color} ${cell.key === planKey ? PLAN_RING : ''} ${cell.key === selectedKey ? 'outline-2 outline-offset-1 outline-slate-900 outline-dashed dark:outline-white' : ''}`}
                       >
-                        {rate === undefined ? '·' : Math.round(rate * 100)}
-                        {cell.claimsBeforeRetiring && <span aria-hidden="true">*</span>}
+                        {rate === undefined ? '·' : heatPct(rate, isHeatFloor(cell, rate))}
+                        {floorOf(cell, rate) && '+'}
                       </button>
                     </td>
                   )
@@ -194,6 +205,10 @@ function Grid({ plan }: { plan: Plan }) {
           <span aria-hidden="true" className={`h-3 w-5 rounded-sm ${PLAN_RING}`} />
           Your plan
         </li>
+        <li className="flex items-center gap-1.5">
+          <span aria-hidden="true" className={`h-3 w-5 rounded-sm ${HEAT_FLOOR}`} />
+          65+ means at least 65%
+        </li>
       </ul>
 
       <div aria-live="polite">
@@ -207,17 +222,20 @@ function Grid({ plan }: { plan: Plan }) {
               {selectedRate === undefined ? (
                 'calculating…'
               ) : (
-                <span className="tabular-nums">{Math.round(selectedRate * 100)}% chance your money lasts to {endLabel(plan)}</span>
+                <span className="tabular-nums">
+                  {selectedIsFloor && 'at least '}
+                  {heatPct(selectedRate, selectedIsFloor)}% chance your money lasts to {endLabel(plan)}
+                </span>
               )}
               {selected.key !== planKey && delta !== null && (
-                <span className={`ml-1 font-medium tabular-nums ${delta > 0 ? 'text-teal-700 dark:text-teal-300' : delta < 0 ? 'text-red-700 dark:text-red-400' : 'text-muted'}`}>
-                  {delta > 0 ? `▲ ${delta} points` : delta < 0 ? `▼ ${-delta} points` : 'No change'} vs your plan
+                <span className={`ml-1 font-medium tabular-nums ${delta.points > 0 ? 'text-teal-700 dark:text-teal-300' : delta.points < 0 ? 'text-red-700 dark:text-red-400' : 'text-muted'}`}>
+                  {delta.points === 0 ? 'No change' : `${delta.points > 0 ? '▲' : '▼'} ${delta.atLeast ? 'at least ' : ''}${Math.abs(delta.points)} ${Math.abs(delta.points) === 1 ? 'point' : 'points'}`} vs your plan
                 </span>
               )}
               {selected.key === planKey && <span className="ml-1 text-muted">This is your plan.</span>}
             </p>
-            {selected.claimsBeforeRetiring && (
-              <p className="mt-1 text-xs text-muted">* Benefits start before you retire, so this may look worse than it really is. See the note below.</p>
+            {selectedIsFloor && (
+              <p className="mt-1 text-xs text-muted">Benefits start before you retire, so the real chance may be higher. See the note below.</p>
             )}
             {selected.key !== planKey && (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -243,10 +261,10 @@ function Grid({ plan }: { plan: Plan }) {
 
       <div className="space-y-1 text-xs text-muted">
         <p>
-          <span aria-hidden="true">* </span>
-          {plan.filingStatus === 'married' ? 'You or your spouse would claim' : 'You’d claim'} before you retire. The lower
-          benefit for claiming early is counted, but the checks that arrive before you retire aren’t, so these combinations
-          look worse than they may really be. Before full retirement age, the Social Security earnings limit can also
+          <strong className="font-semibold">Outlined cells with a +:</strong>{' '}
+          {plan.filingStatus === 'married' ? 'you or your spouse would claim' : 'you’d claim'} before you retire. The lower
+          benefit for claiming early is counted, but the checks that arrive before you retire aren’t, so the number is a
+          floor and the real chance may be higher. Before full retirement age, the Social Security earnings limit can also
           withhold some of the checks of someone still working.
         </p>
         <p>
@@ -259,15 +277,14 @@ function Grid({ plan }: { plan: Plan }) {
 }
 
 /** The chance of success for every retirement and claiming age. The simulations only run while it's open. */
-export function HeatmapPanel({ plan }: { plan: Plan }) {
-  const [open, setOpen] = useState(false)
+export function HeatmapPanel({ plan, open, onOpenChange }: { plan: Plan; open: boolean; onOpenChange: (open: boolean) => void }) {
   // Claiming age doesn't matter without a benefit of your own (the what-if slider hides too)
   if (plan.socialSecurityAtFRA <= 0) return null
   return (
     <details
       open={open}
       className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
     >
       <summary className="cursor-pointer font-medium">
         Try every retirement and Social Security age
