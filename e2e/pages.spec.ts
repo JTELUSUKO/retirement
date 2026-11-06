@@ -137,7 +137,7 @@ test('big expenses: add college, see it in the results, the lever and the summar
   await expectFitsScreen(page)
 })
 
-test('heatmap: every retirement and claiming age, with its effect on the plan', async ({ page }) => {
+test('heatmap: every retirement and claiming age, with its effect on the plan', async ({ page, isMobile }) => {
   // 144 simulations, twice, while other tests share the CPU
   test.setTimeout(120_000)
   await page.goto('./')
@@ -151,6 +151,20 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(chart).toHaveCount(0)
   await page.getByText('Try every retirement and Social Security age').click()
   await expect(page.locator('#root')).toContainText(/All \d+ combinations ready/, { timeout: 90_000 })
+  // The ⓘ explains how to read it, by tap on a phone and by keyboard elsewhere
+  const tip = page.getByRole('button', { name: 'About reading this chart' })
+  if (isMobile) await tip.tap()
+  else await tip.focus()
+  await expect(page.getByRole('tooltip')).toContainText('Each square is your chance')
+  // A second tap closes it, and a third opens it again
+  if (isMobile) {
+    await tip.tap()
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await tip.tap()
+    await expect(page.getByRole('tooltip')).toHaveCount(1)
+  }
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   // Your plan's cell shows the same chance as the headline
   const planCell = chart.getByRole('button', { name: /your plan/ })
   await expect(planCell).toHaveCount(1)
@@ -164,6 +178,8 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(chart.getByRole('button', { name: /Retire at 67, claim at 67/ })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.locator('#root')).toContainText('vs your plan')
+  // The example plan is at risk, and this combination reaches borderline
+  await expect(page.locator('#root')).toContainText('This moves your plan from at risk to borderline')
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
   await page.getByRole('button', { name: 'Apply to my plan' }).click()
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')

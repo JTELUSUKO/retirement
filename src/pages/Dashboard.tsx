@@ -119,6 +119,8 @@ const Results = memo(function Results({ plan, heatmapOpen, onHeatmapOpen }: { pl
 
       <VerdictPanel plan={resultPlan} mc={mc} />
 
+      <HeatmapPanel plan={plan} open={heatmapOpen} onOpenChange={onHeatmapOpen} />
+
       <WatchOuts plan={plan} result={result} />
 
       {mc.guardrails && (
@@ -153,8 +155,6 @@ const Results = memo(function Results({ plan, heatmapOpen, onHeatmapOpen }: { pl
       </p>
 
       <SafeSpendingPanel plan={plan} />
-
-      <HeatmapPanel plan={plan} open={heatmapOpen} onOpenChange={onHeatmapOpen} />
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
       {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}

@@ -16,6 +16,9 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   const id = useId()
   const ref = useRef<HTMLSpanElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  // A tap opens the tip (hover and focus) just before its click, which must not then close it: the click goes by whether
+  // the tip was open when the press began. Null for a click with no press, from the keyboard.
+  const openAtPress = useRef<boolean | null>(null)
 
   // Place the tip under the icon, kept inside the screen (icons near an edge would otherwise push it off)
   useLayoutEffect(() => {
@@ -39,18 +42,24 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
   }, [open])
 
   return (
-    <span ref={ref} className="relative inline-block align-middle" onMouseLeave={() => setOpen(false)}>
+    <span ref={ref} className="relative inline-block align-middle" onPointerLeave={(e) => e.pointerType === 'mouse' && setOpen(false)}>
       <button
         ref={buttonRef}
         type="button"
         aria-label={`About ${label}`}
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
+        onPointerDown={() => {
+          openAtPress.current = open
+        }}
         onClick={(e) => {
           e.preventDefault() // inside a <label> (after its field): don't focus the field
-          setOpen((o) => !o)
+          const wasOpen = openAtPress.current
+          openAtPress.current = null
+          setOpen((o) => !(wasOpen ?? o))
         }}
-        onMouseEnter={() => setOpen(true)}
+        // Hover is for a real mouse: after a tap, browsers also send made-up mouse events, which would close the tip
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setOpen(true)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-400 text-[10px] leading-none font-semibold text-muted hover:border-teal-600 hover:text-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 dark:border-slate-500"

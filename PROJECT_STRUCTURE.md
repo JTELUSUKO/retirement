@@ -361,7 +361,8 @@ One row per year; the age is your age at the **start** of that year.
   already past. Your plan's own ages are always included, and a young plan shows at most 16 columns around its
   retirement age. A full grid is 144 cells at 1,000 runs each: about 5 seconds on a desktop with 4 workers.
 - Each cell is built like a Compare scenario (`applyScenario`), so an annuity bought at retirement moves with it. A
-  combination `validatePlan` rejects shows "–". Your plan's cell is the plan itself, so it matches the headline.
+  combination `validatePlan` rejects shows "–". Your plan's cell is the plan itself, so it matches the headline
+  (a floor rounds down, so a `+` cell can read 1 lower).
 - **Background priority:** cells wait behind every other queued simulation, so editing the plan never waits for the
   grid, and queued cells are dropped when the plan changes or the panel closes (`useBackgroundSimulations`). While
   it recalculates, cells keep their earlier numbers until each new one arrives.
@@ -372,6 +373,8 @@ One row per year; the age is your age at the **start** of that year.
   retired years (`projection.ts`), so those checks are missed, though the lower benefit is applied. The number is a
   floor, so these cells get no verdict color, and against the plan they only report a gain, as "at least". Counting the
   checks properly needs the salary (for the earnings limit) and working-year taxes, which aren't modeled.
+- **Encouragement** (`heatCheer`): a proven gain gets a short message, on selecting a cell and after Apply. It praises the
+  result ("moves your plan from at risk to strong"), never the choice, and comes with a note about trade-offs.
 - Couples: the grid moves your claiming age; your spouse's stays fixed and you retire together.
 
 ## Printable summary

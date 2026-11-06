@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor } from './heatmap'
+import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -110,6 +110,40 @@ describe('a cell against the plan', () => {
     expect(isHeatFloor({ claimsBeforeRetiring: true }, 0.999)).toBe(true)
     expect(isHeatFloor({ claimsBeforeRetiring: true }, 1)).toBe(false)
     expect(isHeatFloor({ claimsBeforeRetiring: false }, 0.5)).toBe(false)
+  })
+})
+
+describe('encouragement', () => {
+  it('celebrates reaching a better verdict', () => {
+    expect(heatCheer(86, 64)).toEqual({ emoji: '🎉', text: 'Great result! This moves your plan from at risk to strong.' })
+    expect(heatCheer(85, 84)!.text).toBe('Great result! This moves your plan from borderline to strong.')
+    expect(heatCheer(81, 64)).toEqual({ emoji: '👍', text: 'Nice step forward. This moves your plan from at risk to borderline.' })
+  })
+
+  it('stays honest about a gain that leaves the verdict where it was', () => {
+    expect(heatCheer(95, 90)!.text).toBe('Even stronger. This adds to your cushion.')
+    expect(heatCheer(69, 60)!.text).toBe('A good gain, though still at risk.')
+    expect(heatCheer(80, 72)!.text).toBe('A good gain, though still borderline.')
+  })
+
+  it('says nothing for a loss, no change, or a tiny gain, even a strong one', () => {
+    expect(heatCheer(60, 64)).toBeNull()
+    expect(heatCheer(64, 64)).toBeNull()
+    expect(heatCheer(68, 64)).toBeNull()
+    expect(heatCheer(86, 85)).toBeNull()
+  })
+
+  it('a floor promises only what it proves', () => {
+    expect(heatCheer(90, 64, true)!.text).toBe('Great result! This moves your plan from at risk to strong.')
+    expect(heatCheer(81, 64, true)!.text).toBe('Nice step forward. This moves your plan from at risk to at least borderline.')
+    // 84+ might really be strong, so it can't say "still borderline"
+    expect(heatCheer(84, 75, true)!.text).toBe('A good gain of at least 9 points.')
+  })
+
+  it('never calls the choice itself right', () => {
+    for (const [cell, plan] of [[86, 64], [81, 64], [95, 90], [69, 60]]) {
+      expect(heatCheer(cell, plan)!.text).not.toMatch(/choice|choose|chose|should|right/i)
+    }
   })
 })
 

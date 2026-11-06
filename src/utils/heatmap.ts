@@ -1,4 +1,5 @@
 import { applyScenario, spouseOffset, TAX_CONFIG, validatePlan, type Plan } from '../engine'
+import { VERDICT_WORD, verdictFor } from './levers'
 
 export interface HeatCell {
   key: string
@@ -102,6 +103,34 @@ export const heatBand = (rate: number) => HEAT_BANDS.find((b) => Math.round(rate
 
 /** A cell whose number is only a floor (`claimsBeforeRetiring`): no verdict color, because the true chance may be higher */
 export const HEAT_FLOOR = 'border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800'
+
+export interface HeatCheer {
+  emoji: string
+  text: string
+}
+
+/** A gain smaller than this, inside the same verdict, isn't worth a message */
+const CHEER_MIN_POINTS = 5
+
+/**
+ * A word of encouragement for a better result, given the percentages shown. It praises the outcome, never the choice:
+ * the planner can say a combination scores higher, not that it's right for someone.
+ */
+export function heatCheer(cellPct: number, planPct: number, cellIsFloor = false): HeatCheer | null {
+  if (cellPct <= planPct) return null
+  const from = verdictFor(planPct / 100)
+  const to = verdictFor(cellPct / 100)
+  if (from !== to) {
+    // A floor at strong is strong for certain; a lower floor might really be better than its verdict
+    return to === 'strong'
+      ? { emoji: '🎉', text: `Great result! This moves your plan from ${VERDICT_WORD[from]} to strong.` }
+      : { emoji: '👍', text: `Nice step forward. This moves your plan from ${VERDICT_WORD[from]} to ${cellIsFloor ? 'at least ' : ''}${VERDICT_WORD[to]}.` }
+  }
+  const points = cellPct - planPct
+  if (points < CHEER_MIN_POINTS) return null
+  if (to === 'strong') return { emoji: '🌟', text: 'Even stronger. This adds to your cushion.' }
+  return { emoji: '📈', text: cellIsFloor ? `A good gain of at least ${points} points.` : `A good gain, though still ${VERDICT_WORD[to]}.` }
+}
 
 /** Whether a cell's result is only a floor: at 100% every run already succeeds, so there's nothing left to be understated */
 export const isHeatFloor = (cell: Pick<HeatCell, 'claimsBeforeRetiring'>, rate: number) => cell.claimsBeforeRetiring && rate < 1

@@ -2,9 +2,10 @@ import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from '
 import type { Plan } from '../engine'
 import { useBackgroundSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor, type HeatCell } from '../utils/heatmap'
+import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, isHeatFloor, type HeatCell, type HeatCheer } from '../utils/heatmap'
 import { endLabel } from '../utils/labels'
 import { Icon } from './Icons'
+import { InfoTip } from './InfoTip'
 import { ScrollRegion } from './ScrollRegion'
 import { PRIMARY, SECONDARY } from './styles'
 
@@ -12,6 +13,17 @@ const PLAN_RING = 'ring-2 ring-slate-900 ring-offset-1 ring-offset-white dark:ri
 // The age column stays put while the cells scroll under it; the shadow also covers the gaps between cells
 const STICKY = 'sticky left-0 z-20 bg-white shadow-[0_0_0_3px_var(--color-white)] dark:bg-slate-900 dark:shadow-[0_0_0_3px_var(--color-slate-900)]'
 const STEP: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }
+
+const TRADE_OFFS = 'Every option has trade-offs, like more working years or a smaller benefit, and only you can weigh them. This is an estimate, not advice.'
+
+/** The emoji is decoration; the words carry the message */
+function CheerText({ cheer }: { cheer: HeatCheer }) {
+  return (
+    <>
+      <span aria-hidden="true">{cheer.emoji}</span> {cheer.text}
+    </>
+  )
+}
 
 function Grid({ plan }: { plan: Plan }) {
   const update = usePlanStore((s) => s.update)
@@ -29,7 +41,7 @@ function Grid({ plan }: { plan: Plan }) {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [focusKey, setFocusKey] = useState(planKey)
   // The plan before and after Apply: the "applied" note lasts until the plan changes again
-  const [applied, setApplied] = useState<{ before: Plan; after: Plan } | null>(null)
+  const [applied, setApplied] = useState<{ before: Plan; after: Plan; cheer: HeatCheer | null } | null>(null)
   const tableRef = useRef<HTMLTableElement>(null)
   const cellsByKey = useMemo(() => new Map(grid.cells.map((c) => [c.key, c])), [grid])
   const cellAt = (key: string | null) => (key === null ? null : (cellsByKey.get(key) ?? null))
@@ -72,10 +84,12 @@ function Grid({ plan }: { plan: Plan }) {
   }
 
   const apply = (cell: HeatCell) => {
+    // With newer edits waiting behind these results, the message might not hold for the plan this lands on
+    const upToDate = usePlanStore.getState().plan === plan
     update(heatCellPatch(usePlanStore.getState().plan, plan, cell))
     setSelectedKey(null)
     setFocusKey(cell.key)
-    setApplied({ before: plan, after: usePlanStore.getState().plan })
+    setApplied({ before: plan, after: usePlanStore.getState().plan, cheer: upToDate ? cheer : null })
     focusCell(cell.key)
   }
   const compare = (cell: HeatCell) => {
@@ -106,23 +120,43 @@ function Grid({ plan }: { plan: Plan }) {
     !updating && selectedRate !== undefined && planRate !== undefined
       ? heatDelta(selectedRate, selectedIsFloor, planRate, floorOf(cellAt(planKey), planRate))
       : null
+  // Only for a gain the numbers prove, which also means the plan's own number is firm
+  const cheer =
+    delta && delta.points > 0 && selectedRate !== undefined && planRate !== undefined
+      ? heatCheer(heatPct(selectedRate, selectedIsFloor), heatPct(planRate, false), selectedIsFloor)
+      : null
 
   return (
     <div className="mt-3 space-y-3">
-      <p aria-live="polite" className="min-h-5 text-sm text-muted tabular-nums">
-        {error ? (
-          <span className="text-red-700 dark:text-red-400">✕ The simulation failed: {error}</span>
-        ) : updating ? (
-          <>
-            Calculating… <span aria-hidden="true">{done} of {jobs.length} done</span>
-          </>
-        ) : (
-          `All ${jobs.length} combinations ready. Select one to see what it would change.`
-        )}
-      </p>
+      <div className="flex items-start gap-1">
+        <p aria-live="polite" className="min-h-5 text-sm text-muted tabular-nums">
+          {error ? (
+            <span className="text-red-700 dark:text-red-400">✕ The simulation failed: {error}</span>
+          ) : updating ? (
+            <>
+              Calculating… <span aria-hidden="true">{done} of {jobs.length} done</span>
+            </>
+          ) : (
+            `All ${jobs.length} combinations ready. Select one to see what it would change.`
+          )}
+        </p>
+        <InfoTip label="reading this chart">
+          <span className="block">
+            Each square is your chance of the money lasting if you retire at the age above it and claim Social Security at
+            the age beside it. The rest of your plan stays the same.
+          </span>
+          <span className="mt-1.5 block">
+            The square with the bold outline is your plan. Moving right (retiring later) or up (claiming later) usually helps.
+          </span>
+          <span className="mt-1.5 block">
+            A + means at least that number, and a – means your plan’s other settings rule that combination out. Select any
+            square with a number to compare it with your plan; nothing changes until you apply it.
+          </span>
+        </InfoTip>
+      </div>
 
       <ScrollRegion label="Chance money lasts by retirement age and Social Security claiming age" className="overflow-x-auto pb-1">
-        <table ref={tableRef} role="grid" aria-label={`Chance money lasts to ${endLabel(plan)}, by retirement age and Social Security claiming age`} className="w-full border-separate border-spacing-[3px] text-xs">
+        <table ref={tableRef} role="grid" aria-label={`Chance money lasts to ${endLabel(plan)}, by retirement age and Social Security claiming age`} className="w-full border-separate border-spacing-[3px] text-xs select-none">
           <thead>
             <tr>
               <th scope="col" className={`${STICKY} px-1 pb-1 text-left align-bottom font-medium whitespace-nowrap text-muted`}>
@@ -212,7 +246,20 @@ function Grid({ plan }: { plan: Plan }) {
       </ul>
 
       <div aria-live="polite">
-        {applied && (plan === applied.before || plan === applied.after) && !selected && <p className="text-sm font-medium text-teal-700 dark:text-teal-300">✓ Applied to your plan</p>}
+        {applied && (plan === applied.before || plan === applied.after) && !selected && (
+          <>
+            <p className="text-sm font-medium text-teal-700 dark:text-teal-300">
+              ✓ Applied to your plan.
+              {applied.cheer && (
+                <>
+                  {' '}
+                  <CheerText cheer={applied.cheer} />
+                </>
+              )}
+            </p>
+            {applied.cheer && <p className="text-xs text-muted">{TRADE_OFFS}</p>}
+          </>
+        )}
         {selected && (
           <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800">
             <p>
@@ -234,6 +281,14 @@ function Grid({ plan }: { plan: Plan }) {
               )}
               {selected.key === planKey && <span className="ml-1 text-muted">This is your plan.</span>}
             </p>
+            {cheer && (
+              <div className="mt-1.5">
+                <p className="font-medium text-teal-700 dark:text-teal-300">
+                  <CheerText cheer={cheer} />
+                </p>
+                <p className="text-xs text-muted">{TRADE_OFFS}</p>
+              </div>
+            )}
             {selectedIsFloor && (
               <p className="mt-1 text-xs text-muted">Benefits start before you retire, so the real chance may be higher. See the note below.</p>
             )}
