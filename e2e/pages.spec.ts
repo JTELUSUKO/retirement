@@ -137,6 +137,41 @@ test('big expenses: add college, see it in the results, the lever and the summar
   await expectFitsScreen(page)
 })
 
+test('heatmap: every retirement and claiming age, with its effect on the plan', async ({ page }) => {
+  // 144 simulations, twice, while other tests share the CPU
+  test.setTimeout(120_000)
+  await page.goto('./')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByRole('button', { name: /example/i }).first().click()
+  const headline = page.getByText('Chance money lasts to').first().locator('xpath=ancestor::div[1]/..')
+  await expect(headline).toContainText(/\d+%/, { timeout: 30_000 })
+  // Closed until asked for
+  const chart = page.getByRole('grid', { name: /Chance money lasts/ })
+  await expect(chart).toHaveCount(0)
+  await page.getByText('Try every retirement and Social Security age').click()
+  await expect(page.locator('#root')).toContainText(/All \d+ combinations ready/, { timeout: 90_000 })
+  // Your plan's cell shows the same chance as the headline
+  const planCell = chart.getByRole('button', { name: /your plan/ })
+  await expect(planCell).toHaveCount(1)
+  await expect(planCell).toHaveAttribute('aria-label', /Retire at 65, claim at 67: \d+% chance/)
+  const planPct = (await planCell.innerText()).replace('*', '')
+  await expect(headline).toContainText(`${planPct}%`)
+  // Arrow keys move inside the chart
+  await planCell.focus()
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await expect(chart.getByRole('button', { name: /Retire at 67, claim at 67/ })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('#root')).toContainText('vs your plan')
+  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
+  await page.getByRole('button', { name: 'Apply to my plan' }).click()
+  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
+  await expect(page.locator('#root')).toContainText('Applied to your plan')
+  await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 67, claim at 67/, { timeout: 30_000 })
+  await expectFitsScreen(page)
+})
+
 test('Free calculators menu lists every calculator page and opens one', async ({ page }) => {
   await page.goto('./')
   const button = page.getByRole('button', { name: /Free calculators/ })

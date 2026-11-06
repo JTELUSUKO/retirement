@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { runSimulation, Superseded } from './pool'
+import { cancelQueued, runSimulation, Superseded } from './pool'
 import type { SimResult, SimTask } from './tasks'
 
 export interface SimState<T, Task = SimTask> {
@@ -41,6 +41,58 @@ export function useSimulations<T extends SimTask>(tasks: (T | null)[]): SimState
   }, [tasks, group])
 
   return { data: state.data, dataTasks: state.dataTasks, pending: state.forTasks !== tasks, error: state.error }
+}
+
+export interface BatchState<R> {
+  /** Results by key as they arrive; a key not re-run yet keeps its earlier result */
+  values: Record<string, R>
+  /** How many of the current jobs have finished */
+  done: number
+  error: string | null
+}
+
+/** A batch state after one job of `jobs` finishes, well or not; the first job of a new batch starts the count over */
+export function settleJob<R>(
+  state: BatchState<R> & { forJobs: unknown },
+  jobs: unknown,
+  outcome: { key: string; value: R } | { error: string },
+): BatchState<R> & { forJobs: unknown } {
+  const same = state.forJobs === jobs
+  return {
+    values: 'value' in outcome ? { ...state.values, [outcome.key]: outcome.value } : state.values,
+    done: (same ? state.done : 0) + 1,
+    error: 'error' in outcome ? outcome.error : same ? state.error : null,
+    forJobs: jobs,
+  }
+}
+
+/**
+ * Run a large batch at background priority (pass a memoized array), showing each result as it arrives. Queued jobs are
+ * dropped when the jobs change or the component goes away.
+ */
+export function useBackgroundSimulations<T extends SimTask>(jobs: { key: string; task: T }[]): BatchState<SimResult<T>> {
+  const group = useId()
+  const [state, setState] = useState<BatchState<SimResult<T>> & { forJobs: unknown }>({ values: {}, done: 0, error: null, forJobs: null })
+
+  useEffect(() => {
+    let active = true
+    for (const { key, task } of jobs) {
+      runSimulation(task, `${group}:${key}`, true)
+        .then((value) => {
+          if (active) setState((s) => settleJob(s, jobs, { key, value }))
+        })
+        .catch((err) => {
+          if (err instanceof Superseded || !active) return
+          setState((s) => settleJob(s, jobs, { error: err instanceof Error ? err.message : String(err) }))
+        })
+    }
+    return () => {
+      active = false
+      cancelQueued(`${group}:`)
+    }
+  }, [jobs, group])
+
+  return { values: state.values, done: state.forJobs === jobs ? state.done : 0, error: state.error }
 }
 
 /** Single-task version of useSimulations (pass a memoized task). */

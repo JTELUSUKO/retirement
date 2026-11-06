@@ -17,6 +17,14 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await loadExample(page)
     await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
   }],
+  ['plan with the heatmap open, one combination selected', async (page) => {
+    await loadExample(page)
+    await expect(page.locator('svg.recharts-surface')).toHaveCount(2, { timeout: 15_000 })
+    await page.getByText('Try every retirement and Social Security age').click()
+    await expect(page.locator('#root')).toContainText(/All \d+ combinations ready/, { timeout: 90_000 })
+    await page.getByRole('button', { name: /Retire at 67, claim at 70/ }).click()
+    await expect(page.locator('#root')).toContainText('vs your plan')
+  }],
   ['compare scenarios', async (page) => {
     await loadExample(page)
     await page.goto('./#compare')
@@ -97,6 +105,8 @@ for (const scheme of ['light', 'dark'] as const) {
   for (const [name, open] of STATES) {
     test(`a11y ${scheme}: ${name}`, async ({ page }, info) => {
       test.skip(info.project.name !== 'Chrome', 'colour and markup checks run once, in Chrome')
+      // 144 simulations, then axe over 144 buttons, while other tests share the CPU
+      if (name.includes('heatmap')) test.setTimeout(120_000)
       await page.emulateMedia({ colorScheme: scheme })
       await open(page)
       await page.waitForTimeout(300)

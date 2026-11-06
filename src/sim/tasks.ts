@@ -14,6 +14,7 @@ export type SimTask =
   | { kind: 'monteCarlo'; plan: Plan; options?: Omit<MonteCarloOptions, 'adjust'> }
   | { kind: 'evaluate'; plan: Plan; stress: StressTest }
   | { kind: 'safeSpending'; plan: Plan; target: number }
+  | { kind: 'successRate'; plan: Plan }
 
 export type SimResult<T extends SimTask> = T extends { kind: 'monteCarlo' }
   ? MonteCarloResult
@@ -30,5 +31,7 @@ export function runTask(task: SimTask): MonteCarloResult | PlanEvaluation | numb
       return evaluatePlan(task.plan, task.stress)
     case 'safeSpending':
       return findSafeSpendingSync(task.plan, task.target, 1000)
+    case 'successRate':
+      return runMonteCarlo(task.plan).successRate
   }
 }

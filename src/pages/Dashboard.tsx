@@ -1,6 +1,7 @@
 import { memo, useDeferredValue, useMemo } from 'react'
 import { AnnuityComparison } from '../components/AnnuityComparison'
 import { RothConversionComparison } from '../components/RothConversionComparison'
+import { HeatmapPanel } from '../components/HeatmapPanel'
 import { SafeSpendingPanel } from '../components/SafeSpendingPanel'
 import { VerdictPanel } from '../components/VerdictPanel'
 import { WhatIfPanel } from '../components/WhatIfPanel'
@@ -152,6 +153,8 @@ const Results = memo(function Results({ plan }: { plan: Plan }) {
       </p>
 
       <SafeSpendingPanel plan={plan} />
+
+      <HeatmapPanel plan={plan} />
 
       {withoutAnnuity && <AnnuityComparison plan={plan} withAnnuity={mc} withoutAnnuity={withoutAnnuity} />}
       {bothLive && <SurvivorComparison plan={plan} withDeath={mc} bothLive={bothLive} />}

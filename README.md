@@ -10,6 +10,7 @@ Enter your accounts, savings, expected spending and Social Security estimate to 
 - Your chance of the money lasting, from 1,000 simulated market histories (Monte Carlo)
 - The range of outcomes, from poor markets to good ones
 - Your Social Security benefit for any claiming age from 62 to 70
+- A heatmap of your chance of success for every combination of retirement age and Social Security claiming age
 - How each account type (pre-tax, Roth, taxable, cash, HSA) is drawn down, including RMDs
 - Approximate federal and state income tax on retirement withdrawals and Social Security (all 50 states + DC)
 - Healthcare costs before and after Medicare, paid from your HSA first

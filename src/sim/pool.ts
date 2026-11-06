@@ -5,6 +5,8 @@ interface Job {
   task: SimTask
   /** Jobs in the same group replace each other while still queued (e.g. one per chart) */
   group: string
+  /** Waits for every other queued job, so a big batch never holds up the results on screen */
+  background: boolean
   resolve: (value: unknown) => void
   reject: (reason: unknown) => void
 }
@@ -57,7 +59,8 @@ function dispatch() {
   slots ??= createSlots()
   for (const slot of slots) {
     if (slot.job || queue.length === 0) continue
-    const job = queue.shift()!
+    const next = queue.findIndex((job) => !job.background)
+    const job = queue.splice(Math.max(next, 0), 1)[0]
     slot.job = job
     slot.worker.postMessage({ id: job.id, task: job.task })
   }
@@ -65,9 +68,10 @@ function dispatch() {
 
 /**
  * Run a simulation task off the main thread. A newer task in the same `group` replaces any of its queued
- * (not yet started) tasks, which reject with `Superseded`. Without Worker support, runs on the main thread.
+ * (not yet started) tasks, which reject with `Superseded`. A `background` task waits for every other queued task.
+ * Without Worker support, runs on the main thread.
  */
-export function runSimulation<T extends SimTask>(task: T, group: string): Promise<SimResult<T>> {
+export function runSimulation<T extends SimTask>(task: T, group: string, background = false): Promise<SimResult<T>> {
   if (!canUseWorkers) {
     return new Promise((resolve, reject) =>
       setTimeout(() => {
@@ -83,7 +87,14 @@ export function runSimulation<T extends SimTask>(task: T, group: string): Promis
     if (queue[i].group === group) queue.splice(i, 1)[0].reject(new Superseded())
   }
   return new Promise((resolve, reject) => {
-    queue.push({ id: nextId++, task, group, resolve: resolve as (v: unknown) => void, reject })
+    queue.push({ id: nextId++, task, group, background, resolve: resolve as (v: unknown) => void, reject })
     dispatch()
   })
+}
+
+/** Drop the queued tasks whose group starts with `prefix` (they reject with `Superseded`); running ones finish. */
+export function cancelQueued(prefix: string) {
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (queue[i].group.startsWith(prefix)) queue.splice(i, 1)[0].reject(new Superseded())
+  }
 }

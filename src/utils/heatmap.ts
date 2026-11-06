@@ -1,0 +1,101 @@
+import { applyScenario, spouseOffset, TAX_CONFIG, validatePlan, type Plan } from '../engine'
+
+export interface HeatCell {
+  key: string
+  retirementAge: number
+  claimAge: number
+  /** The plan with these two ages; null when the combination isn't valid (an annuity bought before retiring, say) */
+  plan: Plan | null
+  /** Benefits (yours or your spouse's) that start before you retire aren't counted until then, so this cell understates the chance */
+  claimsBeforeRetiring: boolean
+}
+
+export interface HeatGrid {
+  retireAges: number[]
+  /** Highest first: the table's top row, so claiming age goes up the chart */
+  claimAges: number[]
+  cells: HeatCell[]
+}
+
+/** Each column adds a full row of simulations, so a long way from retiring only shows the years around the plan */
+const MAX_RETIRE_COLUMNS = 16
+const LAST_RETIRE_AGE = 70
+const YEARS_BEFORE_PLAN = 5
+
+export const heatKey = (retirementAge: number, claimAge: number) => `${retirementAge}:${claimAge}`
+
+/** Retirement ages to show, always including the plan's (a valid plan: currentAge <= retirementAge < lifeExpectancy) */
+function retireAgesFor(plan: Plan): number[] {
+  let last = Math.max(Math.min(LAST_RETIRE_AGE, plan.lifeExpectancy - 1), plan.retirementAge)
+  let first = Math.max(plan.currentAge, last - MAX_RETIRE_COLUMNS + 1)
+  if (plan.retirementAge < first) {
+    first = Math.max(plan.currentAge, plan.retirementAge - YEARS_BEFORE_PLAN)
+    last = Math.min(first + MAX_RETIRE_COLUMNS - 1, plan.lifeExpectancy - 1)
+  }
+  return Array.from({ length: last - first + 1 }, (_, i) => first + i)
+}
+
+/** Claiming ages to show: those still ahead of you, plus the plan's own */
+function claimAgesFor(plan: Plan): number[] {
+  const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
+  const ages: number[] = []
+  for (let age = latestClaimAge; age >= earliestClaimAge; age--) {
+    if (age >= plan.currentAge || age === plan.socialSecurityClaimAge) ages.push(age)
+  }
+  return ages
+}
+
+/** Every retirement and claiming age to test, each built like a Compare scenario */
+export function heatmapGrid(plan: Plan): HeatGrid {
+  const retireAges = retireAgesFor(plan)
+  const claimAges = claimAgesFor(plan)
+  // In your age, as the engine times it; never if there's no spouse's benefit
+  const spouseClaim =
+    plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0 ? plan.spouseClaimAge - spouseOffset(plan) : Infinity
+  const cells = claimAges.flatMap((claimAge) =>
+    retireAges.map((retirementAge): HeatCell => {
+      const tested = applyScenario(plan, {
+        id: 'heatmap',
+        name: 'Heatmap',
+        slot: 1,
+        stress: 'none',
+        overrides: { retirementAge, socialSecurityClaimAge: claimAge },
+      })
+      return {
+        key: heatKey(retirementAge, claimAge),
+        retirementAge,
+        claimAge,
+        plan: validatePlan(tested).length === 0 ? tested : null,
+        // Retiring now leaves no working years for a benefit to be missed in
+        claimsBeforeRetiring: plan.currentAge < retirementAge && Math.min(claimAge, spouseClaim) < retirementAge,
+      }
+    }),
+  )
+  return { retireAges, claimAges, cells }
+}
+
+/** A cell's change to the latest plan: only the ages it moved from `base`, so it can't undo other edits */
+export function heatCellPatch(latest: Plan, base: Plan, cell: HeatCell): Partial<Plan> {
+  const purchaseAge = cell.plan?.annuityPurchase.purchaseAge ?? base.annuityPurchase.purchaseAge
+  return {
+    ...(cell.retirementAge !== base.retirementAge && { retirementAge: cell.retirementAge }),
+    ...(cell.claimAge !== base.socialSecurityClaimAge && { socialSecurityClaimAge: cell.claimAge }),
+    // An annuity bought at retirement moves with it, as it did in the cell's simulation
+    ...(purchaseAge !== base.annuityPurchase.purchaseAge && { annuityPurchase: { ...latest.annuityPurchase, purchaseAge } }),
+  }
+}
+
+/**
+ * Color bands, lowest first, in the app's verdict language: under 70% is at risk, 85% and up is strong. Teal and
+ * orange rather than green and red, which many colorblind readers can't tell apart; the middle band is neutral.
+ */
+export const HEAT_BANDS = [
+  { upTo: 49, label: 'Under 50%', className: 'bg-orange-500 text-slate-900 dark:bg-orange-700 dark:text-white' },
+  { upTo: 69, label: '50–69%', className: 'bg-orange-300 text-slate-900 dark:bg-orange-900 dark:text-white' },
+  { upTo: 84, label: '70–84%', className: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' },
+  { upTo: 94, label: '85–94%', className: 'bg-teal-300 text-slate-900 dark:bg-teal-700 dark:text-white' },
+  { upTo: 100, label: '95%+', className: 'bg-teal-700 text-white dark:bg-teal-300 dark:text-slate-900' },
+]
+
+/** The band for a success rate, judged on the rounded percentage shown */
+export const heatBand = (rate: number) => HEAT_BANDS.find((b) => Math.round(rate * 100) <= b.upTo)!

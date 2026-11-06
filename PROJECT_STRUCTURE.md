@@ -64,7 +64,7 @@ retirement/
 │   ├── sim/                     # Simulations in background Web Workers
 │   │   ├── tasks.ts             # Task types + runTask (Monte Carlo, evaluatePlan, safe spending)
 │   │   ├── simulation.worker.ts # Worker entry: runs one task at a time
-│   │   ├── pool.ts              # Up to 4 workers; queued tasks superseded per group; main-thread fallback
+│   │   ├── pool.ts              # Up to 4 workers; queued tasks superseded per group; background priority; main-thread fallback
 │   │   ├── useSimulation.ts     # React hooks: run tasks when inputs change, keep last result while updating
 │   │   └── sim.test.ts
 │   ├── ai/                      # "Ask Claude" assistant (Claude API, called from the browser)
@@ -90,6 +90,7 @@ retirement/
 │   │   ├── RothConversionSection.tsx    # "Tax strategy": Roth conversion settings
 │   │   ├── LongTermCareSection.tsx      # Optional long-term care need
 │   │   ├── SafeSpendingPanel.tsx        # Safe spending for a target chance, with "Use this" 
+│   │   ├── HeatmapPanel.tsx     # Chance of success by retirement and claiming age: table of buttons, Apply or Compare
 │   │   ├── RothConversionComparison.tsx # With vs. without conversions, incl. lifetime tax + IRMAA, after-tax left
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── SurvivorComparison.tsx# Both live vs. one dies at the chosen age
@@ -149,6 +150,7 @@ retirement/
 │   │   └── pages.test.ts        # Guards: tokens filled, no typed-in tax years, no-transform header for every page
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
+│   │   ├── heatmap.ts           # Heatmap: which ages to test, each cell's plan and change, color bands
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   └── format.ts            # Currency formatting
@@ -350,6 +352,26 @@ One row per year; the age is your age at the **start** of that year.
 - Each scenario runs its own Monte Carlo; up to 3 scenarios. Scenarios are saved with the plan and in backups.
 - Each scenario has a fixed color **slot** (1–3) chosen at creation, so removing one never repaints the others;
   your plan is always slot 0.
+
+## Retirement and claiming age heatmap
+
+- On "My plan", closed by default: **Try every retirement and Social Security age**. Its simulations only run while
+  it's open. Hidden without a Social Security benefit of your own, like the what-if slider.
+- Columns run from your age to 70 (or the year before the plan ends), rows from 62 to 70, leaving out claiming ages
+  already past. Your plan's own ages are always included, and a young plan shows at most 16 columns around its
+  retirement age. A full grid is 144 cells at 1,000 runs each: about 5 seconds on a desktop with 4 workers.
+- Each cell is built like a Compare scenario (`applyScenario`), so an annuity bought at retirement moves with it. A
+  combination `validatePlan` rejects shows "–". Your plan's cell is the plan itself, so it matches the headline.
+- **Background priority:** cells wait behind every other queued simulation, so editing the plan never waits for the
+  grid, and queued cells are dropped when the plan changes or the panel closes (`useBackgroundSimulations`). While
+  it recalculates, cells keep their earlier numbers until each new one arrives.
+- **Colors** change at the verdict's 70% and 85% lines, plus 50% and 95%. Teal and orange rather than green and red,
+  for colorblind readers; every cell also shows its number. Selecting a cell shows its gain or loss against the plan,
+  with **Apply** (only the moved ages, onto the latest plan) and **Compare**.
+- **Marked `*`, benefits starting before you retire (yours or your spouse's):** Social Security only counts in retired
+  years (`projection.ts`), so those checks are missed, though the lower benefit is applied. Those cells understate the
+  chance, and selecting one says so.
+- Couples: the grid moves your claiming age; your spouse's stays fixed and you retire together.
 
 ## Printable summary
 
