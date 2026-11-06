@@ -167,6 +167,10 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   // A plain summary, and a way to jump to the closest combination that reaches strong
   await expect(page.locator('#root')).toContainText(/Your plan \(retire 65, claim 67\): \d+%, at risk/)
+  await expect(page.locator('#root')).toContainText(/retire \d+, claim \d+ \((about|at least) \d+%\)/)
+  // The limits of the numbers are stated: this grid has retirement ages before 67
+  await expect(page.locator('#root')).toContainText('Retiring before 67:')
+  await expect(page.locator('#root')).toContainText('could be a few points off')
   await page.getByRole('button', { name: 'Show me' }).click()
   await expect(page.locator('#root')).toContainText('to strong')
   await expect(chart.getByRole('button', { pressed: true })).toBeInViewport()

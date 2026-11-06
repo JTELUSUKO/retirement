@@ -75,6 +75,10 @@ export function heatmapGrid(plan: Plan): HeatGrid {
   return { retireAges, claimAges, cells }
 }
 
+/** Whether any tested cell stops work before the full retirement age the ssa.gov estimate assumes you earn until */
+export const showsRetiringEarly = (grid: HeatGrid) =>
+  grid.cells.some((c) => c.plan && c.retirementAge < TAX_CONFIG.socialSecurity.fullRetirementAge)
+
 /** A cell's change to the latest plan: only the ages it moved from `base`, so it can't undo other edits */
 export function heatCellPatch(latest: Plan, base: Plan, cell: HeatCell): Partial<Plan> {
   const purchaseAge = cell.plan?.annuityPurchase.purchaseAge ?? base.annuityPurchase.purchaseAge

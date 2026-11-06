@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
-import type { Plan } from '../engine'
+import { TAX_CONFIG, type Plan } from '../engine'
 import { useBackgroundSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, type HeatCell, type HeatCheer } from '../utils/heatmap'
+import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, showsRetiringEarly, type HeatCell, type HeatCheer } from '../utils/heatmap'
 import { VERDICT_WORD, verdictFor, type Verdict } from '../utils/levers'
 import { endLabel } from '../utils/labels'
 import { Icon } from './Icons'
@@ -15,6 +15,7 @@ const PLAN_RING = 'ring-2 ring-slate-900 ring-offset-1 ring-offset-white dark:ri
 // The age column stays put while the cells scroll under it; the shadow also covers the gaps between cells
 const STICKY = 'sticky left-0 z-20 bg-white shadow-[0_0_0_3px_var(--color-white)] dark:bg-slate-900 dark:shadow-[0_0_0_3px_var(--color-slate-900)]'
 const STEP: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }
+const { fullRetirementAge } = TAX_CONFIG.socialSecurity
 
 /** The color key, grouped by what the colors mean */
 const KEY_GROUPS = (['at-risk', 'borderline', 'strong'] as Verdict[]).map((verdict) => ({
@@ -170,6 +171,7 @@ function Grid({ plan }: { plan: Plan }) {
   const planVerdict = planRate === undefined ? null : verdictFor(planRate)
   const closest = !updating && planVerdict !== 'strong' ? nearestStrong(grid, values, plan) : null
   const closestRate = closest ? values[closest.key] : undefined
+  const closestIsFloor = floorOf(closest, closestRate)
   const selectCell = (key: string) => {
     setSelectedKey(key)
     setFocusKey(key)
@@ -208,8 +210,8 @@ function Grid({ plan }: { plan: Plan }) {
           ) : closest && closestRate !== undefined ? (
             <p className="mt-0.5">
               Closest combination that reaches strong (85%+): retire {closest.retirementAge}, claim {closest.claimAge} (
-              {isHeatFloor(closest, closestRate) ? 'at least ' : ''}
-              {heatPct(closestRate, isHeatFloor(closest, closestRate))}%).{' '}
+              {closestIsFloor ? 'at least ' : 'about '}
+              {heatPct(closestRate, closestIsFloor)}%).{' '}
               <button type="button" onClick={() => showCell(closest.key)} className="font-medium text-teal-700 underline underline-offset-2 dark:text-teal-300">
                 Show me
               </button>
@@ -393,6 +395,9 @@ function Grid({ plan }: { plan: Plan }) {
             {selectedIsFloor && (
               <p className="mt-1 text-xs text-muted">Benefits start before you retire, so the real chance may be higher. See the note below.</p>
             )}
+            {selected.retirementAge < fullRetirementAge && (
+              <p className="mt-1 text-xs text-muted">Retiring before {fullRetirementAge} can lower your Social Security, so this could be optimistic. See the note below.</p>
+            )}
             {selected.key !== planKey && (
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" onClick={() => apply(selected)} className={`${PRIMARY} inline-flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
@@ -422,8 +427,17 @@ function Grid({ plan }: { plan: Plan }) {
           working. The planner counts the smaller benefit but not the checks that arrive before you retire, so the real
           chance may be higher. Working can also reduce those checks before full retirement age.
         </p>
+        {showsRetiringEarly(grid) && (
+          <p>
+            <strong className="font-semibold">Retiring before {fullRetirementAge}:</strong> these squares use the Social
+            Security amount in your plan, but your ssa.gov estimate assumes you keep earning until {fullRetirementAge}. Stopping
+            sooner can lower your benefit, so unless your amount already allows for that, the real chance could be lower than
+            shown. In a square with a +, “at least” assumes the amount in your plan.
+          </p>
+        )}
         <p>
-          Each combination runs 1,000 simulated markets with the rest of your plan unchanged.
+          Each combination is an estimate from 1,000 simulated markets with the rest of your plan unchanged. A number could be
+          a few points off, so one near a color boundary could really belong on the other side of it.
           {plan.filingStatus === 'married' && ` You retire together; your spouse’s claiming age stays at ${plan.spouseClaimAge}.`}
         </p>
       </div>

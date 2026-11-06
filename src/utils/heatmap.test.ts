@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong } from './heatmap'
+import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, showsRetiringEarly } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -55,6 +55,15 @@ describe('heatmap grid', () => {
 
   it('marks nothing when retiring now, with no working years to miss a benefit in', () => {
     expect(cellOf({ ...plan, currentAge: 66, retirementAge: 66, socialSecurityClaimAge: 62 }, 66, 62).claimsBeforeRetiring).toBe(false)
+  })
+
+  it('notices retiring before full retirement age, only in cells that can be tested', () => {
+    expect(showsRetiringEarly(heatmapGrid(plan))).toBe(true)
+    expect(showsRetiringEarly(heatmapGrid({ ...plan, currentAge: 66, retirementAge: 66 }))).toBe(true)
+    expect(showsRetiringEarly(heatmapGrid({ ...plan, currentAge: 67, retirementAge: 67 }))).toBe(false)
+    const grid = heatmapGrid(plan)
+    const ruledOut = { ...grid, cells: grid.cells.map((c) => (c.retirementAge < 67 ? { ...c, plan: null } : c)) }
+    expect(showsRetiringEarly(ruledOut)).toBe(false)
   })
 
   it('a combination the plan rules out has no plan to simulate', () => {

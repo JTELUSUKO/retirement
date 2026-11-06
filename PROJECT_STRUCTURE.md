@@ -373,6 +373,10 @@ One row per year; the age is your age at the **start** of that year.
   retired years (`projection.ts`), so those checks are missed, though the lower benefit is applied. The number is a
   floor, so these cells get no verdict color, and against the plan they only report a gain, as "at least". Counting the
   checks properly needs the salary (for the earnings limit) and working-year taxes, which aren't modeled.
+- **Limits stated under the chart:** every cell uses the plan's Social Security amount, though the ssa.gov estimate
+  assumes earning until 67, so a note appears when the grid shows a retirement age before 67, and on selecting such a
+  cell. Each number is also a few points uncertain at 1,000 runs (retire 68, claim 67 on the example plan: 81–86% across
+  eight seeds, 84.4% at 20,000 runs), so the closest strong combination reads "about" unless it's a floor.
 - **Encouragement** (`heatCheer`): a proven gain gets a short message, on selecting a cell and after Apply. It praises the
   result ("moves your plan from at risk to strong"), never the choice, and comes with a note about trade-offs.
 - **Takeaway and Undo:** once every number is in, a summary gives your plan's result and the closest combination that
