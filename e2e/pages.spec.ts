@@ -414,3 +414,11 @@ test('printer icon opens the print / save-as-PDF dialog', async ({ page }) => {
   await expect(page).toHaveURL(/#summary$/)
   await expect(page.getByRole('heading', { name: 'Retirement plan summary' })).toBeVisible({ timeout: 30_000 })
 })
+
+test('planner header states the promise, with the Ask Claude exception beside it', async ({ page }) => {
+  await page.goto('./')
+  const header = page.getByRole('banner')
+  await expect(header).toContainText('A detailed retirement plan with taxes and market simulations, free, no sign-up, and your plan stays in your browser.')
+  await expect(header).toContainText('unless you use Ask Claude')
+  await expectFitsScreen(page)
+})

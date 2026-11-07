@@ -105,6 +105,10 @@ export default function App() {
             </span>
           </a>
         </nav>
+        {/* Its own row (w-full): next to the title it would push the nav onto a second line on a laptop */}
+        <p className="w-full text-sm font-medium">
+          A detailed retirement plan with taxes and market simulations, free, no sign-up, and your plan stays in your browser.
+        </p>
       </header>
       <div className="mb-8">
         <DisclaimerBanner />
