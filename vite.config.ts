@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, type Connect, type Plugin } from 'vite'
 import { PAGES, taxYearPages } from './build/taxYearPages.ts'
 
 // `base` is the path the site is served from: '/retirement/' (the repo name) for
@@ -28,9 +28,26 @@ const previewHeaders = Object.fromEntries(
     .filter(([name]) => name !== 'Strict-Transport-Security'),
 )
 
+// Stands in for the Worker's /api/love (src/worker/index.ts) under `npm run dev` and `npm run preview`
+function loveStub(): Plugin {
+  let count = 0
+  const handler: Connect.NextHandleFunction = async (req, res) => {
+    let body = ''
+    for await (const chunk of req) body += chunk
+    if (req.method === 'POST') count = Math.max(0, count + (body.includes('remove') ? -1 : 1))
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ count }))
+  }
+  return {
+    name: 'love-stub',
+    configureServer: (server) => void server.middlewares.use(`${server.config.base}api/love`, handler),
+    configurePreviewServer: (server) => void server.middlewares.use(`${server.config.base}api/love`, handler),
+  }
+}
+
 export default defineConfig({
   base: basePath.endsWith('/') ? basePath : `${basePath}/`,
-  plugins: [react(), tailwindcss(), taxYearPages()],
+  plugins: [react(), tailwindcss(), taxYearPages(), loveStub()],
   build: {
     rolldownOptions: {
       // Each public page is its own HTML entry (build/taxYearPages.ts lists them, for the sitemap too)

@@ -13,12 +13,15 @@ import { formatUSD } from '../src/utils/format'
 
 const pct = (n: number, digits = 1) => `${(n * 100).toFixed(digits).replace(/\.0+$/, '')}%`
 
+// WebKit reports the heart's request as a page error when a reload interrupts it. Nothing is wrong: the next load asks again
+const interrupted = /api\/love due to access control checks/
+
 /** Fails a test if the page logs an error or the browser blocks something (CSP). */
 const test = base.extend<{ problems: string[] }>({
   problems: [
     async ({ page }, use) => {
       const problems: string[] = []
-      page.on('pageerror', (e) => problems.push(e.message))
+      page.on('pageerror', (e) => interrupted.test(e.message) || problems.push(e.message))
       page.on('console', (m) => {
         if (m.type() === 'error' || /Refused|violat/i.test(m.text())) problems.push(m.text())
       })

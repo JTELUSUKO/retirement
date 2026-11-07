@@ -1,4 +1,4 @@
-const UPDATED = 'November 1, 2026'
+const UPDATED = 'November 7, 2026'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -117,7 +117,8 @@ export function Terms() {
         <p>
           The calculator has no accounts, cookies, tracking or analytics. What you enter stays in your browser and is
           not sent to us. If you use the optional Ask Claude assistant, your plan and questions go from your browser
-          to Anthropic (see section 5). Clearing your browser data erases your plan, so use Export to keep a copy. Like any web host,
+          to Anthropic (see section 5). Clearing your browser data erases your plan, so use Export to keep a copy. If you tap the heart, one is added to a
+          public total on our server; only the total is stored, with nothing about you or your plan. Like any web host,
           our hosting provider keeps standard server logs of page visits.
         </p>
       </Section>

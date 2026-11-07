@@ -47,6 +47,24 @@ Known problems not yet fixed, one entry per item. Delete an entry when it's fixe
 - **Impact:** Most problems in Firefox are only found by hand. Edge hasn't been tested on this work.
 - **Recommended fix:** Run every spec in Firefox, and add an `msedge` project.
 
+## The heart's total can be pushed around
+
+- **Issue:** `/api/love` has no accounts to check against. A script can fake `Origin` and send up to 10 tap or undo requests a
+  minute per IP address; a cleared browser or private window can tap again; a tap whose answer is lost can be counted
+  twice. Reads have no limit and each one is a Worker and Durable Object request.
+- **Location:** `src/worker/index.ts`; the limit in `wrangler.jsonc`.
+- **Impact:** The number is a rough figure. A flood of reads could use up the free daily request allowance, which only
+  affects the heart: pages and files don't run the Worker.
+- **Recommended fix:** Only if it's abused: a short cache on reads, and a floor or a separate store for undos.
+
+## The heatmap's browser test sometimes fails on Undo
+
+- **Issue:** In full `npm run e2e` runs, the heatmap test sometimes finds "Retire at" still on 67 after Undo, on WebKit and
+  phone projects. It failed 2 of 5 runs on commit `97885e0`, and passed 32 of 32 when repeated alone. Cause not found.
+- **Location:** `e2e/pages.spec.ts`, the Undo step of the heatmap test; `.last()` picks among the page's Undo buttons.
+- **Impact:** A red run that passes on retry. Unknown whether a person could hit this with Undo.
+- **Recommended fix:** Find out which Undo button that step clicked when it fails, then fix the test or the app.
+
 ## Verdict lines are written in several places
 
 - **Issue:** 70 and 85 are repeated outside `verdictFor`.

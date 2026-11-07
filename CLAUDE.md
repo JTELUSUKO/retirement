@@ -32,6 +32,8 @@ hash and returns nothing for a short one.
 - Verdicts come from `verdictFor` in `src/utils/levers.ts`: 85%+ strong, 70%+ borderline, judged on the rounded percentage.
 - Simulations use 1,000 runs with seed 42, so a percentage can be a few points off.
 - Messages can say a result scores higher, not that a choice is right for someone.
+- `/api/love` (`src/worker/`) is the only server code and the only thing the site stores: keep it to the one number. Calculator
+  pages don't call it.
 
 ## Shell
 
