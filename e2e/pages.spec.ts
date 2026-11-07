@@ -81,6 +81,18 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await expect(page).toHaveURL(/#plan$/)
 })
 
+test('planner: states the Roth limit only for plans retiring before 59', async ({ page }) => {
+  const note = page.getByText('Roth withdrawals before 59½ count as tax-free here')
+  await page.goto('./')
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByRole('button', { name: /example/i }).first().click()
+  await expect(page.getByText(/Income tax over retirement/)).toBeVisible({ timeout: 30_000 })
+  await expect(note).toHaveCount(0)
+  await page.getByRole('textbox', { name: 'Retire at' }).fill('56')
+  await expect(note).toBeVisible({ timeout: 30_000 })
+})
+
 test('Roth conversion calculator', async ({ page }) => {
   const expected = rothConversion(ROTH_DEFAULTS)
   await page.goto('./roth-conversion-calculator/')

@@ -45,7 +45,8 @@ year's table. Regenerating them in January moves the label and the Tax Foundatio
 3. `npm run e2e` (its expected numbers follow the config, so it needs no edits), then look over the calculator pages'
    tax tables in a browser.
 4. Spot-check one calculation per page against the official source (for example, one bracket and one IRMAA tier).
-5. Commit, push (updates GitHub Pages), then `BASE_PATH=/ npm run build && npx wrangler deploy` (willitlast.app), then `npm run e2e:live`.
+5. Commit and push to `main`, which deploys both sites (`.github/workflows/deploy.yml`). Once that run finishes, run
+   `npm run e2e:live`.
 6. Close the reminder issue.
 
 Text that is not a yearly figure stays as written (for example "since 2024" for Roth 401(k) RMDs). A test fails if a

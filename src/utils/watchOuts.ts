@@ -100,6 +100,14 @@ export function watchOuts(plan: Plan, result: ProjectionResult): WatchOut[] {
   return out.sort((a, b) => a.age - b.age)
 }
 
+/**
+ * True when retired years before 59½ could draw on Roth money, which the engine treats as tax-free even for earnings
+ * (the year you turn 59 counts as after 59½, as for the pre-tax penalty).
+ */
+export const mayUseRothEarly = (plan: Plan) =>
+  Math.max(plan.currentAge, plan.retirementAge) < 59 &&
+  (plan.rothConversion.enabled || plan.accounts.some((a) => a.type === 'roth'))
+
 /** Pre-tax (beyond any RMD), Roth and HSA money taken out in a year */
 const fromRetirementAccounts = (y: YearResult) => y.withdrawalsByBucket.pretax - y.rmd + y.withdrawalsByBucket.roth + y.withdrawalsByBucket.hsa
 

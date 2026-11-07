@@ -23,6 +23,7 @@ import type { SimTask } from '../sim/tasks'
 import { useSimulations } from '../sim/useSimulation'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { endLabel } from '../utils/labels'
+import { mayUseRothEarly } from '../utils/watchOuts'
 
 const Results = memo(function Results({ plan, heatmapOpen, onHeatmapOpen }: { plan: Plan; heatmapOpen: boolean; onHeatmapOpen: (open: boolean) => void }) {
   const result = useMemo(() => projectPlan(plan), [plan])
@@ -139,6 +140,7 @@ const Results = memo(function Results({ plan, heatmapOpen, onHeatmapOpen }: { pl
         {formatUSDCompact(lifetimeTaxReal - lifetimeStateTaxReal)} federal,{' '}
         {plan.state ? `${formatUSDCompact(lifetimeStateTaxReal)} state` : 'no state chosen'}), about{' '}
         {(avgTaxRate * 100).toFixed(1)}% of your income and withdrawals, including capital gains on brokerage sales and any early-withdrawal penalty. Local taxes aren't included.
+        {mayUseRothEarly(plan) && " Roth withdrawals before 59½ count as tax-free here, but earnings taken out that early can owe income tax and a 10% penalty, so this result can look better than it would be."}
         <br />
         Healthcare over retirement: <strong className="tabular-nums">{formatUSDCompact(lifetimeHealthReal)}</strong> in
         today's dollars, including medical costs rising faster than inflation

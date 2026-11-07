@@ -1,11 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { projectPlan, type Plan } from '../engine'
 import { examplePlan, newBigExpense } from '../store/planStore'
-import { watchOuts } from './watchOuts'
+import { mayUseRothEarly, watchOuts } from './watchOuts'
 
 const check = (plan: Plan) => watchOuts(plan, projectPlan(plan))
 const keys = (plan: Plan) => check(plan).map((w) => w.key)
 const pretaxOnly = (balance: number) => [{ ...examplePlan.accounts[0], balance, annualContribution: 0, employerMatch: 0 }]
+
+describe('Roth money before 59½', () => {
+  const roth = [{ ...examplePlan.accounts[0], type: 'roth' as const }]
+  const early = { ...examplePlan, currentAge: 45, retirementAge: 55, accounts: roth }
+
+  it('applies when retiring before 59 with a Roth account or conversions', () => {
+    expect(mayUseRothEarly(early)).toBe(true)
+    const conversions = { ...examplePlan.rothConversion, enabled: true }
+    expect(mayUseRothEarly({ ...early, accounts: pretaxOnly(450_000), rothConversion: conversions })).toBe(true)
+  })
+
+  it('leaves out retiring at 59 or later, being 59 already, and plans with no Roth money', () => {
+    expect(mayUseRothEarly({ ...early, retirementAge: 59 })).toBe(false)
+    expect(mayUseRothEarly({ ...early, currentAge: 60 })).toBe(false)
+    expect(mayUseRothEarly({ ...early, accounts: pretaxOnly(450_000) })).toBe(false)
+  })
+})
 
 describe('watch-outs', () => {
   it('finds the Roth conversion window in the example plan: low brackets before RMDs', () => {

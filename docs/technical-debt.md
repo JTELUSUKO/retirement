@@ -33,9 +33,9 @@ Known problems not yet fixed, one entry per item. Delete an entry when it's fixe
 ## Roth withdrawals before 59½ treated as tax-free
 
 - **Issue:** Earnings withdrawn early from a Roth aren't taxed or penalized in the model.
-- **Location:** `src/engine/projection.ts:66`. The docs and the results page don't mention this limit.
-- **Impact:** Plans that retire early and rely on Roth money can look better than they are.
-- **Recommended fix:** Track contributions separately from earnings, or at least state the limit under the results.
+- **Location:** `src/engine/projection.ts:66`. The limit is stated in `PROJECT_STRUCTURE.md` ("How taxes work"), on "My plan" (`mayUseRothEarly`) and on the printed summary.
+- **Impact:** Plans that retire early and rely on Roth money can look better than they are, and the percentage itself isn't adjusted.
+- **Recommended fix:** Track contributions separately from earnings, and tax and penalize the earnings.
 
 ## Firefox and Edge have no automated checks
 

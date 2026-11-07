@@ -2,13 +2,13 @@
 
 Retirement Planner is a single-page web app built with **Vite + React + TypeScript**.
 All calculations run in the browser and plans are saved to `localStorage`, so there is no backend.
-It is hosted on **GitHub Pages** and deployed automatically on every push to `main`.
+It is hosted at **https://willitlast.app** (Cloudflare) and deployed automatically on every push to `main`.
 
 ```
 retirement/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml           # CI: install → test → build → publish to GitHub Pages
+│       └── deploy.yml           # CI: install → lint → test → build → publish to GitHub Pages and willitlast.app
 ├── public/                      # Static files copied as-is into the build
 │   ├── favicon.svg
 │   ├── _headers                 # Security headers for willitlast.app (Cloudflare)
@@ -65,6 +65,7 @@ retirement/
 │   │   ├── tasks.ts             # Task types + runTask (Monte Carlo, evaluatePlan, safe spending)
 │   │   ├── simulation.worker.ts # Worker entry: runs one task at a time
 │   │   ├── pool.ts              # Up to 4 workers; queued tasks superseded per group; background priority; main-thread fallback
+│   │   ├── pool.test.ts
 │   │   ├── useSimulation.ts     # React hooks: run tasks when inputs change, keep last result while updating
 │   │   └── sim.test.ts
 │   ├── ai/                      # "Ask Claude" assistant (Claude API, called from the browser)
@@ -74,6 +75,7 @@ retirement/
 │   │   ├── tools.ts             # Read-only tools: get_plan_results, run_what_if (run the engine locally)
 │   │   ├── tools.test.ts
 │   │   ├── toolNotes.ts         # Plain-language notes for tool calls shown in the chat
+│   │   ├── toolNotes.test.ts
 │   │   ├── apiKey.ts            # Visitor's own API key: sessionStorage, or localStorage if remembered
 │   │   └── chatStore.ts         # In-memory conversation (not saved)
 │   ├── store/
@@ -81,6 +83,7 @@ retirement/
 │   │   ├── planStore.test.ts
 │   │   ├── planFile.ts          # JSON backup: export, and import with upgrade + validation
 │   │   ├── move.ts              # Carries a saved plan from the old github.io address to willitlast.app
+│   │   ├── move.test.ts
 │   │   ├── uiPrefs.ts           # View preferences (Basic/Advanced, open sections, guided setup), saved apart from the plan
 │   │   └── planFile.test.ts
 │   ├── components/              # Reusable UI pieces
@@ -113,11 +116,20 @@ retirement/
 │   │   ├── Logo.tsx             # The logo: public/favicon.svg itself (calculator pages use the {{LOGO}} token)
 │   │   ├── ScrollRegion.tsx     # Scrolling table box: focusable and labelled only while it overflows
 │   │   ├── StateField.tsx       # State picker + how the state taxes retirees + partial exemption amount
+│   │   ├── StateSelect.tsx      # Type-to-filter state list, with an optional "no state" choice
+│   │   ├── Calculators.tsx      # Header "Free calculators" menu + the footer's grid of calculator cards
+│   │   ├── Disclaimer.tsx       # Bold disclaimer at the top of every page; the full text on the printed summary
+│   │   ├── Icons.tsx            # Small decorative line icons
+│   │   ├── SuccessGauge.tsx     # Half-circle dial for the chance the money lasts, colored by verdict
+│   │   ├── WatchOuts.tsx        # Tax and Medicare points worth a look (also used by the printed summary)
+│   │   ├── WhatIfPanel.tsx      # Sliders for the biggest levers with a live dial; nothing changes until Apply
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
 │   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
 │   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
+│   │   ├── Ask.tsx              # "Ask Claude": API key entry and chat (src/ai/)
+│   │   └── Terms.tsx            # Full disclaimer and terms of use
 │   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
 │   │   ├── incomeTax.ts         # Shared: extra federal/state tax, bracket room and IRMAA from added retirement income
 │   │   ├── rothConversion.ts    # Roth conversion math: fill-a-bracket amounts, convert-vs-not break-even
@@ -150,9 +162,21 @@ retirement/
 │   │   └── pages.test.ts        # Guards: tokens filled, no typed-in tax years, no-transform header for every page
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
+│   │   ├── calculators.ts       # The list of calculator pages (name, path, blurb, icon)
 │   │   ├── heatmap.ts           # Heatmap: which ages to test, each cell's plan and change, color bands
+│   │   ├── heatmap.test.ts
+│   │   ├── levers.ts            # "What would help most" changes to test, and verdictFor (strong / borderline lines)
+│   │   ├── levers.test.ts
+│   │   ├── quickStart.ts        # Guided setup: blank-plan check, totals per account type and writing them back
+│   │   ├── quickStart.test.ts
 │   │   ├── scenarioPresets.ts   # One-click what-ifs (retire earlier/later, spend less, SS at 70, stress tests)
+│   │   ├── scenarioPresets.test.ts
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
+│   │   ├── labels.test.ts
+│   │   ├── states.ts            # State names and codes, and matching typed text for StateSelect
+│   │   ├── states.test.ts
+│   │   ├── watchOuts.ts         # Tax and Medicare points in the typical-returns projection; mayUseRothEarly
+│   │   ├── watchOuts.test.ts
 │   │   └── format.ts            # Currency formatting
 │   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / print / #ask, marked
 │   │                            #   Beta) + footer
@@ -258,7 +282,10 @@ One row per year; the age is your age at the **start** of that year.
   59½). Rule of 55: 401(k)s are penalty-free if you retire at 55+, and are used before penalized pre-tax money.
 - **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
   plus a 20% penalty before 65.
-- **Not taxed:** Roth and cash withdrawals, and the cost-basis part of brokerage sales.
+- **Not taxed:** Roth and cash withdrawals, and the cost-basis part of brokerage sales. Roth earnings withdrawn before
+  59½ are treated as tax-free too, though they can owe income tax and a 10% penalty; contributions and earnings aren't
+  tracked separately. The results say so when a plan could use Roth money that early (`mayUseRothEarly`), and the
+  printed summary always does.
 - **Deductions:** standard deduction, the extra 65+ deduction, and the temporary $6,000 senior deduction
   (2025–2028, phased out above $75k/$150k).
 - **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
@@ -484,7 +511,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run lint` | Lint with oxlint |
 | `npm run e2e:install` | One time: download the test browsers into `node_modules` |
 | `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode (Playwright; failure screenshots in `.tmp/e2e/`) |
-| `npm run e2e:live` | The same checks against https://willitlast.app after a deploy (visible browser windows) |
+| `npm run e2e:live` | The same checks against https://willitlast.app after a deploy, in Chrome only (visible browser windows) |
 
 ## Calculator pages (SEO)
 
@@ -506,14 +533,15 @@ Tax on added retirement income (a conversion, an RMD) comes from `src/seo/income
 
 ## Deployment
 
-The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). Deploy it with
-`BASE_PATH=/ npm run build && npx wrangler deploy`. `public/_headers` sets its security headers (HSTS, no framing, nosniff, and a
+The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). `public/_headers` sets its security headers (HSTS, no framing, nosniff, and a
 Content-Security-Policy: scripts and styles from this site only, images also from `data:` URLs, network requests to
 this site and api.anthropic.com for Ask Claude). `npm run preview` serves the same headers.
 The build targets Vite's default "baseline widely available" browsers (Chrome/Edge 111+, Firefox 114+, Safari 16.4+).
 
-Pushing to `main` also runs `.github/workflows/deploy.yml`, which lints, tests, builds and publishes `dist/` to
-GitHub Pages at `https://<github-username>.github.io/retirement/`. That old address now only redirects:
+Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, tests, builds once per address, and publishes to
+willitlast.app (with `npx wrangler deploy`, using the repo's Cloudflare secrets) and to GitHub Pages at
+`https://<github-username>.github.io/retirement/`. No manual step is needed; run `npm run e2e:live` once the run
+finishes. The GitHub Pages address now only redirects:
 `main.tsx` sends any `*.github.io` visitor to willitlast.app, carrying their saved plan in a `#moved=…` fragment
 (`store/move.ts`), which willitlast.app imports once if its own planner is still blank.
 If the repo is renamed, update the default `base` in `vite.config.ts` to match.

@@ -473,7 +473,7 @@ export function Summary({
               earlier. Optional Roth conversions fill a chosen federal bracket.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies. Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies, and tax or penalty on Roth earnings withdrawn before 59½ (all Roth withdrawals count as tax-free). Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>
