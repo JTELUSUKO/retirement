@@ -121,7 +121,6 @@ retirement/
 │   │   ├── Calculators.tsx      # Header "Free calculators" menu + the footer's grid of calculator cards
 │   │   ├── Disclaimer.tsx       # Bold disclaimer at the top of every page; the full text on the printed summary
 │   │   ├── Icons.tsx            # Small decorative line icons
-│   │   ├── LoveButton.tsx       # The heart and its public total, in the planner's header
 │   │   ├── ThemeSwitch.tsx      # System / Light / Dark radio buttons, in every page's header
 │   │   ├── SuccessGauge.tsx     # Half-circle dial for the chance the money lasts, colored by verdict
 │   │   ├── WatchOuts.tsx        # Tax and Medicare points worth a look (also used by the printed summary)
@@ -133,7 +132,6 @@ retirement/
 │   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
 │   │   ├── Ask.tsx              # "Ask Claude": API key entry and chat (src/ai/)
 │   │   └── Terms.tsx            # Full disclaimer and terms of use
-│   ├── worker/                  # The Cloudflare Worker: static files plus /api/love, the heart's total
 │   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
 │   │   ├── mountThemeSwitch.tsx # Fills a calculator page's #theme-switch placeholder
 │   │   ├── incomeTax.ts         # Shared: extra federal/state tax, bracket room and IRMAA from added retirement income
@@ -207,7 +205,6 @@ retirement/
 │                                #   and the "next year's figures are due" warning from November 15
 ├── e2e/
 │   ├── pages.spec.ts            # Browser checks for every page; expected numbers come from the same math the pages use
-│   ├── love.spec.ts             # The heart, against a fake server so live runs never change the real total
 │   ├── theme.spec.ts            # The System / Light / Dark switch; the one spec that also runs in Firefox
 │   └── a11y.spec.ts             # axe-core (Lighthouse's engine) WCAG 2.2 AA checks, light and dark, every page and state
 ├── playwright.config.ts         # Devices, the local preview server, and the --live mode for willitlast.app
@@ -544,9 +541,7 @@ Tax on added retirement income (a conversion, an RMD) comes from `src/seo/income
 
 ## Deployment
 
-The live site is https://willitlast.app, a Cloudflare Worker serving static files (`wrangler.jsonc`), with code only for
-`/api/*`: the heart's total, in a Durable Object (`src/worker/index.ts`). `npm run dev` and `preview` use a stand-in from
-`vite.config.ts`. `public/_headers` sets its security headers (HSTS, no framing, nosniff, and a
+The live site is https://willitlast.app, a Cloudflare Workers static site (`wrangler.jsonc`). `public/_headers` sets its security headers (HSTS, no framing, nosniff, and a
 Content-Security-Policy: scripts and styles from this site only, images also from `data:` URLs, network requests to
 this site and api.anthropic.com for Ask Claude). `npm run preview` serves the same headers.
 The build targets Vite's default "baseline widely available" browsers (Chrome/Edge 111+, Firefox 114+, Safari 16.4+).

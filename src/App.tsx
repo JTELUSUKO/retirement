@@ -3,7 +3,6 @@ import { Dashboard } from './pages/Dashboard'
 import { Footer } from './components/Footer'
 import { DisclaimerBanner } from './components/Disclaimer'
 import { Logo } from './components/Logo'
-import { LoveButton } from './components/LoveButton'
 import { CalculatorsMenu } from './components/Calculators'
 import { Icon, type IconName } from './components/Icons'
 import { ThemeSwitch } from './components/ThemeSwitch'
@@ -70,10 +69,7 @@ export default function App() {
                 Retirement Planner
               </a>
             </h1>
-            <div className="flex items-center gap-1">
-              <LoveButton />
-              <ThemeSwitch />
-            </div>
+            <ThemeSwitch />
           </div>
           <p className="text-sm text-muted">Everything you enter stays in this browser, unless you use Ask Claude.</p>
         </div>

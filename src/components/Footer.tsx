@@ -40,10 +40,8 @@ export function Footer() {
         <strong className="text-slate-700 dark:text-slate-300">Privacy:</strong> This app has no accounts, cookies, tracking
         or analytics. Everything you enter stays in this browser and is never sent anywhere, except to Anthropic when you
         ask Claude a question (optional, with your own API key). Your plan is saved only on
-        this device; clearing your browser data erases it, so use Export to keep a copy. Tapping the heart adds one to a
-        public total on our server. We store only the total, with nothing about you or your plan. To limit repeat taps, our
-        hosting provider briefly checks your IP address; we don't keep it. (Our hosting provider, like any web host, keeps
-        standard server logs of page visits, which may include these requests.)
+        this device; clearing your browser data erases it, so use Export to keep a copy. (Our hosting provider, like any
+        web host, keeps standard server logs of page visits.)
       </p>
       <div>
         <p>

@@ -12,9 +12,6 @@ interface UiPrefs {
   guide: GuideState
   /** The Free calculators menu has been opened (its "look here" glow stops) */
   calculatorsSeen: boolean
-  /** This device has tapped the heart (the total itself is on the server) */
-  loved: boolean
-  setLoved: (loved: boolean) => void
   setCalculatorsSeen: () => void
   setMode: (mode: FormMode) => void
   setGuide: (guide: GuideState) => void
@@ -29,8 +26,6 @@ export const useUiPrefs = create<UiPrefs>()(
       open: {},
       guide: 'auto',
       calculatorsSeen: false,
-      loved: false,
-      setLoved: (loved) => set({ loved }),
       setCalculatorsSeen: () => set({ calculatorsSeen: true }),
       setMode: (mode) => set({ mode }),
       setGuide: (guide) => set({ guide }),

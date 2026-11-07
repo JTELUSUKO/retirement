@@ -3,15 +3,12 @@ import { test as base, expect, type Page } from '@playwright/test'
 // The System / Light / Dark switch. Also runs in the installed Firefox, with the device set light and dark
 // (playwright.config.ts). The device's setting is what each test emulates; a chosen theme must win over it. Contrast in both themes is covered by a11y.spec.ts.
 
-// WebKit reports the heart's request as a page error when a reload interrupts it. Nothing is wrong: the next load asks again
-const interrupted = /api\/love due to access control checks/
-
 /** Fails a test if the page logs an error or the browser blocks something (the CSP must allow theme-init.js). */
 const test = base.extend<{ problems: string[] }>({
   problems: [
     async ({ page }, use) => {
       const problems: string[] = []
-      page.on('pageerror', (e) => interrupted.test(e.message) || problems.push(e.message))
+      page.on('pageerror', (e) => problems.push(e.message))
       page.on('console', (m) => {
         if (m.type() === 'error' || /Refused|violat/i.test(m.text())) problems.push(m.text())
       })
