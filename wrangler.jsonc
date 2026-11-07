@@ -4,6 +4,8 @@
 {
   "name": "willitlast",
   "main": "src/worker/index.ts",
+  // Served only from its own domain, with no second address on workers.dev
+  "workers_dev": false,
   "compatibility_date": "2026-10-23",
   "assets": {
     "directory": "./dist",
