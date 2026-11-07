@@ -40,7 +40,9 @@ Known problems not yet fixed, one entry per item. Delete an entry when it's fixe
 ## Firefox and Edge have almost no automated checks
 
 - **Issue:** Both are stated build targets, but Playwright runs Chrome, Safari, phone sizes and dark mode only. Firefox
-  runs `e2e/theme.spec.ts` and nothing else; Edge runs nothing.
+  runs `e2e/theme.spec.ts` and nothing else, in the installed app (`channel: 'moz-firefox'`), because Playwright's own
+  Firefox build exits with "Could not find profile folder" on this Mac (cause not found). That driver ignores
+  `emulateMedia`, so printing in Firefox was only checked by hand, and a device change during a visit isn't tested there. Edge runs nothing.
 - **Location:** `playwright.config.ts:21`; `e2e:install` in `package.json:15`; targets in `PROJECT_STRUCTURE.md:513`.
 - **Impact:** Most problems in Firefox are only found by hand. Edge hasn't been tested on this work.
 - **Recommended fix:** Run every spec in Firefox, and add an `msedge` project.

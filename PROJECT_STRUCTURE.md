@@ -516,7 +516,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run lint` | Lint with oxlint |
 | `npm run e2e:install` | One time: download the test browsers into `node_modules` |
-| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode, plus the theme switch in Firefox (Playwright; failure screenshots in `.tmp/e2e/`) |
+| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode, plus the theme switch in the installed Firefox (Playwright; failure screenshots in `.tmp/e2e/`) |
 | `npm run e2e:live` | The same checks against https://willitlast.app after a deploy, in Chrome only (visible browser windows) |
 
 ## Calculator pages (SEO)

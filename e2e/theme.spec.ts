@@ -1,7 +1,7 @@
 import { test as base, expect, type Page } from '@playwright/test'
 
-// The System / Light / Dark switch. Also runs in Firefox (playwright.config.ts). The device's setting is what each test
-// emulates; a chosen theme must win over it. Contrast in both themes is covered by a11y.spec.ts.
+// The System / Light / Dark switch. Also runs in the installed Firefox, with the device set light and dark
+// (playwright.config.ts). The device's setting is what each test emulates; a chosen theme must win over it. Contrast in both themes is covered by a11y.spec.ts.
 
 /** Fails a test if the page logs an error or the browser blocks something (the CSP must allow theme-init.js). */
 const test = base.extend<{ problems: string[] }>({
@@ -18,6 +18,8 @@ const test = base.extend<{ problems: string[] }>({
     { auto: true },
   ],
 })
+
+const NO_EMULATION = "Firefox's driver ignores emulateMedia"
 
 const CALCULATORS = [
   'roth-conversion-calculator/',
@@ -58,7 +60,8 @@ const looks = (page: Page) =>
 const isLight = (page: Page) => expect.poll(() => looks(page)).toEqual({ background: 'light', text: 'light', controls: 'light', chart: 'light' })
 const isDark = (page: Page) => expect.poll(() => looks(page)).toEqual({ background: 'dark', text: 'dark', controls: 'dark', chart: 'dark' })
 
-test('system: follows the device, live, with nothing saved', async ({ page }) => {
+test('system: follows the device, live, with nothing saved', async ({ page, browserName }) => {
+  test.skip(browserName === 'firefox', NO_EMULATION)
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('./')
   await expect(option(page, 'System')).toBeChecked()
@@ -68,7 +71,23 @@ test('system: follows the device, live, with nothing saved', async ({ page }) =>
   await expect(page.locator('html')).not.toHaveAttribute('data-theme')
 })
 
-test('a chosen theme beats the device, and System goes back to it', async ({ page }) => {
+test('Firefox: System follows the device, and a chosen theme beats it', async ({ page, browserName }, info) => {
+  test.skip(browserName !== 'firefox', 'other browsers emulate the device: see the tests above and below')
+  await page.goto('./')
+  // From the project, not the browser, so a device preference that stopped working fails here
+  const device = info.project.name.includes('dark') ? isDark : isLight
+  await device(page)
+  await choose(page, 'Light')
+  await isLight(page)
+  await choose(page, 'Dark')
+  await isDark(page)
+  await choose(page, 'System')
+  await device(page)
+  expect(await page.evaluate(() => localStorage.getItem('retirement-theme'))).toBeNull()
+})
+
+test('a chosen theme beats the device, and System goes back to it', async ({ page, browserName }) => {
+  test.skip(browserName === 'firefox', NO_EMULATION)
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('./')
   await choose(page, 'Dark')
@@ -147,7 +166,8 @@ test('the printable summary stays light under a chosen Dark', async ({ page }) =
   expect(await paper.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)')
 })
 
-test('printing any page under a chosen Dark gives dark text on white', async ({ page }) => {
+test('printing any page under a chosen Dark gives dark text on white', async ({ page, browserName }) => {
+  test.skip(browserName === 'firefox', NO_EMULATION)
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('./rmd-calculator/')
   await choose(page, 'Dark')

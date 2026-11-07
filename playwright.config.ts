@@ -26,8 +26,17 @@ export default defineConfig({
         { name: 'iPhone SE', use: { ...devices['iPhone SE'] } },
         { name: 'Pixel 7', use: { ...devices['Pixel 7'] } },
         { name: 'Dark mode', use: { ...devices['Desktop Chrome'], colorScheme: 'dark' } },
-        // Only the theme switch so far (docs/technical-debt.md)
-        { name: 'Firefox', testMatch: 'theme.spec.ts', use: { ...devices['Desktop Firefox'] } },
+        // The installed Firefox app (Playwright's own build won't start on this Mac), theme switch only so far
+        // (docs/technical-debt.md). Its driver ignores emulateMedia, so the device's setting is a preference: 1 light, 0 dark.
+        ...([['Firefox', 1], ['Firefox, dark device', 0]] as const).map(([name, device]) => ({
+          name,
+          testMatch: 'theme.spec.ts',
+          use: {
+            ...devices['Desktop Firefox'],
+            channel: 'moz-firefox',
+            launchOptions: { firefoxUserPrefs: { 'layout.css.prefers-color-scheme.content-override': device } },
+          },
+        })),
       ],
   webServer: live
     ? undefined
