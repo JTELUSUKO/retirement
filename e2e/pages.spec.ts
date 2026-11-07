@@ -415,10 +415,22 @@ test('printer icon opens the print / save-as-PDF dialog', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Retirement plan summary' })).toBeVisible({ timeout: 30_000 })
 })
 
-test('planner header states the promise, with the Ask Claude exception beside it', async ({ page }) => {
-  await page.goto('./')
+test('planner header states the promise and its Ask Claude exception together, on every page', async ({ page }) => {
   const header = page.getByRole('banner')
-  await expect(header).toContainText('A detailed retirement plan with taxes and market simulations, free, no sign-up, and your plan stays in your browser.')
-  await expect(header).toContainText('unless you use Ask Claude')
+  for (const hash of ['#plan', '#ask']) {
+    await page.goto(`./${hash}`)
+    await expect(header.getByText('Free, no sign-up, and everything stays in this browser.')).toHaveCount(1)
+    await expect(header.locator('p', { hasText: 'Free, no sign-up' })).toContainText(
+      'The optional Ask Claude uses your own paid Anthropic key and sends your plan to Anthropic.',
+    )
+  }
   await expectFitsScreen(page)
+  // On a laptop the nav stays on one row (the sentence has its own row, so it can't push the nav down)
+  if ((page.viewportSize()?.width ?? 0) >= 1280) {
+    const centers = await header
+      .getByRole('navigation')
+      .locator(':scope > *')
+      .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top + e.getBoundingClientRect().height / 2)))
+    expect(new Set(centers).size).toBe(1)
+  }
 })

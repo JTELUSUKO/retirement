@@ -71,7 +71,6 @@ export default function App() {
             </h1>
             <ThemeSwitch />
           </div>
-          <p className="text-sm text-muted">Everything you enter stays in this browser, unless you use Ask Claude.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">
           {tab('plan', 'My plan', '#plan', 'home')}
@@ -105,9 +104,14 @@ export default function App() {
             </span>
           </a>
         </nav>
-        {/* Its own row (w-full): next to the title it would push the nav onto a second line on a laptop */}
-        <p className="w-full text-sm font-medium">
-          A detailed retirement plan with taxes and market simulations, free, no sign-up, and your plan stays in your browser.
+        {/* Its own row (w-full): next to the title it would push the nav onto a second line on a laptop. One sentence
+            with its exception, so the promise never shows without it (the Ask page included) */}
+        <p className="w-full text-sm">
+          <span className="font-medium">
+            A detailed retirement plan with taxes and market simulations. Free, no sign-up, and everything stays in this
+            browser.
+          </span>{' '}
+          The optional Ask Claude uses your own paid Anthropic key and sends your plan to Anthropic.
         </p>
       </header>
       <div className="mb-8">

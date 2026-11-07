@@ -182,8 +182,8 @@ retirement/
 │   │   ├── watchOuts.ts         # Tax and Medicare points in the typical-returns projection; mayUseRothEarly
 │   │   ├── watchOuts.test.ts
 │   │   └── format.ts            # Currency formatting
-│   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / print / #ask, marked
-│   │                            #   Beta) + footer
+│   ├── App.tsx                  # App shell: header (title, theme switch, tabs #plan / #compare / print / #ask marked
+│   │                            #   Beta, one-sentence promise with its Ask Claude exception) + footer
 │   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app, reloads once after a deploy
 │   └── index.css                # Tailwind + dark-mode variant (device or chosen theme, off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry for the planner
@@ -241,7 +241,8 @@ retirement/
    label. Gains under 2 points are hidden.
 6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
    The one exception is **Ask Claude** (in the menu, marked Beta): with the visitor's own API key, the plan is sent
-   to api.anthropic.com when they ask a question. The header, footer, terms and the Ask page all say so.
+   to api.anthropic.com when they ask a question. The header (in the same sentence as the
+   promise), footer, terms and the Ask page all say so.
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
 7. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.
