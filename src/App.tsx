@@ -5,6 +5,7 @@ import { DisclaimerBanner } from './components/Disclaimer'
 import { Logo } from './components/Logo'
 import { CalculatorsMenu } from './components/Calculators'
 import { Icon, type IconName } from './components/Icons'
+import { ThemeSwitch } from './components/ThemeSwitch'
 import { tabClass } from './components/styles'
 
 // Pages other than "My plan" load on first visit, keeping the first download small (Ask holds the Anthropic SDK)
@@ -59,13 +60,17 @@ export default function App() {
     <div className="mx-auto max-w-7xl px-4 py-8 print:p-0">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4 print:hidden">
         <div>
-          {/* The logo and name go back to your plan (home) from any page */}
-          <h1 className="text-2xl font-semibold">
-            <a href="#plan" className="inline-flex items-center gap-2 rounded-md hover:text-teal-800 dark:hover:text-teal-300">
-              <Logo />
-              Retirement Planner
-            </a>
-          </h1>
+          {/* Beside the title, not in the nav, so the nav still fits on one row next to this block on a laptop */}
+          <div className="flex flex-wrap items-center justify-between gap-x-3">
+            {/* The logo and name go back to your plan (home) from any page */}
+            <h1 className="text-2xl font-semibold">
+              <a href="#plan" className="inline-flex items-center gap-2 rounded-md hover:text-teal-800 dark:hover:text-teal-300">
+                <Logo />
+                Retirement Planner
+              </a>
+            </h1>
+            <ThemeSwitch />
+          </div>
           <p className="text-sm text-muted">Everything you enter stays in this browser, unless you use Ask Claude.</p>
         </div>
         <nav className="flex flex-wrap items-center gap-1">

@@ -1,9 +1,17 @@
 @import "tailwindcss";
 
-/* Dark mode follows the OS, except inside .paper (the printable summary), which is always light. */
+/*
+ * Dark mode follows the device unless the visitor chose Light or Dark (data-theme on <html>, src/utils/theme.ts), and
+ * never applies inside .paper (the printable summary). A chosen Dark is for screens only: printed pages stay readable.
+ */
 @custom-variant dark {
   @media (prefers-color-scheme: dark) {
-    &:not(:where(.paper, .paper *)) {
+    &:not(:where([data-theme="light"], [data-theme="light"] *, .paper, .paper *)) {
+      @slot;
+    }
+  }
+  @media screen {
+    &:where([data-theme="dark"], [data-theme="dark"] *):not(:where(.paper, .paper *)) {
       @slot;
     }
   }
@@ -25,6 +33,8 @@ body {
 }
 
 :root {
+  /* Native controls and scrollbars match the theme */
+  color-scheme: light;
   --chart-series: #0f766e;
   --chart-grid: #e2e8f0;
   --chart-ink: #64748b;
@@ -41,10 +51,9 @@ body {
   --scenario-1: #eb6834;
   --scenario-2: #1baf7a;
   --scenario-3: #eda100;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
+  @variant dark {
+    color-scheme: dark;
     --chart-series: #2dd4bf;
     --chart-grid: #1e293b;
     --chart-ink: #94a3b8;

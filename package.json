@@ -10,9 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "BASE_PATH=/ npm run build && mkdir -p .tmp && PLAYWRIGHT_BROWSERS_PATH=0 TMPDIR=.tmp playwright test",
-    "e2e:live": "mkdir -p .tmp && E2E_LIVE=1 PLAYWRIGHT_BROWSERS_PATH=0 TMPDIR=.tmp playwright test",
-    "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium webkit"
+    "e2e": "BASE_PATH=/ npm run build && mkdir -p .tmp && PLAYWRIGHT_BROWSERS_PATH=0 TMPDIR=\"$PWD/.tmp\" playwright test",
+    "e2e:live": "mkdir -p .tmp && E2E_LIVE=1 PLAYWRIGHT_BROWSERS_PATH=0 TMPDIR=\"$PWD/.tmp\" playwright test",
+    "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium webkit firefox"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

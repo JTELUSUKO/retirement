@@ -19,6 +19,15 @@ describe('calculator pages and the yearly update', () => {
     expect(text.match(/\b20[2-3]\d\b/g) ?? []).toEqual([])
   })
 
+  it.each(PAGES)('%s page applies the saved theme before it paints', (_, path) => {
+    expect(html(path).split('</head>')[0]).toContain('<script src="/theme-init.js"></script>')
+  })
+
+  it.each(PAGES.filter(([, path]) => path))('%s page has a place for the theme switch', (name, path) => {
+    expect(html(path)).toContain('id="theme-switch"')
+    expect(read(`src/seo/${name}Page.tsx`)).toContain('mountThemeSwitch()')
+  })
+
   it('app code has no hard-coded tax year in what users see (they come from TAX_CONFIG / STATE_RULES_YEAR)', () => {
     const files = (dir: string): string[] =>
       readdirSync(new URL(dir, root)).flatMap((name) => {

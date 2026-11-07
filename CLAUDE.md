@@ -16,7 +16,7 @@ sessions are in `docs/agent-retrospectives.md`.
 - `npm run e2e:live`: Chrome only, against the live site, in visible windows (Bot Fight Mode blocks headless browsers
   and curl)
 
-There's no coverage setup, and Firefox and Edge have no automated checks.
+There's no coverage setup. Firefox runs only the theme checks, and Edge has no automated checks.
 
 ## Deploying
 

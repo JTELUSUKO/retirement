@@ -11,6 +11,7 @@ retirement/
 │       └── deploy.yml           # CI: install → lint → test → build → publish to GitHub Pages and willitlast.app
 ├── public/                      # Static files copied as-is into the build
 │   ├── favicon.svg
+│   ├── theme-init.js            # Applies a saved Light or Dark choice before the first paint (a file: the CSP blocks inline scripts)
 │   ├── _headers                 # Security headers for willitlast.app (Cloudflare)
 │   └── robots.txt               # Allows all crawlers, points to the sitemap (sitemap.xml is generated at build time)
 ├── src/
@@ -120,6 +121,7 @@ retirement/
 │   │   ├── Calculators.tsx      # Header "Free calculators" menu + the footer's grid of calculator cards
 │   │   ├── Disclaimer.tsx       # Bold disclaimer at the top of every page; the full text on the printed summary
 │   │   ├── Icons.tsx            # Small decorative line icons
+│   │   ├── ThemeSwitch.tsx      # System / Light / Dark radio buttons, in every page's header
 │   │   ├── SuccessGauge.tsx     # Half-circle dial for the chance the money lasts, colored by verdict
 │   │   ├── WatchOuts.tsx        # Tax and Medicare points worth a look (also used by the printed summary)
 │   │   ├── WhatIfPanel.tsx      # Sliders for the biggest levers with a live dial; nothing changes until Apply
@@ -131,6 +133,7 @@ retirement/
 │   │   ├── Ask.tsx              # "Ask Claude": API key entry and chat (src/ai/)
 │   │   └── Terms.tsx            # Full disclaimer and terms of use
 │   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
+│   │   ├── mountThemeSwitch.tsx # Fills a calculator page's #theme-switch placeholder
 │   │   ├── incomeTax.ts         # Shared: extra federal/state tax, bracket room and IRMAA from added retirement income
 │   │   ├── rothConversion.ts    # Roth conversion math: fill-a-bracket amounts, convert-vs-not break-even
 │   │   ├── rothConversion.test.ts
@@ -173,6 +176,7 @@ retirement/
 │   │   ├── scenarioPresets.test.ts
 │   │   ├── labels.ts            # Account/income type labels + plain-language scenario descriptions
 │   │   ├── labels.test.ts
+│   │   ├── theme.ts             # Reads, saves and applies the System / Light / Dark choice (localStorage, data-theme on <html>)
 │   │   ├── states.ts            # State names and codes, and matching typed text for StateSelect
 │   │   ├── states.test.ts
 │   │   ├── watchOuts.ts         # Tax and Medicare points in the typical-returns projection; mayUseRothEarly
@@ -181,7 +185,7 @@ retirement/
 │   ├── App.tsx                  # App shell: header (bold disclaimer) + tabs (#plan / #compare / print / #ask, marked
 │   │                            #   Beta) + footer
 │   ├── main.tsx                 # React entry point; redirects the old github.io address to willitlast.app, reloads once after a deploy
-│   └── index.css                # Tailwind + dark-mode variant (off inside .paper), chart tokens, print styles
+│   └── index.css                # Tailwind + dark-mode variant (device or chosen theme, off inside .paper), chart tokens, print styles
 ├── index.html                   # HTML entry for the planner
 ├── roth-conversion-calculator/
 │   └── index.html               # Calculator page: guide text in plain HTML (crawlable), calculator mounts in #calculator.
@@ -201,6 +205,7 @@ retirement/
 │                                #   and the "next year's figures are due" warning from November 15
 ├── e2e/
 │   ├── pages.spec.ts            # Browser checks for every page; expected numbers come from the same math the pages use
+│   ├── theme.spec.ts            # The System / Light / Dark switch; the one spec that also runs in Firefox
 │   └── a11y.spec.ts             # axe-core (Lighthouse's engine) WCAG 2.2 AA checks, light and dark, every page and state
 ├── playwright.config.ts         # Devices, the local preview server, and the --live mode for willitlast.app
 ├── scripts/                     # Regenerate state tax rules from the Tax Foundation table (scripts/README.md)
@@ -414,7 +419,8 @@ One row per year; the age is your age at the **start** of that year.
 ## Printable summary
 
 - `#summary` renders a report on a "paper" that is always light (Tailwind's `dark:` variant is disabled inside
-  `.paper`, and chart tokens are reset to light values), so it prints the same in any OS theme.
+  `.paper`, and chart tokens are reset to light values), so it prints the same in any theme. A chosen Dark
+  applies to screens only, so printing any other page isn't pale text on white.
 - **Print / Save as PDF** uses the browser's print dialog; the app header and buttons are hidden in print,
   sections avoid page breaks, and `print-color-adjust: exact` keeps chart fills and legend swatches.
 
@@ -510,7 +516,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run lint` | Lint with oxlint |
 | `npm run e2e:install` | One time: download the test browsers into `node_modules` |
-| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode (Playwright; failure screenshots in `.tmp/e2e/`) |
+| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode, plus the theme switch in Firefox (Playwright; failure screenshots in `.tmp/e2e/`) |
 | `npm run e2e:live` | The same checks against https://willitlast.app after a deploy, in Chrome only (visible browser windows) |
 
 ## Calculator pages (SEO)
@@ -519,7 +525,8 @@ Each calculator is its own page at `willitlast.app/<name>/` so search engines ca
 tax tables are plain HTML in `<name>/index.html`; only the calculator itself is React. To add one:
 1. Put the math in `src/seo/<name>.ts` on top of the engine, with tests.
 2. Add `<name>/index.html` (title, meta description, canonical URL, the disclaimer banner, the guide text) and an entry
-   script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator. Write tax years and yearly
+   script in `src/seo/` that redirects `*.github.io` visitors and mounts the calculator and the theme switch. Copy
+   `<script src="/theme-init.js">` and the `#theme-switch` placeholder from another page. Write tax years and yearly
    figures as tokens (`{{YEAR}}`, `{{REVIEWED}}`, …) and sources as `<!--SOURCE key: what it covers-->` with a key
    from `TAX_CONFIG.sources`; see the top of `build/taxYearPages.ts`.
 3. Add the page to `PAGES` in `build/taxYearPages.ts` (that builds it and lists it in the sitemap), and link it from the
@@ -527,7 +534,8 @@ tax tables are plain HTML in `<name>/index.html`; only the calculator itself is 
 4. Add a `/<name>/*` rule with `Cache-Control: … no-transform` to `public/_headers`, so Cloudflare doesn't add its
    analytics script to the page.
 
-`src/seo/pages.test.ts` fails if a page has an unfilled token, a typed-in tax year, or no `no-transform` rule.
+`src/seo/pages.test.ts` fails if a page has an unfilled token, a typed-in tax year, no `no-transform` rule, or no theme
+script or switch.
 
 Tax on added retirement income (a conversion, an RMD) comes from `src/seo/incomeTax.ts`, so every page agrees.
 

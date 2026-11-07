@@ -37,12 +37,13 @@ Known problems not yet fixed, one entry per item. Delete an entry when it's fixe
 - **Impact:** Plans that retire early and rely on Roth money can look better than they are, and the percentage itself isn't adjusted.
 - **Recommended fix:** Track contributions separately from earnings, and tax and penalize the earnings.
 
-## Firefox and Edge have no automated checks
+## Firefox and Edge have almost no automated checks
 
-- **Issue:** Both are stated build targets, but Playwright runs Chrome, Safari, phone sizes and dark mode only.
+- **Issue:** Both are stated build targets, but Playwright runs Chrome, Safari, phone sizes and dark mode only. Firefox
+  runs `e2e/theme.spec.ts` and nothing else; Edge runs nothing.
 - **Location:** `playwright.config.ts:21`; `e2e:install` in `package.json:15`; targets in `PROJECT_STRUCTURE.md:513`.
-- **Impact:** Problems in Firefox are only found by hand. Edge hasn't been tested on this work.
-- **Recommended fix:** Add Firefox and `msedge` projects to the local run.
+- **Impact:** Most problems in Firefox are only found by hand. Edge hasn't been tested on this work.
+- **Recommended fix:** Run every spec in Firefox, and add an `msedge` project.
 
 ## Verdict lines are written in several places
 
