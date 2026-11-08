@@ -2,7 +2,7 @@
 
 Retirement planner live at https://willitlast.app: Vite, React 19, TypeScript, Zustand, Tailwind 4, Recharts.
 
-Read the part of `PROJECT_STRUCTURE.md` you need (519 lines). Known problems are in `docs/technical-debt.md`; past
+Read the part of `PROJECT_STRUCTURE.md` you need (556 lines). Known problems are in `docs/technical-debt.md`; past
 sessions are in `docs/agent-retrospectives.md`.
 
 ## Commands
@@ -35,5 +35,13 @@ hash and returns nothing for a short one.
 
 ## Shell
 
-The shell is zsh: quote globs (an unmatched one stops the whole command), `PIPESTATUS` doesn't exist, and a failure in
-an `&&` chain skips the rest. Log real exit codes for test runs.
+The shell is zsh: quote globs (an unmatched one stops the whole command), quote words starting with `=` (`echo ===`
+fails), `PIPESTATUS` doesn't exist, and a failure in an `&&` chain skips the rest. Log real exit codes for test runs.
+
+## Harness
+
+- Hooks in `.claude/settings.json` (scripts in `.claude/hooks/`) run lint and unit tests before a turn ends when code
+  changed, and block running Playwright by hand or `gh run list --commit` with a short hash. Output of the last check is in
+  `.tmp/stop-check.log`.
+- The yearly tax update has a skill, `.claude/skills/yearly-tax-update/`, that follows `YEARLY_UPDATE.md`.
+- At the end of a working session, add an entry to `docs/agent-retrospectives.md`.
