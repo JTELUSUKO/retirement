@@ -2,6 +2,21 @@
 
 What slowed each working session down and what would help next time, newest first.
 
+## 2026-11-09: Review fixes to the hooks and the tax skill (after 4e59e39)
+
+1. **What was difficult to find?** Nothing in the app. The hook scripts had no tests, so each fix had to be tried by
+   hand: 27 commands through the Bash guard and 14 situations through the stop check in a throwaway repo.
+2. **What documentation was missing?** Nothing said the hooks need `jq`, or what the stop check counts as a change.
+   CLAUDE.md now says both.
+3. **Which files required excessive exploration?** None.
+4. **What caused unnecessary work?** The first Bash guard matched its phrases anywhere in a command, so it blocked a
+   review command that only mentioned running Playwright, and let a quoted short hash through. The first stop check
+   looked only at uncommitted changes, so a commit made in the same turn was never tested.
+5. **What improvement would save the most time next session?** The guard is now `guard-bash.mjs` and reads commands
+   the way the shell does; the stop check compares the checkout with how the turn began (recorded by a
+   `UserPromptSubmit` hook), so it covers commits and leaves the user's unfinished work alone. A small test file for
+   the two hooks would let the next change to them be checked in one command.
+
 ## 2026-11-07: Theme switch, Firefox checks, heart, header promise (97885e0..76b2ec0)
 
 Written on 2026-11-08 from the commit messages, not by the session that did the work.

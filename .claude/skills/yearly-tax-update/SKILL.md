@@ -11,8 +11,9 @@ through it in order. This skill adds only how to run it.
 1. **Confirm the year and what's published.** The target year is the one asked for (or the reminder issue's title).
    For each row of the "What to update" table, find the official source for that year. A figure that isn't published
    yet keeps last year's value: list it for the user rather than guessing or using a news summary.
-2. **Change only `src/engine/config/taxYear.ts`** (and `config/stateRules.ts` through `scripts/`, only once the Tax
-   Foundation table for the year is out). Never type a figure or a year anywhere else.
+2. **Change figures only in `src/engine/config/taxYear.ts`** (and `config/stateRules.ts` through `scripts/`, only
+   once the Tax Foundation table for the year is out). Never type a figure or a year anywhere else, except expected
+   numbers in tests, which step 4 covers.
 3. **Record each source.** For every figure changed, note the official URL and the page or table it came from, and
    update the year-named `sources` links, `year` and `reviewed`.
 4. **Treat test failures as checks, not chores.** When `npm test` fails, compare the new expected number with the

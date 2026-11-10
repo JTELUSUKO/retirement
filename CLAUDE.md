@@ -40,8 +40,8 @@ fails), `PIPESTATUS` doesn't exist, and a failure in an `&&` chain skips the res
 
 ## Harness
 
-- Hooks in `.claude/settings.json` (scripts in `.claude/hooks/`) run lint and unit tests before a turn ends when code
-  changed, and block running Playwright by hand or `gh run list --commit` with a short hash. Output of the last check is in
-  `.tmp/stop-check.log`.
+- Hooks in `.claude/settings.json` (scripts in `.claude/hooks/`) run lint and unit tests before a turn ends when files
+  changed or were committed during the turn, and block running Playwright by hand or `gh run list --commit` with a short
+  hash. Output of the last check is in `.tmp/stop-check.log`. The stop check needs `jq`.
 - The yearly tax update has a skill, `.claude/skills/yearly-tax-update/`, that follows `YEARLY_UPDATE.md`.
 - At the end of a working session, add an entry to `docs/agent-retrospectives.md`.
