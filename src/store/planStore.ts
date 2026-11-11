@@ -24,6 +24,8 @@ export const examplePlan: Plan = {
   spouseClaimAge: 67,
   survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
   socialSecurityClaimAge: 67,
+  annualPay: 130_000,
+  spouseAnnualPay: 0,
   incomeStreams: [],
   annuityPurchase: {
     enabled: false,
@@ -66,6 +68,7 @@ export const blankPlan: Plan = {
   spouseSocialSecurityAtFRA: 0,
   spouseCurrentAge: 0,
   spouseClaimAge: 67,
+  annualPay: 0,
   survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
   incomeStreams: [],
   annuityPurchase: { ...examplePlan.annuityPurchase, enabled: false, purchaseAge: 0 },
@@ -185,6 +188,13 @@ export function migratePlanState(persisted: unknown, version: number): { plan: P
   if (version < 17) {
     state.plan = { ...state.plan, bigExpenses: state.plan.bigExpenses ?? [] }
   }
+  // v17 → v18: pay while working (not entered), for Social Security that starts before retiring
+  if (version < 18) {
+    state.plan = { ...state.plan, annualPay: state.plan.annualPay ?? 0, spouseAnnualPay: state.plan.spouseAnnualPay ?? 0 }
+    // A Roth's cost basis now means its contributions. Until now only brokerage accounts used one, so any other
+    // account's is left over from when it was a brokerage account.
+    state.plan = { ...state.plan, accounts: state.plan.accounts.map((a) => (a.type === 'taxable' ? a : { ...a, costBasis: null })) }
+  }
   return state
 }
 
@@ -203,7 +213,7 @@ export function newBigExpense(kind: BigExpenseKind, plan: Plan): BigExpense {
 export const MAX_SCENARIOS = 3
 
 /** Bump when the saved plan shape changes, and add a step to migratePlanState. */
-export const PLAN_VERSION = 17
+export const PLAN_VERSION = 18
 
 type UndoAction = 'cleared' | 'example' | 'imported'
 

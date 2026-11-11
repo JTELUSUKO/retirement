@@ -18,6 +18,8 @@ export const basePlan: Plan = {
   spouseClaimAge: 67,
   survivor: { enabled: false, whoDies: 'you', firstDeathAge: 0, spendingShare: 0.75 },
   socialSecurityClaimAge: 67,
+  annualPay: 0,
+  spouseAnnualPay: 0,
   incomeStreams: [],
   annuityPurchase: {
     enabled: false,

@@ -30,7 +30,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 /** Returns the first problem with the plan's shape, or null if it looks complete. */
 function shapeProblem(plan: unknown): string | null {
   if (!isObj(plan)) return 'the plan is missing'
-  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'spouseSocialSecurityAtFRA', 'spouseCurrentAge', 'spouseClaimAge', 'socialSecurityClaimAge']) {
+  for (const key of ['currentAge', 'retirementAge', 'lifeExpectancy', 'annualSpending', 'socialSecurityAtFRA', 'spouseSocialSecurityAtFRA', 'spouseCurrentAge', 'spouseClaimAge', 'socialSecurityClaimAge', 'annualPay', 'spouseAnnualPay']) {
     if (!isNum(plan[key])) return `“${key}” must be a number`
   }
   if (plan.filingStatus !== 'single' && plan.filingStatus !== 'married') return '“filingStatus” must be single or married'

@@ -32,6 +32,7 @@ export {
   householdSocialSecurityMonthly,
   planEndAge,
   socialSecurityAt,
+  socialSecurityByPerson,
   spousalFactor,
   spouseOffset,
   survivorFromAge,

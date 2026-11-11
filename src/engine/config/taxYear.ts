@@ -45,6 +45,7 @@ export const TAX_CONFIG = {
     },
     ssaMedicare: { url: 'https://www.ssa.gov/benefits/medicare/medicare-premiums.html', name: 'Social Security Administration: Medicare premiums' },
     ssaEarly: { url: 'https://www.ssa.gov/benefits/retirement/planner/agereduction.html', name: 'SSA: Retirement age and benefit reduction' },
+    ssaEarningsTest: { url: 'https://www.ssa.gov/oact/cola/rtea.html', name: 'SSA: Exempt amounts under the earnings test' },
     ssaDelayed: { url: 'https://www.ssa.gov/benefits/retirement/planner/delayret.html', name: 'SSA: Delayed retirement credits' },
     mySocialSecurity: { url: 'https://www.ssa.gov/myaccount/', name: 'my Social Security' },
     lifeExpectancy: { url: 'https://www.ssa.gov/oact/population/longevity.html', name: 'SSA: Life expectancy calculator' },
@@ -118,6 +119,12 @@ export const TAX_CONFIG = {
     fullRetirementAge: 67,
     earliestClaimAge: 62,
     latestClaimAge: 70,
+    /**
+     * Earnings test for benefits paid while working before full retirement age: yearly pay above the limit withholds
+     * $1 of benefits for every $2 (the higher limit in the year you reach full retirement age isn't modeled).
+     */
+    earningsLimit: 24_480,
+    earningsWithholdingRate: 0.5,
   },
   rmd: {
     /** RMD start age for people born 1951–1959; 75 for born 1960 or later (SECURE 2.0). */

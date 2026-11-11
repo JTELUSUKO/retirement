@@ -7,14 +7,17 @@ const T = TAX_CONFIG.federalTax
  * Taxable part of Social Security (IRS provisional-income test).
  * Provisional income = other income + half of benefits. Up to 85% can be taxable.
  */
+/** The most of a benefit that is ever taxable (set by law, not indexed) */
+export const MAX_TAXABLE_SOCIAL_SECURITY = 0.85
+
 export function taxableSocialSecurity(otherIncome: number, benefits: number, status: FilingStatus): number {
   if (benefits <= 0) return 0
   const [base1, base2] = T.socialSecurityThresholds[status]
   const provisional = otherIncome + benefits / 2
   if (provisional <= base1) return 0
   const tier1 = Math.min(benefits / 2, (Math.min(provisional, base2) - base1) / 2)
-  const tier2 = provisional > base2 ? 0.85 * (provisional - base2) : 0
-  return Math.min(0.85 * benefits, tier1 + tier2)
+  const tier2 = provisional > base2 ? MAX_TAXABLE_SOCIAL_SECURITY * (provisional - base2) : 0
+  return Math.min(MAX_TAXABLE_SOCIAL_SECURITY * benefits, tier1 + tier2)
 }
 
 export interface TaxInput {

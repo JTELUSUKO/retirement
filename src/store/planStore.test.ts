@@ -139,6 +139,14 @@ describe('plan store: scenarios', () => {
     expect(plan.accounts.every((a) => a.costBasis === null)).toBe(true)
   })
 
+  it('upgrades a v17 plan: pay not entered, and a cost basis kept only on brokerage accounts', () => {
+    const { annualPay: _p, spouseAnnualPay: _s, ...rest } = examplePlan
+    const v17 = { ...rest, accounts: examplePlan.accounts.map((a) => ({ ...a, costBasis: 45_000 })) }
+    const { plan } = migratePlanState({ plan: v17 }, 17)
+    expect(plan.annualPay).toBe(0)
+    expect(plan.accounts.map((a) => a.costBasis)).toEqual(examplePlan.accounts.map((a) => (a.type === 'taxable' ? 45_000 : null)))
+  })
+
   it('upgrades a v10 couple: spouse gets your age and claiming age, and you are the one who dies', () => {
     const { spouseCurrentAge: _a, spouseClaimAge: _c, ...rest } = examplePlan
     const v10 = { ...rest, filingStatus: 'married', currentAge: 58, socialSecurityClaimAge: 68, survivor: { enabled: true, firstDeathAge: 80, spendingShare: 0.75 } }

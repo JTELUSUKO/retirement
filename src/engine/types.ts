@@ -19,7 +19,10 @@ export interface Account {
   annualContribution: number
   /** Employer match per year, in today's dollars. */
   employerMatch: number
-  /** Taxable accounts: what you paid for the investments (null = same as balance, i.e. no gains yet). */
+  /**
+   * Taxable accounts: what you paid for the investments. Roth accounts: what you've contributed, which comes out
+   * tax-free at any age. null = same as balance (no gains yet).
+   */
   costBasis: number | null
 }
 
@@ -69,6 +72,14 @@ export interface Plan {
   /** Fixed spending, or guardrails that cut/raise spending after bad/good markets. */
   spendingRule: SpendingRule
   socialSecurityClaimAge: number
+  /**
+   * Yearly pay while working, today's dollars (0 = not entered). Only used for Social Security that starts before
+   * you retire: the earnings limit and the tax on those benefits. Without it, benefits before full retirement age are
+   * assumed to be withheld in full.
+   */
+  annualPay: number
+  /** Spouse's yearly pay while working (married only), used the same way. */
+  spouseAnnualPay: number
   /** Pensions, annuities, part-time work, rental income, ... */
   incomeStreams: IncomeStream[]
   /** Optional: turn part of your savings into lifetime income. */
@@ -230,7 +241,7 @@ export interface YearResult {
   withdrawalsByBucket: BucketAmounts
   /** Start-of-year balances by tax bucket, in today's dollars. */
   startByBucketReal: BucketAmounts
-  /** Social Security + other income received this year. */
+  /** Social Security + other income received this year (Social Security after anything the earnings limit withholds). */
   income: number
   /** Other income (pensions, annuities, work, rental) received this year. */
   otherIncome: number
@@ -248,13 +259,16 @@ export interface YearResult {
   spending: number
   /** Healthcare costs for the year (included in spending). */
   healthcare: number
-  /** All income tax for the year (federal + penalties + state), retired years only, paid from savings. */
+  /**
+   * All income tax for the year (federal + penalties + state), paid from savings. Working years only count the tax
+   * on withdrawals for big expenses and on Social Security received (tax on pay isn't modeled).
+   */
   tax: number
   /** Federal income tax, capital gains tax, NIIT, plus any early-withdrawal / HSA penalties */
   federalTax: number
   /** Capital gains realized plus qualified dividends this year (nominal) */
   capitalGains: number
-  /** 10% early-withdrawal penalty (pre-tax withdrawals before 59½), included in federalTax */
+  /** 10% early-withdrawal penalty (pre-tax withdrawals and Roth earnings before 59½), included in federalTax */
   earlyWithdrawalPenalty: number
   /** Pre-tax money converted to Roth this year (nominal; taxable as ordinary income) */
   rothConversion: number
@@ -267,7 +281,7 @@ export interface YearResult {
   bigExpensesFrom529: number
   /** Spending as a share of the plan this year (1 unless guardrails adjusted it) */
   spendingFactor: number
-  /** Modified AGI this year (nominal), used for IRMAA two years later */
+  /** Modified AGI this year (nominal), used for IRMAA two years later. Working years: 0 (see projection.ts). */
   magi: number
   stateTax: number
   /** Taxable income after deductions. */

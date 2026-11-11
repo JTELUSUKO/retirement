@@ -2,7 +2,7 @@ import { BUCKET_OF, WITHDRAWAL_ORDER, emptyBuckets } from './accounts'
 import { TAX_CONFIG } from './config/taxYear'
 import { medianReturn } from './returns'
 import { requiredMinimumDistribution, rmdStartAge } from './rmd'
-import { householdAt, planEndAge, socialSecurityAt, spouseOffset } from './survivor'
+import { householdAt, planEndAge, socialSecurityByPerson, spouseOffset } from './survivor'
 import { annuityTaxableShare, payoutRate } from './annuity'
 import { healthcarePerPerson } from './healthcare'
 import { longTermCareAt } from './longTermCare'
@@ -11,7 +11,7 @@ import { incomeAtAge } from './income'
 import { withAdjust, type MarketAdjust } from './scenarios'
 import { stateIncomeTax } from './stateTax'
 import { irmaaFirstThreshold, irmaaPerPersonYearly } from './irmaa'
-import { bracketTop, federalIncomeTax, marginalRate, taxableSocialSecurity } from './taxes'
+import { MAX_TAXABLE_SOCIAL_SECURITY, bracketTop, federalIncomeTax, marginalRate, taxableSocialSecurity } from './taxes'
 import type { FilingStatus, Plan, ProjectionResult, TaxBucket, YearResult } from './types'
 
 /** Guardrail raises only restore earlier cuts: spending never goes above the plan. */
@@ -29,9 +29,9 @@ export const QUALIFIED_DIVIDEND_YIELD = 0.015
 export const HSA_PENALTY = 0.2
 
 /**
- * Taxes on withdrawals during working years (big expenses before retirement): pay isn't modeled, so pre-tax and
- * non-medical HSA withdrawals are taxed at a typical working-years federal rate stacked on top of it, and capital
- * gains at the usual 15%. State tax isn't added for these years.
+ * Taxes on withdrawals during working years (big expenses before retirement): pre-tax and non-medical HSA
+ * withdrawals and early Roth earnings are taxed at a typical working-years federal rate stacked on top of pay, and
+ * capital gains at the usual 15%. State tax isn't added for them.
  */
 export const WORKING_YEARS_ORDINARY_RATE = 0.22
 export const WORKING_YEARS_GAINS_RATE = 0.15
@@ -63,10 +63,16 @@ export type MarketFn = (t: number, retired: boolean) => YearMarket
  * - Federal income tax (retired years) is paid from savings too: pre-tax withdrawals
  *   (including the whole RMD), the taxable share of other income, taxable Social Security and non-medical HSA
  *   withdrawals are taxed (plus a 20% penalty on non-medical HSA money before 65).
- *   Roth and cash withdrawals are untaxed. Selling taxable (brokerage) investments realizes capital gains above
+ *   Cash withdrawals are untaxed. Roth contributions (and conversions) come out first and untaxed at any age; Roth
+ *   earnings are untaxed from 59½, and before that are taxed as income plus the 10% penalty. Selling taxable (brokerage) investments realizes capital gains above
  *   cost basis, and brokerage accounts pay qualified dividends each year; both are taxed at capital-gains
  *   rates (plus NIIT), and as ordinary income by states. Pre-tax withdrawals before 59½ owe a 10% penalty
- *   (401(k)s are exempt under the Rule of 55 if you retire at 55+). Taxes during working years are not modeled.
+ *   (401(k)s are exempt under the Rule of 55 if you retire at 55+). Tax on pay during working years is not modeled.
+ * - Social Security counts from each person's claiming age, working or not. While you're still working, pay above the
+ *   earnings limit withholds benefits before full retirement age ($1 for every $2; all of them when pay isn't
+ *   entered), and the months withheld raise the benefit from full retirement age, as if it had been claimed that
+ *   much later. Benefits received while working are taxed on top of pay (less pre-tax and HSA contributions) and the
+ *   rest is reinvested.
  * - State income tax (retired years) is added the same way, using the plan's state (see stateTax.ts).
  * - Healthcare costs (retired years) are added to spending, including Medicare surcharges (IRMAA) and any
  *   long-term care period; the HSA pays them first.
@@ -104,12 +110,13 @@ export function simulatePath(
     accounts.push({ id: CONVERTED_ROTH_ID, name: 'Converted Roth', type: 'roth', balance: 0, annualContribution: 0, employerMatch: 0, costBasis: null })
   }
   const balances = accounts.map((a) => a.balance)
-  // Cost basis of taxable (brokerage) accounts; unused for other account types
-  const basis = accounts.map((a) => (a.type === 'taxable' ? (a.costBasis ?? a.balance) : 0))
+  // Cost basis of taxable (brokerage) accounts and contributions in Roth accounts; unused for other account types
+  const basis = accounts.map((a) => (a.type === 'taxable' || a.type === 'roth' ? (a.costBasis ?? a.balance) : 0))
   const bucketOf = accounts.map((a) => BUCKET_OF[a.type])
   const indexesIn = (bucket: TaxBucket) => bucketOf.flatMap((b, i) => (b === bucket ? [i] : []))
   const pretax = indexesIn('pretax')
   const hsa = indexesIn('hsa')
+  const roth = indexesIn('roth')
   const firstTaxable = bucketOf.indexOf('taxable')
   const total = () => balances.reduce((sum, b) => sum + b, 0)
 
@@ -140,6 +147,15 @@ export function simulatePath(
       bal[i] -= part
     }
     return { taken, gains }
+  }
+
+  /** Take `amount` from the Roth accounts, contributions first; `earnings` is what had to come from growth. */
+  const takeRoth = (bal: number[], bas: number[], amount: number) => {
+    const contributed = roth.reduce((sum, i) => sum + bas[i], 0)
+    const { taken } = take(bal, bas, roth, amount)
+    const fromContributions = Math.min(taken, contributed)
+    if (contributed > 0) for (const i of roth) bas[i] *= 1 - fromContributions / contributed
+    return { taken, earnings: taken - fromContributions }
   }
 
   // Withdrawal order as account groups; before 59½, penalty-free pre-tax money comes before penalized money
@@ -182,6 +198,7 @@ export function simulatePath(
     let remaining = Math.max(need - rmd, 0)
     let realizedGains = 0
     let penalized = 0
+    let rothEarnings = 0
 
     const hsaMedical = take(next, nextBasis, hsa, Math.min(medicalCost, remaining)).taken
     withdrawalsByBucket.hsa += hsaMedical
@@ -190,6 +207,13 @@ export function simulatePath(
     // 59 is treated as after 59½ (withdrawals assumed in the second half of that year)
     for (const g of age >= 59 ? normalGroups : working ? workingGroups : earlyGroups) {
       if (remaining <= 0) break
+      if (g.bucket === 'roth') {
+        const { taken, earnings } = takeRoth(next, nextBasis, remaining)
+        withdrawalsByBucket.roth += taken
+        if (age < 59) rothEarnings += earnings
+        remaining -= taken
+        continue
+      }
       const { taken, gains } = take(next, nextBasis, g.idx, remaining)
       withdrawalsByBucket[g.bucket] += taken
       realizedGains += gains
@@ -199,7 +223,11 @@ export function simulatePath(
     // Roth conversion: move pre-tax money (left after spending) into the first Roth account
     const pretaxLeft = pretax.reduce((sum, i) => sum + next[i], 0)
     const converted = convert > 0 && rothTarget >= 0 ? take(next, nextBasis, pretax, convert).taken : 0
-    if (converted > 0) next[rothTarget] += converted
+    if (converted > 0) {
+      next[rothTarget] += converted
+      // Converted money counts as contributed (the five-year wait on each conversion isn't modeled)
+      nextBasis[rothTarget] += converted
+    }
     const extraPretax = withdrawalsByBucket.pretax - Math.min(rmd, need)
     return {
       balances: next,
@@ -219,6 +247,8 @@ export function simulatePath(
       realizedGains,
       /** Pre-tax withdrawals subject to the 10% early-withdrawal penalty */
       penalized,
+      /** Roth earnings taken before 59½ (taxable as ordinary income, plus the 10% penalty) */
+      rothEarnings,
       shortfall: remaining,
     }
   }
@@ -231,6 +261,8 @@ export function simulatePath(
   let annuity: { payment: number; priceLevelAtPurchase: number; taxableShare: number } | null = null
   const purchase = plan.annuityPurchase
   const afterTax = [...indexesIn('cash'), ...indexesIn('taxable')]
+  // Yearly contributions that come off pay before income tax (today's dollars)
+  const pretaxContributions = [...pretax, ...hsa].reduce((sum, i) => sum + accounts[i].annualContribution, 0)
 
   const endAge = planEndAge(plan)
   const years: YearResult[] = []
@@ -251,6 +283,13 @@ export function simulatePath(
   const convTo = conv.toAge || rmdStartAge(startYear - plan.currentAge) - 1
   // 529 balances for big expenses (nominal), used first for their own expense
   const funds529 = plan.bigExpenses.map((e) => (e.kind === 'college' ? e.saved529 : 0))
+  // Months of benefits the earnings limit has withheld from each person, credited back at full retirement age
+  const { fullRetirementAge, earningsLimit, earningsWithholdingRate } = TAX_CONFIG.socialSecurity
+  const withheldMonths = { you: 0, spouse: 0 }
+  const socialSecurityPeople = [
+    { who: 'you', offset: 0, claimAge: plan.socialSecurityClaimAge, pay: plan.annualPay },
+    { who: 'spouse', offset: spouseOffset(plan), claimAge: plan.spouseClaimAge, pay: plan.spouseAnnualPay },
+  ] as const
   let depletionAge: number | null = null
   let balanceAtRetirement = total()
   let balanceAtRetirementReal = balanceAtRetirement
@@ -307,7 +346,23 @@ export function simulatePath(
     let healthcare = 0
     let irmaa = 0
     let longTermCare = 0
+    // Social Security, in today's dollars until it's totalled
     let ssIncome = 0
+    // From full retirement age, withheld months count as if the benefit had been claimed that much later
+    const creditedAge = (p: (typeof socialSecurityPeople)[number]) =>
+      age + p.offset >= fullRetirementAge && withheldMonths[p.who] > 0 ? Math.min(p.claimAge + withheldMonths[p.who] / 12, fullRetirementAge) : p.claimAge
+    const benefits = socialSecurityByPerson(plan, age, { you: creditedAge(socialSecurityPeople[0]), spouse: creditedAge(socialSecurityPeople[1]) })
+    for (const p of socialSecurityPeople) {
+      let benefit = benefits[p.who]
+      if (benefit <= 0) continue
+      if (age + p.offset < fullRetirementAge && !retired) {
+        const withheld = p.pay > 0 ? Math.min(benefit, Math.max(p.pay - earningsLimit, 0) * earningsWithholdingRate) : benefit
+        withheldMonths[p.who] += (withheld / benefit) * 12
+        benefit -= withheld
+      }
+      ssIncome += benefit
+    }
+    ssIncome *= priceLevel
     let other = { amount: 0, taxable: 0, taxableRetirement: 0 }
     if (retired) {
       const healthcareToday = household.livingAges.reduce((sum, a) => sum + healthcarePerPerson(plan, a), 0)
@@ -321,7 +376,6 @@ export function simulatePath(
       longTermCare = longTermCareAt(plan, age) * healthLevel
       healthcare = healthcareToday * healthLevel + irmaa + longTermCare
       other = incomeAtAge(plan.incomeStreams, age, priceLevel, household.widowed)
-      ssIncome = socialSecurityAt(plan, age) * priceLevel
       const planned = plan.annualSpending * (household.widowed ? plan.survivor.spendingShare : 1) * priceLevel
       if (rule.type === 'guardrails') {
         // Withdrawal rate this year at the current spending level (healthcare is never cut)
@@ -365,9 +419,41 @@ export function simulatePath(
     // Qualified dividends from brokerage accounts (taxed in retirement; reinvested, so they add to basis)
     const dividends = balances.reduce((sum, b, i) => sum + (isTaxable[i] ? b * QUALIFIED_DIVIDEND_YIELD : 0), 0)
     let draw = drawDown(balances, basis, Math.max(gap, 0), rmdRequired, healthcare, age, 0, !retired)
+    const taxPriceLevel = priceLevel * taxIndexAtStart
+    // Pay of everyone still alive and working. It's only known when each of them has it entered: 0 means "not
+    // entered", so one person's pay alone would understate the household's.
+    const youWork = !(household.widowed && plan.survivor.whoDies === 'you')
+    const spouseWorks = plan.filingStatus === 'married' && !(household.widowed && plan.survivor.whoDies === 'spouse')
+    const pays = [...(youWork ? [plan.annualPay] : []), ...(spouseWorks ? [plan.spouseAnnualPay] : [])]
+    const payKnown = !retired && pays.length > 0 && pays.every((p) => p > 0)
+    // Taxable pay: pre-tax and HSA contributions come off first
+    const wages = payKnown ? Math.max(pays.reduce((sum, p) => sum + p, 0) - pretaxContributions, 0) * priceLevel : 0
+    // Benefits received while working: the tax they add on top of pay (22% of the taxable 85% when pay isn't known)
+    const benefitTax = { federal: 0, state: 0 }
+    if (!retired && ssIncome > 0) {
+      if (!payKnown) {
+        benefitTax.federal = WORKING_YEARS_ORDINARY_RATE * MAX_TAXABLE_SOCIAL_SECURITY * ssIncome
+      } else {
+        const seniors = household.livingAges.filter((a) => a >= 65).length
+        const federalWith = (socialSecurity: number) =>
+          federalIncomeTax({ ordinaryIncome: wages, socialSecurity, age, year: startYear + t, status: household.taxStatus, priceLevel: taxPriceLevel, seniors }).tax
+        const stateWith = (taxableSs: number) =>
+          stateIncomeTax({
+            state: plan.state,
+            status: household.taxStatus,
+            age: Math.max(...household.livingAges),
+            ordinaryIncome: wages,
+            retirementIncome: 0,
+            taxableSocialSecurity: taxableSs,
+            retirementExclusionPerPerson: plan.stateRetirementExclusion,
+            priceLevel: taxPriceLevel,
+          })
+        benefitTax.federal = federalWith(ssIncome) - federalWith(0)
+        benefitTax.state = stateWith(taxableSocialSecurity(wages, ssIncome, household.taxStatus)) - stateWith(0)
+      }
+    }
     if (retired) {
       const annuityTaxable = annuityIncome * (annuity?.taxableShare ?? 0)
-      const taxPriceLevel = priceLevel * taxIndexAtStart
       const converting = conv.enabled && age >= convFrom && age <= convTo
       const seniors = household.livingAges.filter((a) => a >= 65).length
       const federalFor = (ordinaryIncome: number, gains: number) =>
@@ -382,11 +468,11 @@ export function simulatePath(
           seniors,
         })
       for (let pass = 0; pass < 25; pass++) {
-        const baseOrdinary = draw.pretaxWithdrawn + draw.hsaNonMedical + other.taxable + annuityTaxable
+        const baseOrdinary = draw.pretaxWithdrawn + draw.hsaNonMedical + draw.rothEarnings + other.taxable + annuityTaxable
         const ordinaryIncome = baseOrdinary + draw.converted
         capitalGains = draw.realizedGains + dividends + purchaseGains
         const result = federalFor(ordinaryIncome, capitalGains)
-        earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
+        earlyWithdrawalPenalty = EARLY_PENALTY * (draw.penalized + draw.rothEarnings)
         const hsaPenalty = age < TAX_CONFIG.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         const state = stateIncomeTax({
           state: plan.state,
@@ -426,27 +512,34 @@ export function simulatePath(
         draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, healthcare, age, conversion)
       }
       federalBracket = marginalRate(taxableOrdinary, household.taxStatus, taxPriceLevel)
-    } else if (gap > 0) {
+    } else if (gap + benefitTax.federal + benefitTax.state > 0) {
       // A big expense while working: tax on what it takes out of savings, paid from savings too. An RMD while
-      // working stays untaxed, like the rest of working years (pay isn't modeled), so only the extra pre-tax counts.
+      // working stays untaxed, like the rest of working years (tax on pay isn't modeled), so only the extra pre-tax counts.
+      stateTax = benefitTax.state
       for (let pass = 0; pass < 25; pass++) {
-        const pretaxExtra = draw.pretaxWithdrawn - draw.rmd
-        earlyWithdrawalPenalty = EARLY_PENALTY * draw.penalized
+        const ordinary = draw.pretaxWithdrawn - draw.rmd + draw.hsaNonMedical + draw.rothEarnings
+        earlyWithdrawalPenalty = EARLY_PENALTY * (draw.penalized + draw.rothEarnings)
         const hsaPenalty = age < TAX_CONFIG.medicare.eligibilityAge ? HSA_PENALTY * draw.hsaNonMedical : 0
         capitalGains = draw.realizedGains
         federalTax =
-          WORKING_YEARS_ORDINARY_RATE * (pretaxExtra + draw.hsaNonMedical) +
+          benefitTax.federal +
+          WORKING_YEARS_ORDINARY_RATE * ordinary +
           WORKING_YEARS_GAINS_RATE * capitalGains +
           earlyWithdrawalPenalty +
           hsaPenalty
         // Added on top of pay, which isn't modeled
-        taxableIncome = pretaxExtra + draw.hsaNonMedical + capitalGains
-        federalBracket = pretaxExtra + draw.hsaNonMedical > 0 ? WORKING_YEARS_ORDINARY_RATE : 0
-        const settled = Math.abs(federalTax - tax) < 0.5
-        tax = federalTax
+        taxableIncome = ordinary + capitalGains
+        federalBracket = ordinary > 0 ? WORKING_YEARS_ORDINARY_RATE : 0
+        const settled = Math.abs(federalTax + stateTax - tax) < 0.5
+        tax = federalTax + stateTax
         if (settled) break
-        draw = drawDown(balances, basis, Math.max(gap, 0) + tax, rmdRequired, 0, age, 0, true)
+        draw = drawDown(balances, basis, Math.max(gap + tax, 0), rmdRequired, 0, age, 0, true)
       }
+    } else {
+      // Working, with benefits covering their own tax and any big expense
+      federalTax = benefitTax.federal
+      stateTax = benefitTax.state
+      tax = federalTax + stateTax
     }
     magiStatus[t] = household.taxStatus
     balances.splice(0, balances.length, ...draw.balances)
@@ -469,6 +562,8 @@ export function simulatePath(
         const added = (acc.annualContribution + acc.employerMatch) * priceLevel
         balances[i] += added
         if (isTaxable[i]) basis[i] += added
+        // Your own Roth contributions can come back out untaxed; a match can't
+        if (bucketOf[i] === 'roth') basis[i] += acc.annualContribution * priceLevel
         contributions += added
       }
     })
@@ -517,6 +612,8 @@ export function simulatePath(
       bigExpenses,
       bigExpensesFrom529,
       spendingFactor: retired ? spendingFactor : 1,
+      // Working years stay at 0, so the first retired years carry no surcharge from pay: stopping work lets you ask
+      // Social Security to use your retired income instead (form SSA-44)
       magi: retired ? magi : 0,
       stateTax,
       taxableIncome,
