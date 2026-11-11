@@ -49,8 +49,15 @@ export function NumberField({ label, value, onChange, prefix, suffix, min, max, 
   }
   const typingInvalid = editing && parse(text) === null
   const invalid = typingInvalid || Boolean(error)
-  const rangeHint =
-    min !== undefined && max !== undefined ? `Enter ${min}–${max}` : min !== undefined ? `Minimum ${min}` : 'Enter a number'
+  // Letters get "Enter a number"; the range only helps once the text is a number
+  const notANumber = !Number.isFinite(Number(text.replace(/[$,\s]/g, '')))
+  const rangeHint = notANumber
+    ? 'Enter a number'
+    : min !== undefined && max !== undefined
+      ? `Enter ${min}–${max}`
+      : min !== undefined
+        ? `Minimum ${min}`
+        : 'Enter a number'
 
   return (
     // A div rather than a wrapping <label>: a label wrapping the ⓘ button would label the button, not the input
