@@ -2,20 +2,55 @@
 
 What slowed each working session down and what would help next time, newest first.
 
-## 2026-11-09: Review fixes to the hooks and the tax skill (after 4e59e39)
+## 2026-11-10: "Enter a number" for letters, then a review of the Nov 9 work before pushing it (a664cba..)
 
-1. **What was difficult to find?** Nothing in the app. The hook scripts had no tests, so each fix had to be tried by
-   hand: 27 commands through the Bash guard and 14 situations through the stop check in a throwaway repo.
-2. **What documentation was missing?** Nothing said the hooks need `jq`, or what the stop check counts as a change.
-   CLAUDE.md now says both.
+1. **What was difficult to find?** Nothing: the "Minimum 0" text led straight to `src/components/NumberField.tsx`,
+   and the review named a file and line for each finding.
+2. **What documentation was missing?** Nothing said why working years record no income for Medicare surcharges. A
+   review finding "fixed" that, and the example plan then showed a surcharge at 65 that stopping work normally
+   avoids (form SSA-44). The reason is now in the code and the debt list.
+3. **Which files required excessive exploration?** `src/engine/projection.ts` again: the credit for withheld months
+   sat there as a multiplier on a total, which is why it broke for widows and spousal top-ups. It now goes into
+   `socialSecurityByPerson` as the claiming age each amount is figured at.
+4. **What caused unnecessary work?** Two sessions of uncommitted work meant the review covered 34 files at once.
+5. **What improvement would save the most time next session?** Commit each session's work, and run the review before
+   the next one starts. Still open: whether number fields should block letters as they are typed, and the three new
+   entries in the debt list.
+
+## 2026-11-10: Working-style sections in CLAUDE.md, a Fable 5.2 migration list and a skill check (no commits)
+
+1. **What was difficult to find?** Nothing in the repo: every model call is in `src/ai/`, as `PROJECT_STRUCTURE.md`
+   says. The slow part was the facts about Fable 5.2. The bundled `claude-api` reference stopped at Fable 5.1, so they
+   came from Anthropic's live guide (platform.claude.com/docs/en/models/fable-5-2/migration-guide), which has a
+   section for moving from Opus 5.5.
+2. **What documentation was missing?** Nothing says the three working-style sections at the end of CLAUDE.md are also
+   in `~/.claude/CLAUDE.md` on this Mac. That is on purpose: the project copy is the one a cloud session or another
+   computer reads.
 3. **Which files required excessive exploration?** None.
-4. **What caused unnecessary work?** The first Bash guard matched its phrases anywhere in a command, so it blocked a
-   review command that only mentioned running Playwright, and let a quoted short hash through. The first stop check
-   looked only at uncommitted changes, so a commit made in the same turn was never tested.
-5. **What improvement would save the most time next session?** The guard is now `guard-bash.mjs` and reads commands
-   the way the shell does; the stop check compares the checkout with how the turn began (recorded by a
-   `UserPromptSubmit` hook), so it covers commits and leaves the user's unfinished work alone. A small test file for
-   the two hooks would let the next change to them be checked in one command.
+4. **What caused unnecessary work?** Four prompts arrived as bare pastes, so what to do with each had to be inferred:
+   standing instructions went into CLAUDE.md, and the two one-off tasks (migration, skill check) were run read-only.
+5. **What improvement would save the most time next session?** Don't reopen the model question: the user decided on
+   2026-11-10 to keep Ask Claude on `claude-opus-5-5` and not move it to Fable 5.2. If it comes back, the change is
+   one line in `src/ai/prompt.ts` plus one in `PROJECT_STRUCTURE.md`, and the points to settle first are the price
+   (twice Opus 5.5's), the refusal fallback and what to show an account without 30-day retention.
+
+## 2026-11-09: Hook review fixes, then the ten items on the debt list (4e59e39..)
+
+1. **What was difficult to find?** Why the heatmap test sometimes failed on Undo. It took about 70 runs of that test to see
+   it once: Undo was still on screen and the grid still calculating, so the click had landed elsewhere. Text above the
+   button changes length when numbers arrive, and Safari doesn't hold the page still for that. A first theory (a race
+   in the `<details>` toggle) was written into the code and the docs before it was tested, then removed.
+2. **What documentation was missing?** Nothing said the hooks need `jq`, what the stop check counts as a change, or that
+   `fill()` in the installed Firefox changes a field without the page hearing about it. CLAUDE.md now says all three.
+3. **Which files required excessive exploration?** `src/engine/projection.ts` (now about 650 lines): Roth earnings and
+   Social Security while working each touched the withdrawal helper, both tax loops and the yearly growth step.
+4. **What caused unnecessary work?** The first Bash guard matched its phrases anywhere in a command and the first stop
+   check ignored commits, so both were rewritten. A check that Undo "doesn't move" was written against the whole page,
+   failed for reasons outside the heatmap, and was rewritten twice. Each repeat of the heatmap test under load took four
+   to six minutes.
+5. **What improvement would save the most time next session?** Steady heights for the results above the heatmap (see
+   the debt list), which would remove the last known cause of lost clicks. Before explaining a flaky test in code or
+   docs, reproduce it once with a screenshot. Splitting `simulatePath` by step would make the next engine change smaller.
 
 ## 2026-11-07: Theme switch, Firefox checks, heart, header promise (97885e0..76b2ec0)
 

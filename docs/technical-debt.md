@@ -2,76 +2,71 @@
 
 Known problems not yet fixed, one entry per item. Delete an entry when it's fixed.
 
-## Benefits before retirement aren't counted
-
-- **Issue:** Social Security only counts in retired years, so a benefit claimed while still working is missed, though the lower benefit is applied.
-- **Location:** `src/engine/projection.ts`; explained in `PROJECT_STRUCTURE.md` under "Retirement and claiming age heatmap".
-- **Impact:** Those heatmap cells understate the chance, so they appear as `+` floors with no verdict color.
-- **Recommended fix:** Model the salary (for the earnings limit) and working-year taxes, then count the benefit and remove the floors.
-
 ## Social Security estimate doesn't change with retirement age
 
-- **Issue:** Every heatmap cell uses the plan's amount, though the ssa.gov estimate assumes earning until 67.
-- **Location:** `src/utils/heatmap.ts:50` (`heatmapGrid`); note in `src/components/HeatmapPanel.tsx:430`.
-- **Impact:** Early retirement columns can be optimistic. Someone who already entered a lowered amount gets understated results in columns at 67 and later, and no note says so.
-- **Recommended fix:** State the second case in the note, or adjust the benefit for the years of earnings each cell removes.
+- **Issue:** Every heatmap cell uses the plan's amount, though the ssa.gov estimate assumes earning until 67. The note under the chart now states both cases (optimistic early columns; understated later columns when the amount was already lowered), but the benefit itself is not adjusted per cell.
+- **Location:** `src/utils/heatmap.ts` (`heatmapGrid`); note in `src/components/HeatmapNotes.tsx`.
+- **Impact:** Early retirement columns can be optimistic by an amount the planner can't state.
+- **Recommended fix:** Adjust the benefit for the years of earnings each cell removes. This needs an earnings history, or an agreed rule of thumb.
 
-## Early-retirement note ignores a younger spouse
+## Pay not entered: benefits before 67 are assumed withheld
 
-- **Issue:** `showsRetiringEarly` checks only your retirement age, but couples retire together.
-- **Location:** `src/utils/heatmap.ts:79`.
-- **Impact:** A younger spouse who stops earning before 67 gets no warning when your own age is 67 or later.
-- **Recommended fix:** Also test the spouse's age at retirement, using `spouseOffset`, and word the note for couples.
+- **Issue:** With no pay in the plan, Social Security that starts while still working is treated as fully withheld until 67. A spouse who isn't working has to enter 1 to avoid that.
+- **Location:** `src/engine/projection.ts` (the earnings-limit block); fields in `src/components/PlanForm.tsx`.
+- **Impact:** Understates plans where low pay or a non-working spouse would keep the benefit, until pay is entered.
+- **Recommended fix:** A "not working" choice for the spouse, or separate retirement ages per spouse.
 
-## Only some heatmap numbers say "about"
+## A Roth with no contributions, or an amount of exactly 0, can't be entered
 
-- **Issue:** The closest strong combination reads "about", but other cells and comparisons show bare numbers with the same few points of sampling noise.
-- **Location:** `src/components/HeatmapPanel.tsx:213`.
-- **Impact:** A one or two point difference can look meaningful, and a cell near a verdict line could land on either side of it. The note under the chart is the only other caution.
-- **Recommended fix:** Decide on one rule for small differences, such as not reporting gains within the noise.
+- **Issue:** Number fields show 0 as empty, so "Contributions so far" (and a brokerage cost basis) stores an emptied
+  field as "same as balance". A Roth that is all growth or employer match has to enter 1.
+- **Location:** `src/components/PlanForm.tsx` (the two cost-basis fields); `src/components/NumberField.tsx`.
+- **Impact:** Left empty, such a Roth's early withdrawals are treated as tax-free.
+- **Recommended fix:** Let a number field tell a typed 0 from an empty field.
 
-## Roth withdrawals before 59½ treated as tax-free
+## Working years don't count toward Medicare surcharges
 
-- **Issue:** Earnings withdrawn early from a Roth aren't taxed or penalized in the model.
-- **Location:** `src/engine/projection.ts:66`. The limit is stated in `PROJECT_STRUCTURE.md` ("How taxes work"), on "My plan" (`mayUseRothEarly`) and on the printed summary.
-- **Impact:** Plans that retire early and rely on Roth money can look better than they are, and the percentage itself isn't adjusted.
-- **Recommended fix:** Track contributions separately from earnings, and tax and penalize the earnings.
+- **Issue:** Working years record no income for the surcharge two years later, even when pay is entered. This is on
+  purpose: stopping work lets you ask Social Security to use retired income (form SSA-44), but not everyone files it.
+- **Location:** `src/engine/projection.ts` (`magi` in the year record).
+- **Impact:** Someone with high pay who doesn't file the form pays a surcharge for up to two years that the plan omits.
+- **Recommended fix:** State the assumption in the healthcare notes, or add a choice.
 
-## Firefox and Edge have almost no automated checks
+## The text above the heatmap keeps its tallest height
 
-- **Issue:** Both are stated build targets, but Playwright runs Chrome, Safari, phone sizes and dark mode only. Firefox
-  runs `e2e/theme.spec.ts` and nothing else, in the installed app (`channel: 'moz-firefox'`), because Playwright's own
-  Firefox build exits with "Could not find profile folder" on this Mac (cause not found). That driver ignores
-  `emulateMedia`, so printing in Firefox was only checked by hand, and a device change during a visit isn't tested there. Edge runs nothing.
-- **Location:** `playwright.config.ts:21`; `e2e:install` in `package.json:15`; targets in `PROJECT_STRUCTURE.md:513`.
-- **Impact:** Most problems in Firefox are only found by hand. Edge hasn't been tested on this work.
-- **Recommended fix:** Run every spec in Firefox, and add an `msedge` project.
-
-## The heatmap's browser test sometimes fails on Undo
-
-- **Issue:** In full `npm run e2e` runs, the heatmap test sometimes finds "Retire at" still on 67 after Undo, on WebKit and
-  phone projects. It failed 2 of 5 runs on commit `97885e0`, and passed 32 of 32 when repeated alone. Cause not found.
-- **Location:** `e2e/pages.spec.ts`, the Undo step of the heatmap test; `.last()` picks among the page's Undo buttons.
-- **Impact:** A red run that passes on retry. Unknown whether a person could hit this with Undo.
-- **Recommended fix:** Find out which Undo button that step clicked when it fails, then fix the test or the app.
-
-## Verdict lines are written in several places
-
-- **Issue:** 70 and 85 are repeated outside `verdictFor`.
-- **Location:** `src/utils/levers.ts:128`, `src/pages/Scenarios.tsx:289`, `src/components/SuccessGauge.tsx:72`, `src/utils/heatmap.ts:104`.
-- **Impact:** Changing a line means finding every copy, and a missed one makes a verdict and its color or icon disagree.
-- **Recommended fix:** Export the two values from `levers.ts`, and use `verdictFor` in `Scenarios.tsx`.
-
-## ssa.gov warning is written in three places
-
-- **Issue:** The "assumes you keep earning until 67" warning has three separate wordings.
-- **Location:** `src/components/PlanForm.tsx:341`, `src/components/HeatmapPanel.tsx:433`, `src/pages/Summary.tsx:476`.
-- **Impact:** A correction to one can miss the others.
-- **Recommended fix:** Share one short component or string.
-
-## `HeatmapPanel.tsx` does too many jobs
-
-- **Issue:** One 465-line file holds the table, takeaway, selection, Apply and Undo, key and notes.
+- **Issue:** `useHeldHeight` only ever raises the block's minimum height at a given width, and only re-measures when
+  the chart re-renders, so a shorter takeaway leaves a blank line and a rotated phone can keep the old height.
 - **Location:** `src/components/HeatmapPanel.tsx`.
-- **Impact:** It changed in all five heatmap commits, and each wording or behavior change means reading the whole file.
-- **Recommended fix:** Move the takeaway, selected-cell details and notes into their own components in the same folder.
+- **Impact:** Cosmetic.
+- **Recommended fix:** Fixed heights for the takeaway (see the Safari entry below), which would remove the hook.
+
+## Roth five-year waits aren't modeled
+
+- **Issue:** Converted money counts as contributions at once, and a first Roth's five-year wait on earnings is ignored.
+- **Location:** `src/engine/projection.ts` (`takeRoth`, the conversion step in `drawDown`).
+- **Impact:** A plan that converts and then spends that money within five years, before 59½, misses a 10% penalty.
+- **Recommended fix:** Track each conversion's year.
+
+## Edge isn't checked on this Mac, and Firefox can't emulate media
+
+- **Issue:** Firefox now runs every spec, in the installed app (`channel: 'moz-firefox'`), because Playwright's own
+  Firefox build exits with "Could not find profile folder" on this Mac (cause not found). That driver ignores
+  `emulateMedia`, so printing in Firefox and a device change during a visit are still only checked by hand, and its
+  `fill()` changes a field's text without the page hearing about it, so specs type instead. The Edge project runs only
+  where `/Applications/Microsoft Edge.app` exists, which isn't this Mac or CI.
+- **Location:** `playwright.config.ts`; `retype` in `e2e/pages.spec.ts`.
+- **Impact:** Edge has still never been run against this work.
+- **Recommended fix:** Install Edge here (or run the Edge project in CI), and find why Playwright's Firefox won't start.
+
+## A tap can miss in Safari while results are arriving
+
+- **Issue:** When numbers land, text above a button can change length and move it. Chrome and Firefox hold the page
+  still for that (scroll anchoring); Safari doesn't, so a click that starts just before can land on something else and
+  do nothing. This was the heatmap test's occasional failure on Undo (WebKit and phone projects), reproduced on
+  2026-11-09 with Undo still showing and the grid still calculating, and it is the likely reason the click that opens the heatmap was lost twice in those runs.
+- **Location:** Fixed inside the heatmap: the text above the chart keeps its tallest height (`useHeldHeight` in
+  `src/components/HeatmapPanel.tsx`). Not fixed above it: the verdict and "What would help most" in
+  `src/pages/Dashboard.tsx` still change height as they recalculate. The heatmap test retries those two clicks
+  (`clickUntil` in `e2e/pages.spec.ts`).
+- **Impact:** In Safari, a tap made in the second or two after a plan change can need repeating.
+- **Recommended fix:** Give the results above the heatmap steady heights while they recalculate, then remove `clickUntil`.

@@ -25,6 +25,7 @@ The calculator pages' year, dates, tax tables and source links fill in from this
 | 7 | `rmd` start ages and Uniform Lifetime Table | IRS Publication 590-B | Rarely changes |
 | 8 | `federalTax.niit`, `socialSecurityThresholds` | Fixed by law (not indexed) | Only when the law changes |
 | 9 | `socialSecurity` claiming ages | SSA | Rarely changes |
+| 9a | `socialSecurity.earningsLimit` (pay above it withholds benefits before full retirement age) | SSA "Exempt Amounts Under the Earnings Test" (the lower amount) | October |
 | 10 | `bigExpenses` college costs (tuition and fees + housing and food) and wedding cost | College Board "Trends in College Pricing" (October); The Knot Real Weddings Study (February) | October / February |
 | 11 | `kidsAccount` (children's account yearly and employer limits, indexed after 2027; $1,000 deposit birth years) | IRS children's account FAQ, Form 4547 instructions, newsroom inflation-adjustment releases | October–November |
 

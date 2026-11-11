@@ -33,6 +33,7 @@ retirement/
 │   │   ├── longTermCare.ts      # Optional long-term care cost period (and stress-test defaults)
 │   │   ├── safeSpending.ts      # "How much can I safely spend?" (bisection over the Monte Carlo)
 │   │   ├── phaseC.test.ts       # Fees/mix, spousal benefits, long-term care, safe spending
+│   │   ├── phaseD.test.ts       # Roth earnings before 59½, Social Security that starts before retiring
 │   │   ├── phaseB.test.ts       # IRMAA and Roth conversion tests
 │   │   ├── contributions.ts     # 2026 IRS contribution-limit warnings (401(k), IRA, HSA; age catch-ups)
 │   │   ├── phaseA.test.ts       # Typical returns, early-withdrawal penalty, capital gains/NIIT, limits
@@ -94,7 +95,10 @@ retirement/
 │   │   ├── RothConversionSection.tsx    # "Tax strategy": Roth conversion settings
 │   │   ├── LongTermCareSection.tsx      # Optional long-term care need
 │   │   ├── SafeSpendingPanel.tsx        # Safe spending for a target chance, with "Use this" 
-│   │   ├── HeatmapPanel.tsx     # Chance of success by retirement and claiming age: table of buttons, Apply or Compare
+│   │   ├── HeatmapPanel.tsx     # Chance of success by retirement and claiming age: table of buttons, Apply, Undo, color key
+│   │   ├── HeatmapTakeaway.tsx  # Above the chart: the plan's result and the closest combination that reaches strong
+│   │   ├── HeatmapSelection.tsx # The selected square against the plan, with Apply and Compare
+│   │   ├── HeatmapNotes.tsx     # Under the chart: what the numbers assume and how far to trust them
 │   │   ├── RothConversionComparison.tsx # With vs. without conversions, incl. lifetime tax + IRMAA, after-tax left
 │   │   ├── AnnuityComparison.tsx# Success rate and money left, with vs. without the annuity
 │   │   ├── SurvivorComparison.tsx# Both live vs. one dies at the chosen age
@@ -166,9 +170,10 @@ retirement/
 │   ├── utils/
 │   │   ├── buckets.ts           # Account-type labels and chart colors
 │   │   ├── calculators.ts       # The list of calculator pages (name, path, blurb, icon)
-│   │   ├── heatmap.ts           # Heatmap: which ages to test, each cell's plan and change, color bands
+│   │   ├── heatmap.ts           # Heatmap: which ages to test, each cell's plan and change, color bands, the rule for small differences
+│   │   ├── socialSecurityNotes.ts # The shared wording of what an ssa.gov estimate assumes, and who stops work before 67
 │   │   ├── heatmap.test.ts
-│   │   ├── levers.ts            # "What would help most" changes to test, and verdictFor (strong / borderline lines)
+│   │   ├── levers.ts            # "What would help most" changes to test, and verdictFor with the two verdict lines (STRONG_PCT, BORDERLINE_PCT)
 │   │   ├── levers.test.ts
 │   │   ├── quickStart.ts        # Guided setup: blank-plan check, totals per account type and writing them back
 │   │   ├── quickStart.test.ts
@@ -179,7 +184,7 @@ retirement/
 │   │   ├── theme.ts             # Reads, saves and applies the System / Light / Dark choice (localStorage, data-theme on <html>)
 │   │   ├── states.ts            # State names and codes, and matching typed text for StateSelect
 │   │   ├── states.test.ts
-│   │   ├── watchOuts.ts         # Tax and Medicare points in the typical-returns projection; mayUseRothEarly
+│   │   ├── watchOuts.ts         # Tax and Medicare points in the typical-returns projection; mayUseRothEarly, assumesRothContributions
 │   │   ├── watchOuts.test.ts
 │   │   └── format.ts            # Currency formatting
 │   ├── App.tsx                  # App shell: header (title, theme switch, tabs #plan / #compare / print / #ask marked
@@ -205,7 +210,7 @@ retirement/
 │                                #   and the "next year's figures are due" warning from November 15
 ├── e2e/
 │   ├── pages.spec.ts            # Browser checks for every page; expected numbers come from the same math the pages use
-│   ├── theme.spec.ts            # The System / Light / Dark switch; the one spec that also runs in Firefox
+│   ├── theme.spec.ts            # The System / Light / Dark switch; also runs in a second Firefox set to a dark device
 │   └── a11y.spec.ts             # axe-core (Lighthouse's engine) WCAG 2.2 AA checks, light and dark, every page and state
 ├── playwright.config.ts         # Devices, the local preview server, and the --live mode for willitlast.app
 ├── scripts/                     # Regenerate state tax rules from the Tax Foundation table (scripts/README.md)
@@ -288,10 +293,14 @@ One row per year; the age is your age at the **start** of that year.
   59½). Rule of 55: 401(k)s are penalty-free if you retire at 55+, and are used before penalized pre-tax money.
 - **HSA:** tax-free when it pays healthcare costs. HSA money used for other spending is taxed as income,
   plus a 20% penalty before 65.
-- **Not taxed:** Roth and cash withdrawals, and the cost-basis part of brokerage sales. Roth earnings withdrawn before
-  59½ are treated as tax-free too, though they can owe income tax and a 10% penalty; contributions and earnings aren't
-  tracked separately. The results say so when a plan could use Roth money that early (`mayUseRothEarly`), and the
-  printed summary always does.
+- **Not taxed:** cash withdrawals, the cost-basis part of brokerage sales, Roth contributions at any age, and Roth
+  earnings from 59½.
+- **Roth before 59½:** each Roth account tracks what was contributed (`costBasis`; empty means today's balance, as for
+  a brokerage account). Your own later contributions and any conversions add to it; a match and growth don't.
+  Withdrawals use contributions first, across all Roth accounts together. Earnings taken out before 59½ are taxed as
+  ordinary income plus the 10% penalty. The five-year waits (on conversions, and on a first Roth) aren't modeled. The
+  results and the printed summary say when a plan retiring before 59 has a Roth account with no contributions entered
+  (`assumesRothContributions`), because the balance then counts as all contributions.
 - **Deductions:** standard deduction, the extra 65+ deduction, and the temporary $6,000 senior deduction
   (2025–2028, phased out above $75k/$150k).
 - **Filing status:** single or married filing jointly (the spouse is assumed to be the same age).
@@ -302,8 +311,15 @@ One row per year; the age is your age at the **start** of that year.
   NM, RI, UT, VT; their own exemptions aren't modeled), subtracts the state standard deduction and exemptions,
   applies the 2026 brackets and subtracts credits. Brackets are indexed with inflation (not all states do).
   Data: `config/stateRules.ts`, generated from the Tax Foundation's table for the tax year.
-- **Not modeled:** local/city tax, state income-based phase-outs, credits, and taxes during working years
-  (except on withdrawals for big expenses; see "Big expenses").
+- **Social Security while still working:** a benefit counts from its claiming age, retired or not. Before full
+  retirement age, each person's pay (`annualPay`, `spouseAnnualPay`) above `socialSecurity.earningsLimit` withholds $1
+  of their benefit for every $2; with no pay entered the whole benefit is assumed withheld. The months withheld raise
+  the benefit from full retirement age, as if it had been claimed that much later. What is received while working is
+  taxed as the extra federal and state tax it adds on top of pay (22% of the taxable 85% when pay isn't entered), and
+  the rest is reinvested. Not modeled: the higher limit in the year you reach full retirement age, and withholding of
+  a spouse's top-up on the worker's record.
+- **Not modeled:** local/city tax, state income-based phase-outs, credits, and tax on pay during working years
+  (withdrawals for big expenses and benefits received while working are taxed; see above and "Big expenses").
 
 ## Couples and survivors
 
@@ -362,8 +378,8 @@ One row per year; the age is your age at the **start** of that year.
   and it never triggers a guardrail cut.
 - **Before retirement:** the cost comes out of savings in the same order. Unlike other working-year withdrawals, these
   are taxed: pre-tax money at a flat 22% (plus the 10% penalty before 59½) and brokerage gains at a flat 15%
-  (`WORKING_YEARS_ORDINARY_RATE`, `WORKING_YEARS_GAINS_RATE`). Roth money is treated as contributions, so it's
-  tax-free. A watch-out reports what these years take from retirement accounts, because lifetime tax counts retired
+  (`WORKING_YEARS_ORDINARY_RATE`, `WORKING_YEARS_GAINS_RATE`). Roth contributions come out tax-free; Roth earnings
+  before 59½ are taxed like pre-tax money. A watch-out reports what these years take from retirement accounts, because lifetime tax counts retired
   years only.
 - Validation flags an expense that starts after the plan ends, or one with no start age.
 
@@ -394,24 +410,28 @@ One row per year; the age is your age at the **start** of that year.
   already past. Your plan's own ages are always included, and a young plan shows at most 16 columns around its
   retirement age. A full grid is 144 cells at 1,000 runs each: about 5 seconds on a desktop with 4 workers.
 - Each cell is built like a Compare scenario (`applyScenario`), so an annuity bought at retirement moves with it. A
-  combination `validatePlan` rejects shows "–". Your plan's cell is the plan itself, so it matches the headline
-  (a floor rounds down, so a `+` cell can read 1 lower).
+  combination `validatePlan` rejects shows "–". Your plan's cell is the plan itself, so it matches the headline.
 - **Background priority:** cells wait behind every other queued simulation, so editing the plan never waits for the
   grid, and queued cells are dropped when the plan changes or the panel closes (`useBackgroundSimulations`). While
   it recalculates, cells keep their earlier numbers until each new one arrives.
-- **Colors** change at the verdict's 70% and 85% lines, plus 50% and 95%. Teal and orange rather than green and red,
+- **Colors** change at the verdict's 70% and 85% lines (read from `levers.ts`), plus 50% and 95%. Teal and orange rather than green and red,
   for colorblind readers; every cell also shows its number. Selecting a cell shows its gain or loss against the plan,
   with **Apply** (only the moved ages, onto the latest plan) and **Compare**.
-- **Outlined with a `+`, benefits starting before you retire (yours or your spouse's):** Social Security only counts in
-  retired years (`projection.ts`), so those checks are missed, though the lower benefit is applied. The number is a
-  floor, so these cells get no verdict color, and against the plan they only report a gain, as "at least". Counting the
-  checks properly needs the salary (for the earnings limit) and working-year taxes, which aren't modeled.
-- **Limits stated under the chart:** every cell uses the plan's Social Security amount, though the ssa.gov estimate
-  assumes earning until 67, so a note appears when the grid shows a retirement age before 67, and on selecting such a
-  cell. Each number is also a few points uncertain at 1,000 runs (retire 68, claim 67 on the example plan: 81–86% across
-  eight seeds, 84.4% at 20,000 runs), so the closest strong combination reads "about" unless it's a floor.
-- **Encouragement** (`heatCheer`): a proven gain gets a short message, on selecting a cell and after Apply. It praises the
+- **Benefits starting while you still work (yours or your spouse's):** counted, with the earnings limit and tax on top
+  of pay (see "How taxes work"). A note under the chart says whether the cells used the plan's pay or assumed the
+  benefits withheld, and selecting such a cell points to it.
+- **Limits stated under the chart** (`HeatmapNotes`): every cell uses the plan's Social Security amounts, though an
+  ssa.gov estimate assumes earning until 67. A note appears when any cell has you, or a younger spouse with a benefit,
+  stopping work before 67 (`stopsEarningEarly`), and on selecting such a cell. When the plan itself stops early, the note
+  adds that an amount already lowered for that understates the cells that work to 67 or later. The benefit is not
+  adjusted per cell.
+- **Small differences** (`HEAT_NOISE_POINTS`, 3): each number is a few points uncertain at 1,000 runs (retire 68, claim
+  67 on the example plan: 81–86% across eight seeds, 84.4% at 20,000 runs). Numbers are shown as simulated, and a cell
+  within 3 points of the plan is called "about the same": no gain, loss or encouragement, even across a verdict line.
+- **Encouragement** (`heatCheer`): a gain beyond the noise gets a short message, on selecting a cell and after Apply. It praises the
   result ("moves your plan from at risk to strong"), never the choice, and comes with a note about trade-offs.
+- **Steady layout:** the text above the chart keeps the tallest height it has had (`useHeldHeight`), so Undo and Apply
+  below it don't move when new numbers change its length.
 - **Takeaway and Undo:** once every number is in, a summary gives your plan's result and the closest combination that
   reaches strong (`nearestStrong`: fewest years of change). After Apply, **Undo** restores only what that Apply changed,
   until the plan changes again.
@@ -517,7 +537,7 @@ PlanForm ──(edits)──▶ planStore (Zustand, persisted) ──▶ Dashboa
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run lint` | Lint with oxlint |
 | `npm run e2e:install` | One time: download the test browsers into `node_modules` |
-| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7 and dark mode, plus the theme switch in the installed Firefox (Playwright; failure screenshots in `.tmp/e2e/`) |
+| `npm run e2e` | Build for willitlast.app, then check every page in Chrome, Safari, iPhone 15, iPhone SE, Pixel 7, dark mode and the installed Firefox, plus the installed Edge on machines that have it (Playwright; failure screenshots in `.tmp/e2e/`) |
 | `npm run e2e:live` | The same checks against https://willitlast.app after a deploy, in Chrome only (visible browser windows) |
 
 ## Calculator pages (SEO)
