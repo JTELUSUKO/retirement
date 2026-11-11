@@ -20,6 +20,7 @@ import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { ageLabel, endLabel, scenarioName } from '../utils/labels'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { SCENARIO_PRESETS, stressOptions } from '../utils/scenarioPresets'
+import { VERDICT_ICON, verdictFor } from '../utils/levers'
 import { SECONDARY } from '../components/styles'
 import { ScrollRegion } from '../components/ScrollRegion'
 import { Icon } from '../components/Icons'
@@ -286,8 +287,7 @@ export function Scenarios() {
             </tr>
             {resultRow(`Chance money lasts to ${endLabel(plan)}`, (r, i) => {
               const pct = Math.round(r.successRate * 100)
-              const icon = pct >= 85 ? '✓' : pct >= 70 ? '⚠' : '✕'
-              return emphasize(`${icon} ${pct}%`, successValues[i] === bestOf(successValues) && results.length > 1)
+              return emphasize(`${VERDICT_ICON[verdictFor(r.successRate)]} ${pct}%`, successValues[i] === bestOf(successValues) && results.length > 1)
             })}
             {resultRow('Savings at retirement', (r) => formatUSDCompact(r.savingsAtRetirement))}
             {resultRow('With typical returns', (r) =>

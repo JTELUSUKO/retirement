@@ -101,12 +101,16 @@ export function watchOuts(plan: Plan, result: ProjectionResult): WatchOut[] {
 }
 
 /**
- * True when retired years before 59½ could draw on Roth money, which the engine treats as tax-free even for earnings
- * (the year you turn 59 counts as after 59½, as for the pre-tax penalty).
+ * True when retired years before 59½ could draw on Roth money (the year you turn 59 counts as after 59½, as for the
+ * pre-tax penalty). Earnings taken out that early are taxed and penalized; contributions aren't.
  */
 export const mayUseRothEarly = (plan: Plan) =>
   Math.max(plan.currentAge, plan.retirementAge) < 59 &&
   (plan.rothConversion.enabled || plan.accounts.some((a) => a.type === 'roth'))
+
+/** True when that early Roth money leans on a guess: an account's contributions aren't entered, so its balance counts as all contributed */
+export const assumesRothContributions = (plan: Plan) =>
+  mayUseRothEarly(plan) && plan.accounts.some((a) => a.type === 'roth' && a.balance > 0 && a.costBasis === null)
 
 /** Pre-tax (beyond any RMD), Roth and HSA money taken out in a year */
 const fromRetirementAccounts = (y: YearResult) => y.withdrawalsByBucket.pretax - y.rmd + y.withdrawalsByBucket.roth + y.withdrawalsByBucket.hsa

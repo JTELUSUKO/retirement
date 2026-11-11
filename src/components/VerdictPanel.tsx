@@ -4,7 +4,7 @@ import type { SimTask } from '../sim/tasks'
 import { useSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
 import { endLabel } from '../utils/labels'
-import { articleFor, leverVariants, patchFor, spendMoreVariant, verdictFor, withArticle, type Lever } from '../utils/levers'
+import { articleFor, leverVariants, patchFor, spendMoreVariant, STRONG_PCT, verdictFor, withArticle, type Lever } from '../utils/levers'
 import { InfoTip } from './InfoTip'
 import { SECONDARY } from './styles'
 
@@ -57,7 +57,7 @@ export function VerdictPanel({ plan, mc }: { plan: Plan; mc: MonteCarloResult })
         {headline}
       </h2>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        {verdict !== 'strong' && 'Many planners aim for 85% or more. '}
+        {verdict !== 'strong' && `Many planners aim for ${STRONG_PCT}% or more. `}
         <strong className="text-slate-800 dark:text-slate-200">An estimate from simulated markets, not a guarantee or advice.</strong>
       </p>
 

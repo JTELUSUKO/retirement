@@ -122,14 +122,24 @@ export function spendMoreVariant(plan: Plan): Lever {
 }
 
 export type Verdict = 'strong' | 'borderline' | 'at-risk'
+/** The two verdict lines, in percent: the only place they're written. Colors, ticks and wording all read these. */
+export const STRONG_PCT = 85
+export const BORDERLINE_PCT = 70
 /** Judged on the rounded percentage shown, so "85%" is never called borderline. */
 export function verdictFor(successRate: number): Verdict {
   const pct = Math.round(successRate * 100)
-  return pct >= 85 ? 'strong' : pct >= 70 ? 'borderline' : 'at-risk'
+  return pct >= STRONG_PCT ? 'strong' : pct >= BORDERLINE_PCT ? 'borderline' : 'at-risk'
 }
 
+/** The symbol that goes with each verdict */
+export const VERDICT_ICON: Record<Verdict, string> = { strong: '✓', borderline: '⚠', 'at-risk': '✕' }
+
 /** Short verdict label, e.g. next to the success rate */
-export const VERDICT_NOTE: Record<Verdict, string> = { strong: '✓ Strong', borderline: '⚠ Borderline', 'at-risk': '✕ At risk' }
+export const VERDICT_NOTE: Record<Verdict, string> = {
+  strong: `${VERDICT_ICON.strong} Strong`,
+  borderline: `${VERDICT_ICON.borderline} Borderline`,
+  'at-risk': `${VERDICT_ICON['at-risk']} At risk`,
+}
 
 /** The verdict as a plain word (no symbol), for screen-reader text */
 export const VERDICT_WORD: Record<Verdict, string> = { strong: 'strong', borderline: 'borderline', 'at-risk': 'at risk' }

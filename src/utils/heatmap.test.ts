@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { runMonteCarlo, TAX_CONFIG } from '../engine'
+import { projectPlan, runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, showsRetiringEarly } from './heatmap'
+import { claimsWhileWorking, HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatUndoPatch, nearestStrong, showsClaimingWhileWorking, showsRetiringEarly } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -39,31 +39,50 @@ describe('heatmap grid', () => {
     expect(claimAges).toEqual([70, 69, 68, 67, 66, 62])
   })
 
-  it('marks a claim before retiring, not one at or after', () => {
-    expect(cellOf(plan, 67, 62).claimsBeforeRetiring).toBe(true)
-    expect(cellOf(plan, 67, 67).claimsBeforeRetiring).toBe(false)
-    expect(cellOf(plan, 62, 67).claimsBeforeRetiring).toBe(false)
+  it('notices a claim while still working, not one at or after retiring', () => {
+    expect(claimsWhileWorking(plan, 67, 62)).toBe(true)
+    expect(claimsWhileWorking(plan, 67, 67)).toBe(false)
+    expect(claimsWhileWorking(plan, 62, 67)).toBe(false)
+    expect(showsClaimingWhileWorking(heatmapGrid(plan), plan)).toBe(true)
   })
 
-  it("marks a spouse's benefit that starts before you retire, by your age at the time", () => {
+  it("notices a spouse's benefit that starts while you still work, by your age at the time", () => {
     // Your spouse is 5 years older: claiming at 65 is your age 60
     const couple: Plan = { ...plan, filingStatus: 'married', spouseCurrentAge: 60, spouseClaimAge: 65, spouseSocialSecurityAtFRA: 1500 }
-    expect(cellOf(couple, 67, 67).claimsBeforeRetiring).toBe(true)
-    expect(cellOf(couple, 60, 67).claimsBeforeRetiring).toBe(false)
-    expect(cellOf({ ...couple, spouseSocialSecurityAtFRA: 0 }, 67, 67).claimsBeforeRetiring).toBe(false)
+    expect(claimsWhileWorking(couple, 67, 67)).toBe(true)
+    expect(claimsWhileWorking(couple, 60, 67)).toBe(false)
+    expect(claimsWhileWorking({ ...couple, spouseSocialSecurityAtFRA: 0 }, 67, 67)).toBe(false)
   })
 
-  it('marks nothing when retiring now, with no working years to miss a benefit in', () => {
-    expect(cellOf({ ...plan, currentAge: 66, retirementAge: 66, socialSecurityClaimAge: 62 }, 66, 62).claimsBeforeRetiring).toBe(false)
+  it('notices nothing when retiring now, with no working years left', () => {
+    const now = { ...plan, currentAge: 66, retirementAge: 66, socialSecurityClaimAge: 62 }
+    expect(claimsWhileWorking(now, 66, 62)).toBe(false)
+  })
+
+  it('a cell that claims while working counts the benefits paid before retiring', () => {
+    const paid: Plan = { ...plan, currentAge: 62, retirementAge: 66, annualPay: 20_000 }
+    const withPay = projectPlan(cellOf(paid, 66, 62).plan!).balanceAtRetirement
+    const withheld = projectPlan(cellOf({ ...paid, annualPay: 0 }, 66, 62).plan!).balanceAtRetirement
+    expect(withPay).toBeGreaterThan(withheld + 4 * 12 * 1_000)
   })
 
   it('notices retiring before full retirement age, only in cells that can be tested', () => {
-    expect(showsRetiringEarly(heatmapGrid(plan))).toBe(true)
-    expect(showsRetiringEarly(heatmapGrid({ ...plan, currentAge: 66, retirementAge: 66 }))).toBe(true)
-    expect(showsRetiringEarly(heatmapGrid({ ...plan, currentAge: 67, retirementAge: 67 }))).toBe(false)
+    expect(showsRetiringEarly(heatmapGrid(plan), plan)).toBe(true)
+    const at66 = { ...plan, currentAge: 66, retirementAge: 66 }
+    expect(showsRetiringEarly(heatmapGrid(at66), at66)).toBe(true)
+    const at67 = { ...plan, currentAge: 67, retirementAge: 67 }
+    expect(showsRetiringEarly(heatmapGrid(at67), at67)).toBe(false)
     const grid = heatmapGrid(plan)
     const ruledOut = { ...grid, cells: grid.cells.map((c) => (c.retirementAge < 67 ? { ...c, plan: null } : c)) }
-    expect(showsRetiringEarly(ruledOut)).toBe(false)
+    expect(showsRetiringEarly(ruledOut, plan)).toBe(false)
+  })
+
+  it('notices a younger spouse who stops work before full retirement age when you do not', () => {
+    // You're 67 and retire now or later; your spouse is 62 with a benefit of their own
+    const couple: Plan = { ...plan, currentAge: 67, retirementAge: 68, filingStatus: 'married', spouseCurrentAge: 62, spouseSocialSecurityAtFRA: 1500 }
+    expect(showsRetiringEarly(heatmapGrid(couple), couple)).toBe(true)
+    const noBenefit = { ...couple, spouseSocialSecurityAtFRA: 0 }
+    expect(showsRetiringEarly(heatmapGrid(noBenefit), noBenefit)).toBe(false)
   })
 
   it('a combination the plan rules out has no plan to simulate', () => {
@@ -110,31 +129,16 @@ describe('undoing a cell', () => {
 })
 
 describe('a cell against the plan', () => {
-  it('two firm numbers compare either way', () => {
-    expect(heatDelta(0.8, false, 0.7, false)).toEqual({ points: 10, atLeast: false })
-    expect(heatDelta(0.6, false, 0.7, false)).toEqual({ points: -10, atLeast: false })
+  it('compares the percentages shown, either way', () => {
+    expect(heatDelta(0.8, 0.7)).toEqual({ points: 10, same: false })
+    expect(heatDelta(0.6, 0.7)).toEqual({ points: -10, same: false })
   })
 
-  it('a floor above the plan is "at least" that gain; a floor at or below it says nothing', () => {
-    expect(heatDelta(0.8, true, 0.7, false)).toEqual({ points: 10, atLeast: true })
-    expect(heatDelta(0.6, true, 0.7, false)).toBeNull()
-    expect(heatDelta(0.7, true, 0.7, false)).toBeNull()
-  })
-
-  it('below a plan that is itself a floor, a firm cell is at least that much worse; above it, nothing is proven', () => {
-    expect(heatDelta(0.6, false, 0.7, true)).toEqual({ points: -10, atLeast: true })
-    expect(heatDelta(0.8, false, 0.7, true)).toBeNull()
-    expect(heatDelta(0.8, true, 0.7, true)).toBeNull()
-  })
-
-  it('a floor rounds down, so "at least" stays true, and 100% is no floor at all', () => {
-    expect(heatPct(0.996, true)).toBe(99)
-    expect(heatPct(0.996, false)).toBe(100)
-    // 0.29 × 100 is 28.999… in floating point
-    expect(heatPct(0.29, true)).toBe(29)
-    expect(isHeatFloor({ claimsBeforeRetiring: true }, 0.999)).toBe(true)
-    expect(isHeatFloor({ claimsBeforeRetiring: true }, 1)).toBe(false)
-    expect(isHeatFloor({ claimsBeforeRetiring: false }, 0.5)).toBe(false)
+  it('calls a difference within the noise about the same, in either direction', () => {
+    expect(heatDelta(0.72, 0.7).same).toBe(true)
+    expect(heatDelta(0.68, 0.7).same).toBe(true)
+    expect(heatDelta(0.7, 0.7)).toEqual({ points: 0, same: true })
+    expect(heatDelta(0.73, 0.7).same).toBe(false)
   })
 })
 
@@ -148,10 +152,9 @@ describe('closest combination that reaches strong', () => {
     expect([cell.retirementAge, cell.claimAge]).toEqual([65, 69])
   })
 
-  it('counts a floor only if the floor itself reaches strong', () => {
-    // Retire 66, claim 62 claims before retiring: 84.9% floors to 84, so it can't be promised
-    expect(nearestStrong(grid, { [key(66, 62)]: 0.849 }, plan)).toBeNull()
-    const cell = nearestStrong(grid, { [key(66, 62)]: 0.85 }, plan)!
+  it('judges a cell on the rounded percentage shown, like the headline', () => {
+    expect(nearestStrong(grid, { [key(66, 62)]: 0.844 }, plan)).toBeNull()
+    const cell = nearestStrong(grid, { [key(66, 62)]: 0.845 }, plan)!
     expect([cell.retirementAge, cell.claimAge]).toEqual([66, 62])
   })
 
@@ -164,7 +167,7 @@ describe('closest combination that reaches strong', () => {
 describe('encouragement', () => {
   it('celebrates reaching a better verdict', () => {
     expect(heatCheer(86, 64)).toEqual({ emoji: '🎉', text: 'Great result! This moves your plan from at risk to strong.' })
-    expect(heatCheer(85, 84)!.text).toBe('Great result! This moves your plan from borderline to strong.')
+    expect(heatCheer(87, 84)!.text).toBe('Great result! This moves your plan from borderline to strong.')
     expect(heatCheer(81, 64)).toEqual({ emoji: '👍', text: 'Nice step forward. This moves your plan from at risk to borderline.' })
   })
 
@@ -181,11 +184,9 @@ describe('encouragement', () => {
     expect(heatCheer(86, 85)).toBeNull()
   })
 
-  it('a floor promises only what it proves', () => {
-    expect(heatCheer(90, 64, true)!.text).toBe('Great result! This moves your plan from at risk to strong.')
-    expect(heatCheer(81, 64, true)!.text).toBe('Nice step forward. This moves your plan from at risk to at least borderline.')
-    // 84+ might really be strong, so it can't say "still borderline"
-    expect(heatCheer(84, 75, true)!.text).toBe('A good gain of at least 9 points.')
+  it('says nothing for a gain within the noise, even one that crosses a verdict line', () => {
+    expect(heatCheer(85, 84)).toBeNull()
+    expect(heatCheer(71, 69)).toBeNull()
   })
 
   it('never calls the choice itself right', () => {
@@ -200,6 +201,7 @@ describe('heatmap colors', () => {
     expect(HEAT_BANDS.at(-1)!.upTo).toBe(100)
     expect(heatBand(0).label).toBe('Under 50%')
     expect(heatBand(0.496).label).toBe('50–69%')
+    expect(heatBand(0.845).label).toBe('85–94%')
     expect(heatBand(1).label).toBe('95%+')
   })
 

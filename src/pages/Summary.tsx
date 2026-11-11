@@ -26,7 +26,8 @@ import { usePlanStore } from '../store/planStore'
 import { formatUSD, formatUSDCompact } from '../utils/format'
 import { ACCOUNT_TYPE_LABEL, describeScenario, INCOME_KIND_LABEL, ageCell, ageLabel, endLabel, scenarioName } from '../utils/labels'
 import { PRIMARY, SECONDARY } from '../components/styles'
-import { watchOuts } from '../utils/watchOuts'
+import { ssaEstimateAssumes } from '../utils/socialSecurityNotes'
+import { assumesRothContributions, watchOuts } from '../utils/watchOuts'
 import { WatchOutList } from '../components/WatchOuts'
 import { ScrollRegion } from '../components/ScrollRegion'
 import { VERDICT_NOTE, verdictFor } from '../utils/levers'
@@ -473,7 +474,12 @@ export function Summary({
               earlier. Optional Roth conversions fill a chosen federal bracket.
             </li>
             <li>
-              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies, and tax or penalty on Roth earnings withdrawn before 59½ (all Roth withdrawals count as tax-free). Social Security assumes the ssa.gov estimate, which assumes you keep working until 67.
+              Roth contributions come out tax-free at any age; Roth growth taken out before 59½ is taxed as income plus a 10% penalty
+              {assumesRothContributions(plan) && ' (no contributions are entered for a Roth account, so its balance today counts as all contributions)'}. Social Security
+              that starts while still working is reduced by the earnings limit before {TAX_CONFIG.socialSecurity.fullRetirementAge} and taxed on top of pay.
+            </li>
+            <li>
+              Not modeled: local/city income tax, state income-based phase-outs, ACA subsidies and tax on pay. Social Security uses the {plan.filingStatus === 'married' ? 'amounts' : 'amount'} in the plan. {ssaEstimateAssumes(plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0 ? 'both' : 'you')}
             </li>
             {plan.scenarios.some((s) => s.stress !== 'none') && (
               <li>

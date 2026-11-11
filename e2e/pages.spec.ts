@@ -1,4 +1,4 @@
-import { expect, test as base, type Page } from '@playwright/test'
+import { expect, test as base, type Locator, type Page } from '@playwright/test'
 import { CLAIMING_DEFAULTS, claimingAge } from '../src/seo/claimingAge'
 import { FOUR_PERCENT_DEFAULTS, fourPercent } from '../src/seo/fourPercent'
 import { KIDS_ACCOUNT_DEFAULTS, kidsAccount } from '../src/seo/kidsAccount'
@@ -43,6 +43,29 @@ async function typeIn(page: Page, label: string, value: string) {
   await page.keyboard.press('Tab')
 }
 
+/** Replace a field's text by typing; fill() changes the text in Firefox without the page hearing about it. */
+async function retype(page: Page, field: Locator, value: string) {
+  await field.click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type(value)
+}
+
+/**
+ * Click, and click again if nothing came of it. While results are still arriving, content above the target changes
+ * height; Safari doesn't hold the page still for that, so the target can move mid-click (docs/technical-debt.md).
+ * The target must stop matching once its click has worked (a toggle clicked twice undoes itself).
+ */
+async function clickUntil(target: Locator, done: () => Promise<void>) {
+  await expect(async () => {
+    try {
+      await done()
+    } catch {
+      await target.click({ timeout: 2_000 })
+      await done()
+    }
+  }).toPass({ timeout: 30_000 })
+}
+
 test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await page.goto('./')
   await page.evaluate(() => localStorage.clear())
@@ -81,16 +104,19 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await expect(page).toHaveURL(/#plan$/)
 })
 
-test('planner: states the Roth limit only for plans retiring before 59', async ({ page }) => {
-  const note = page.getByText('Roth withdrawals before 59½ count as tax-free here')
+test('planner: states the Roth assumption only for plans retiring before 59 with no contributions entered', async ({ page }) => {
+  const note = page.getByText('Roth money taken out before 59½ is tax-free only up to what you contributed')
   await page.goto('./')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.getByRole('button', { name: /example/i }).first().click()
   await expect(page.getByText(/Income tax over retirement/)).toBeVisible({ timeout: 30_000 })
   await expect(note).toHaveCount(0)
-  await page.getByRole('textbox', { name: 'Retire at' }).fill('56')
+  await retype(page, page.getByRole('textbox', { name: 'Retire at' }), '56')
   await expect(note).toBeVisible({ timeout: 30_000 })
+  // Entering what was contributed replaces the guess
+  await retype(page, page.getByRole('textbox', { name: 'Contributions so far (what you put in)' }), '50000')
+  await expect(note).toHaveCount(0, { timeout: 30_000 })
 })
 
 test('Roth conversion calculator', async ({ page }) => {
@@ -161,7 +187,9 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   // Closed until asked for
   const chart = page.getByRole('grid', { name: /Chance money lasts/ })
   await expect(chart).toHaveCount(0)
-  await page.getByText('Try every retirement and Social Security age').click()
+  // Only a closed chart is clicked: a second click on an open one would close it again
+  const closedChart = page.locator('details:not([open]) > summary', { hasText: 'Try every retirement and Social Security age' })
+  await clickUntil(closedChart, () => expect(chart).toBeVisible({ timeout: 2_000 }))
   await expect(page.locator('#root')).toContainText('Select a square to compare it', { timeout: 90_000 })
   // The ⓘ explains how to read it, by tap on a phone and by keyboard elsewhere
   const tip = page.getByRole('button', { name: 'About reading this chart' })
@@ -179,9 +207,11 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   // A plain summary, and a way to jump to the closest combination that reaches strong
   await expect(page.locator('#root')).toContainText(/Your plan \(retire 65, claim 67\): \d+%, at risk/)
-  await expect(page.locator('#root')).toContainText(/retire \d+, claim \d+ \((about|at least) \d+%\)/)
+  await expect(page.locator('#root')).toContainText(/retire \d+, claim \d+ \(\d+%\)/)
   // The limits of the numbers are stated: this grid has retirement ages before 67
-  await expect(page.locator('#root')).toContainText('Retiring before 67:')
+  await expect(page.locator('#root')).toContainText('Stopping work before 67:')
+  // So is how a benefit that starts while still working is treated
+  await expect(page.locator('#root')).toContainText('Claiming while still working:')
   await expect(page.locator('#root')).toContainText('could be a few points off')
   await page.getByRole('button', { name: 'Show me' }).click()
   await expect(page.locator('#root')).toContainText('to strong')
@@ -202,16 +232,23 @@ test('heatmap: every retirement and claiming age, with its effect on the plan', 
   // The example plan is at risk, and this combination reaches borderline
   await expect(page.locator('#root')).toContainText('This moves your plan from at risk to borderline')
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
+  const chartTop = () => chart.evaluate((el) => Math.round(el.getBoundingClientRect().top - el.closest('details')!.getBoundingClientRect().top))
+  const settledTop = await chartTop()
   await page.getByRole('button', { name: 'Apply to my plan' }).click()
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
   await expect(page.locator('#root')).toContainText('Applied to your plan')
+  // While the new numbers are worked out, the text above the chart is shorter. The chart, and Undo below it, must not
+  // move up for that and back down after: a tap at that moment would miss
+  await expect(page.locator('#root')).toContainText('Looking for the closest combination')
+  expect(await chartTop()).toBeGreaterThanOrEqual(settledTop)
+  await expect(page.locator('#root')).toContainText('Select a square to compare it', { timeout: 90_000 })
+  const undo = page.locator('details', { hasText: 'Try every retirement' }).getByRole('button', { name: 'Undo', exact: true })
   await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 67, claim at 67/, { timeout: 30_000 })
   // Undo survives selecting another square, puts the ages back, and says so
   await expect(page.getByRole('button', { name: 'About undo' })).toBeVisible()
   await chart.getByRole('button', { name: /Retire at 66, claim at 67/ }).click()
   await expect(page.getByRole('button', { name: 'About undo' })).toBeVisible()
-  await page.getByRole('button', { name: 'Undo', exact: true }).last().click()
-  await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65')
+  await clickUntil(undo, () => expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('65', { timeout: 2_000 }))
   await expect(page.locator('#root')).toContainText('Your plan is back to how it was')
   await expect(chart.getByRole('button', { name: /your plan/ })).toHaveAttribute('aria-label', /Retire at 65, claim at 67/, { timeout: 30_000 })
   // Retyping an age takes the results away for a moment; the chart comes back open
@@ -257,18 +294,17 @@ test('Free calculators menu lists every calculator page and opens one', async ({
 test('state picker: type to filter, pick from the list or leave with a single match', async ({ page }) => {
   await page.goto('./rmd-calculator/')
   const state = page.getByRole('combobox', { name: 'State' })
-  await state.click()
-  await state.fill('carolina')
+  await retype(page, state, 'carolina')
   await expect(page.getByRole('listbox').getByRole('option')).toHaveText(['North Carolina', 'South Carolina'])
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('Enter')
   await expect(state).toHaveValue('South Carolina')
   await expect(page.getByRole('listbox')).toHaveCount(0)
   // A single match is picked on leaving the field; text matching nothing goes back to the last state
-  await state.fill('tex')
+  await retype(page, state, 'tex')
   await page.keyboard.press('Tab')
   await expect(state).toHaveValue('Texas')
-  await state.fill('xyz')
+  await retype(page, state, 'xyz')
   await expect(page.getByRole('listbox')).toContainText('No state matches')
   await page.keyboard.press('Tab')
   await expect(state).toHaveValue('Texas')

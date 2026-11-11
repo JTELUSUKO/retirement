@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { projectPlan, type Plan } from '../engine'
 import { examplePlan, newBigExpense } from '../store/planStore'
-import { mayUseRothEarly, watchOuts } from './watchOuts'
+import { assumesRothContributions, mayUseRothEarly, watchOuts } from './watchOuts'
 
 const check = (plan: Plan) => watchOuts(plan, projectPlan(plan))
 const keys = (plan: Plan) => check(plan).map((w) => w.key)
@@ -21,6 +21,12 @@ describe('Roth money before 59½', () => {
     expect(mayUseRothEarly({ ...early, retirementAge: 59 })).toBe(false)
     expect(mayUseRothEarly({ ...early, currentAge: 60 })).toBe(false)
     expect(mayUseRothEarly({ ...early, accounts: pretaxOnly(450_000) })).toBe(false)
+  })
+
+  it('only leans on a guess while a Roth account has no contributions entered', () => {
+    expect(assumesRothContributions(early)).toBe(true)
+    expect(assumesRothContributions({ ...early, accounts: [{ ...roth[0], costBasis: 200_000 }] })).toBe(false)
+    expect(assumesRothContributions({ ...early, retirementAge: 59 })).toBe(false)
   })
 })
 

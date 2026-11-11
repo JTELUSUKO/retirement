@@ -1,5 +1,6 @@
 import { applyScenario, spouseOffset, TAX_CONFIG, validatePlan, type Plan } from '../engine'
-import { VERDICT_WORD, verdictFor } from './levers'
+import { stopsEarningEarly } from './socialSecurityNotes'
+import { BORDERLINE_PCT, STRONG_PCT, VERDICT_WORD, verdictFor } from './levers'
 
 export interface HeatCell {
   key: string
@@ -7,8 +8,6 @@ export interface HeatCell {
   claimAge: number
   /** The plan with these two ages; null when the combination isn't valid (an annuity bought before retiring, say) */
   plan: Plan | null
-  /** Benefits (yours or your spouse's) that start before you retire aren't counted until then, so this cell understates the chance */
-  claimsBeforeRetiring: boolean
 }
 
 export interface HeatGrid {
@@ -50,9 +49,6 @@ function claimAgesFor(plan: Plan): number[] {
 export function heatmapGrid(plan: Plan): HeatGrid {
   const retireAges = retireAgesFor(plan)
   const claimAges = claimAgesFor(plan)
-  // In your age, as the engine times it; never if there's no spouse's benefit
-  const spouseClaim =
-    plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0 ? plan.spouseClaimAge - spouseOffset(plan) : Infinity
   const cells = claimAges.flatMap((claimAge) =>
     retireAges.map((retirementAge): HeatCell => {
       const tested = applyScenario(plan, {
@@ -62,22 +58,39 @@ export function heatmapGrid(plan: Plan): HeatGrid {
         stress: 'none',
         overrides: { retirementAge, socialSecurityClaimAge: claimAge },
       })
-      return {
-        key: heatKey(retirementAge, claimAge),
-        retirementAge,
-        claimAge,
-        plan: validatePlan(tested).length === 0 ? tested : null,
-        // Retiring now leaves no working years for a benefit to be missed in
-        claimsBeforeRetiring: plan.currentAge < retirementAge && Math.min(claimAge, spouseClaim) < retirementAge,
-      }
+      return { key: heatKey(retirementAge, claimAge), retirementAge, claimAge, plan: validatePlan(tested).length === 0 ? tested : null }
     }),
   )
   return { retireAges, claimAges, cells }
 }
 
-/** Whether any tested cell stops work before the full retirement age the ssa.gov estimate assumes you earn until */
-export const showsRetiringEarly = (grid: HeatGrid) =>
-  grid.cells.some((c) => c.plan && c.retirementAge < TAX_CONFIG.socialSecurity.fullRetirementAge)
+const hasSpouseBenefit = (plan: Plan) => plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0
+
+/**
+ * Whether a benefit (yours or your spouse's) would start while you're still working at these ages, which is when
+ * the earnings limit and the plan's pay come into it
+ */
+export function claimsWhileWorking(plan: Plan, retirementAge: number, claimAge: number): boolean {
+  // In your age, as the engine times it; never if there's no spouse's benefit
+  const spouseClaim = hasSpouseBenefit(plan) ? plan.spouseClaimAge - spouseOffset(plan) : Infinity
+  // Retiring now leaves no working years
+  return plan.currentAge < retirementAge && Math.min(claimAge, spouseClaim) < retirementAge
+}
+
+/** Whether one of those benefits would start before full retirement age, so the earnings limit could withhold it */
+export function earningsLimitApplies(plan: Plan, retirementAge: number, claimAge: number): boolean {
+  const { fullRetirementAge } = TAX_CONFIG.socialSecurity
+  const yours = claimAge < Math.min(retirementAge, fullRetirementAge)
+  const spouses = hasSpouseBenefit(plan) && plan.spouseClaimAge < fullRetirementAge && plan.spouseClaimAge - spouseOffset(plan) < retirementAge
+  return plan.currentAge < retirementAge && (yours || spouses)
+}
+
+/** Whether any tested cell has someone stopping work before full retirement age (see stopsEarningEarly) */
+export const showsRetiringEarly = (grid: HeatGrid, plan: Plan) => grid.cells.some((c) => c.plan && stopsEarningEarly(plan, c.retirementAge) !== null)
+
+/** Whether any tested cell starts a benefit while still working */
+export const showsClaimingWhileWorking = (grid: HeatGrid, plan: Plan) =>
+  grid.cells.some((c) => c.plan && claimsWhileWorking(plan, c.retirementAge, c.claimAge))
 
 /** A cell's change to the latest plan: only the ages it moved from `base`, so it can't undo other edits */
 export function heatCellPatch(latest: Plan, base: Plan, cell: HeatCell): Partial<Plan> {
@@ -96,22 +109,28 @@ export function heatUndoPatch(patch: Partial<Plan>, before: Plan): Partial<Plan>
 }
 
 /**
- * Color bands, lowest first, in the app's verdict language: under 70% is at risk, 85% and up is strong. Teal and
+ * Color bands, lowest first, in the app's verdict language (the two verdict lines come from levers.ts). Teal and
  * orange rather than green and red, which many colorblind readers can't tell apart; the middle band is neutral.
  */
 export const HEAT_BANDS = [
   { upTo: 49, label: 'Under 50%', className: 'bg-orange-500 text-slate-900 dark:bg-orange-700 dark:text-white' },
-  { upTo: 69, label: '50–69%', className: 'bg-orange-300 text-slate-900 dark:bg-orange-900 dark:text-white' },
-  { upTo: 84, label: '70–84%', className: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' },
-  { upTo: 94, label: '85–94%', className: 'bg-teal-300 text-slate-900 dark:bg-teal-700 dark:text-white' },
+  { upTo: BORDERLINE_PCT - 1, label: `50–${BORDERLINE_PCT - 1}%`, className: 'bg-orange-300 text-slate-900 dark:bg-orange-900 dark:text-white' },
+  { upTo: STRONG_PCT - 1, label: `${BORDERLINE_PCT}–${STRONG_PCT - 1}%`, className: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' },
+  { upTo: 94, label: `${STRONG_PCT}–94%`, className: 'bg-teal-300 text-slate-900 dark:bg-teal-700 dark:text-white' },
   { upTo: 100, label: '95%+', className: 'bg-teal-700 text-white dark:bg-teal-300 dark:text-slate-900' },
 ]
 
 /** The band for a success rate, judged on the rounded percentage shown */
 export const heatBand = (rate: number) => HEAT_BANDS.find((b) => Math.round(rate * 100) <= b.upTo)!
 
-/** A cell whose number is only a floor (`claimsBeforeRetiring`): no verdict color, because the true chance may be higher */
-export const HEAT_FLOOR = 'border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800'
+/** The percentage shown */
+export const heatPct = (rate: number) => Math.round(rate * 100)
+
+/**
+ * The one rule for small differences: each number comes from 1,000 simulated markets and can be a few points off, so
+ * a cell within this many points of the plan is called about the same, never a gain or a loss.
+ */
+export const HEAT_NOISE_POINTS = 3
 
 /** The combination closest to the plan's ages that reaches strong, the higher chance on a tie; null if none does */
 export function nearestStrong(grid: HeatGrid, values: Record<string, number>, plan: Plan): HeatCell | null {
@@ -119,7 +138,7 @@ export function nearestStrong(grid: HeatGrid, values: Record<string, number>, pl
   for (const cell of grid.cells) {
     const rate = values[cell.key]
     if (!cell.plan || rate === undefined) continue
-    const pct = heatPct(rate, isHeatFloor(cell, rate))
+    const pct = heatPct(rate)
     if (verdictFor(pct / 100) !== 'strong') continue
     const distance = Math.abs(cell.retirementAge - plan.retirementAge) + Math.abs(cell.claimAge - plan.socialSecurityClaimAge)
     if (!best || distance < best.distance || (distance === best.distance && pct > best.pct)) best = { cell, distance, pct }
@@ -137,38 +156,26 @@ const CHEER_MIN_POINTS = 5
 
 /**
  * A word of encouragement for a better result, given the percentages shown. It praises the outcome, never the choice:
- * the planner can say a combination scores higher, not that it's right for someone.
+ * the planner can say a combination scores higher, not that it's right for someone. A gain within the noise gets none,
+ * even one that crosses a verdict line.
  */
-export function heatCheer(cellPct: number, planPct: number, cellIsFloor = false): HeatCheer | null {
-  if (cellPct <= planPct) return null
+export function heatCheer(cellPct: number, planPct: number): HeatCheer | null {
+  const points = cellPct - planPct
+  if (points < HEAT_NOISE_POINTS) return null
   const from = verdictFor(planPct / 100)
   const to = verdictFor(cellPct / 100)
   if (from !== to) {
-    // A floor at strong is strong for certain; a lower floor might really be better than its verdict
     return to === 'strong'
       ? { emoji: '🎉', text: `Great result! This moves your plan from ${VERDICT_WORD[from]} to strong.` }
-      : { emoji: '👍', text: `Nice step forward. This moves your plan from ${VERDICT_WORD[from]} to ${cellIsFloor ? 'at least ' : ''}${VERDICT_WORD[to]}.` }
+      : { emoji: '👍', text: `Nice step forward. This moves your plan from ${VERDICT_WORD[from]} to ${VERDICT_WORD[to]}.` }
   }
-  const points = cellPct - planPct
   if (points < CHEER_MIN_POINTS) return null
   if (to === 'strong') return { emoji: '🌟', text: 'Even stronger. This adds to your cushion.' }
-  return { emoji: '📈', text: cellIsFloor ? `A good gain of at least ${points} points.` : `A good gain, though still ${VERDICT_WORD[to]}.` }
+  return { emoji: '📈', text: `A good gain, though still ${VERDICT_WORD[to]}.` }
 }
 
-/** Whether a cell's result is only a floor: at 100% every run already succeeds, so there's nothing left to be understated */
-export const isHeatFloor = (cell: Pick<HeatCell, 'claimsBeforeRetiring'>, rate: number) => cell.claimsBeforeRetiring && rate < 1
-
-/** The percentage shown: a floor rounds down, so "at least" stays true */
-export const heatPct = (rate: number, isFloor: boolean) => (isFloor ? Math.floor(rate * 100 + 1e-9) : Math.round(rate * 100))
-
-/**
- * A cell against the plan, in points, as far as the numbers can say. A floor above the plan is at least that much better;
- * a firm cell below a floor plan is at least that much worse. Anything else can't be told apart.
- */
-export function heatDelta(rate: number, cellIsFloor: boolean, planRate: number, planIsFloor: boolean): { points: number; atLeast: boolean } | null {
-  const points = heatPct(rate, cellIsFloor) - heatPct(planRate, planIsFloor)
-  if (cellIsFloor && planIsFloor) return null
-  if (cellIsFloor) return points > 0 ? { points, atLeast: true } : null
-  if (planIsFloor) return points < 0 ? { points, atLeast: true } : null
-  return { points, atLeast: false }
+/** A cell against the plan, in points of the percentages shown; `same` when the difference is within the noise */
+export function heatDelta(rate: number, planRate: number): { points: number; same: boolean } {
+  const points = heatPct(rate) - heatPct(planRate)
+  return { points, same: Math.abs(points) < HEAT_NOISE_POINTS }
 }

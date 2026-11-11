@@ -207,8 +207,8 @@ export function BigExpenseList() {
       <p className="text-xs text-muted">
         Paid from your savings in the year they happen: cash first, then brokerage, then retirement accounts. Before you
         retire, pre-tax withdrawals are taxed at about {Math.round(WORKING_YEARS_ORDINARY_RATE * 100)}% plus a 10% penalty
-        before 59½. Roth money is treated as your contributions (tax-free); earnings taken before 59½ would also owe tax
-        and a penalty.
+        before 59½. Roth contributions come out tax-free; Roth growth taken before 59½ is taxed the same way as pre-tax
+        money.
       </p>
     </div>
   )

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
 
 // Browser checks for every page (e2e/pages.spec.ts).
@@ -6,6 +7,7 @@ import { defineConfig, devices } from '@playwright/test'
 //   npm run e2e:live      check https://willitlast.app after a deploy (visible browser windows: Cloudflare's
 //                         Bot Fight Mode blocks headless browsers)
 const live = Boolean(process.env.E2E_LIVE)
+const EDGE_APP = '/Applications/Microsoft Edge.app'
 
 export default defineConfig({
   testDir: 'e2e',
@@ -26,17 +28,20 @@ export default defineConfig({
         { name: 'iPhone SE', use: { ...devices['iPhone SE'] } },
         { name: 'Pixel 7', use: { ...devices['Pixel 7'] } },
         { name: 'Dark mode', use: { ...devices['Desktop Chrome'], colorScheme: 'dark' } },
-        // The installed Firefox app (Playwright's own build won't start on this Mac), theme switch only so far
-        // (docs/technical-debt.md). Its driver ignores emulateMedia, so the device's setting is a preference: 1 light, 0 dark.
-        ...([['Firefox', 1], ['Firefox, dark device', 0]] as const).map(([name, device]) => ({
+        // The installed Firefox app (Playwright's own build won't start on this Mac; docs/technical-debt.md). Its driver
+        // ignores emulateMedia, so the device's setting is a preference: 1 light, 0 dark. The light device runs every
+        // spec; the dark one only the theme switch, which is all that depends on it.
+        ...([['Firefox', 1, undefined], ['Firefox, dark device', 0, 'theme.spec.ts']] as const).map(([name, device, testMatch]) => ({
           name,
-          testMatch: 'theme.spec.ts',
+          testMatch,
           use: {
             ...devices['Desktop Firefox'],
             channel: 'moz-firefox',
             launchOptions: { firefoxUserPrefs: { 'layout.css.prefers-color-scheme.content-override': device } },
           },
         })),
+        // The installed Edge app, on machines that have it
+        ...(existsSync(EDGE_APP) ? [{ name: 'Edge', use: { ...devices['Desktop Edge'], channel: 'msedge' } }] : []),
       ],
   webServer: live
     ? undefined

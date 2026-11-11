@@ -2,6 +2,10 @@ import type { ReactNode } from 'react'
 import { AGE_LIMITS, TAX_CONFIG, contributionWarnings, mixLabel, MIX_PRESETS, mixReturns, mixShare, validatePlan, type AccountType, type Plan, type PlanIssue } from '../engine'
 import { usePlanStore } from '../store/planStore'
 import { useUiPrefs, type FormMode } from '../store/uiPrefs'
+import { formatUSD } from '../utils/format'
+import { claimsWhileWorking } from '../utils/heatmap'
+import { SSA_FEWER_YEARS, ssaEstimateAssumes, stopsEarningEarly } from '../utils/socialSecurityNotes'
+import { mayUseRothEarly } from '../utils/watchOuts'
 import { ACCOUNT_TYPE_LABEL, activeAdvancedSettings, defaultAccountName, isAutoAccountName, sectionSummaries } from '../utils/labels'
 import { Icon, type IconName } from './Icons'
 import { InfoTip } from './InfoTip'
@@ -129,7 +133,12 @@ export function PlanForm() {
   // Blank (0) fields just show their placeholder; the results area lists what's still needed
   const errorFor = (field: PlanIssue['field']) =>
     field !== 'accounts' && plan[field] === 0 ? undefined : issues.find((i) => i.field === field)?.message
-  const { earliestClaimAge, latestClaimAge } = TAX_CONFIG.socialSecurity
+  const { earliestClaimAge, latestClaimAge, fullRetirementAge, earningsLimit, earningsWithholdingRate } = TAX_CONFIG.socialSecurity
+  const stillWorking = plan.currentAge > 0 && plan.currentAge < plan.retirementAge
+  // Pay only matters for benefits that start before you stop working
+  const showPay = stillWorking && (advanced || plan.annualPay > 0 || plan.spouseAnnualPay > 0 || claimsWhileWorking(plan, plan.retirementAge, plan.socialSecurityClaimAge))
+  const payInfo = `Only used if Social Security starts while still working: before ${fullRetirementAge}, pay above ${formatUSD(earningsLimit)} a year holds back $1 of benefits for every $${1 / earningsWithholdingRate}. Left empty, the planner assumes those benefits are held back in full.`
+  const early = plan.retirementAge > 0 ? stopsEarningEarly(plan, plan.retirementAge) : null
   const modeButton = (value: FormMode, label: string) => (
     <button
       type="button"
@@ -228,7 +237,8 @@ export function PlanForm() {
                   const type = e.target.value as AccountType
                   // Rename only if the name is still automatic (not one you typed)
                   const others = plan.accounts.filter((a) => a.id !== acc.id).map((a) => a.name)
-                  updateAccount(acc.id, isAutoAccountName(acc.name, acc.type) ? { type, name: defaultAccountName(type, others) } : { type })
+                  // A brokerage cost basis and a Roth's contributions share a field; neither carries over to another type
+                  updateAccount(acc.id, { type, costBasis: null, ...(isAutoAccountName(acc.name, acc.type) ? { name: defaultAccountName(type, others) } : {}) })
                 }}
               >
                 {Object.entries(ACCOUNT_TYPE_LABEL).map(([value, label]) => (
@@ -263,6 +273,17 @@ export function PlanForm() {
                 min={0}
                 placeholder="Same as balance"
                 info="Gains above this are taxed when you sell (0%, 15% or 20%, plus 3.8% at high incomes). Find it on your brokerage statement; leave empty to assume no gains yet."
+                value={acc.costBasis ?? 0}
+                onChange={(v) => updateAccount(acc.id, { costBasis: v === 0 ? null : v })}
+              />
+            )}
+            {acc.type === 'roth' && (advanced || mayUseRothEarly(plan)) && (
+              <NumberField
+                label="Contributions so far (what you put in)"
+                prefix="$"
+                min={0}
+                placeholder="Same as balance"
+                info="What you’ve contributed comes out tax-free at any age. Growth taken out before 59½ is taxed as income plus a 10% penalty, so this matters if you retire early. Leave empty to count today’s balance as all contributions; if none of it is (only growth or an employer match), enter 1."
                 value={acc.costBasis ?? 0}
                 onChange={(v) => updateAccount(acc.id, { costBasis: v === 0 ? null : v })}
               />
@@ -336,12 +357,27 @@ export function PlanForm() {
             <NumberField label="Claim at age" min={earliestClaimAge} max={latestClaimAge} info="62 to 70. Claiming early lowers the benefit for life (about 30% less at 62); waiting past 67 raises it 8% a year." value={plan.socialSecurityClaimAge} onChange={(v) => update({ socialSecurityClaimAge: v })} />
           </div>
         )}
-        {plan.retirementAge > 0 && plan.retirementAge < TAX_CONFIG.socialSecurity.fullRetirementAge && (
+        {showPay && (
+          <div className="grid grid-cols-2 gap-3">
+            <NumberField label={married ? 'Your pay / yr' : 'Pay / yr'} prefix="$" min={0} placeholder="Optional" info={payInfo} value={plan.annualPay} onChange={(v) => update({ annualPay: v })} />
+            {married && (
+              <NumberField
+                label="Spouse’s pay / yr"
+                prefix="$"
+                min={0}
+                placeholder="Optional"
+                info={`${payInfo} If your spouse isn’t working, enter 1.`}
+                value={plan.spouseAnnualPay}
+                onChange={(v) => update({ spouseAnnualPay: v })}
+              />
+            )}
+          </div>
+        )}
+        {early && (
           <p role="note" className="rounded-md border border-l-4 border-slate-200 border-l-amber-500 px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:border-l-amber-400 dark:text-slate-400">
-            ⚠ Your ssa.gov estimate assumes you keep earning until {TAX_CONFIG.socialSecurity.fullRetirementAge}. Stopping
-            work at {plan.retirementAge} means fewer earning years, which can lower your benefit, especially if you have
-            fewer than 35 years of earnings. Your my Social Security account can show how changing your future earnings
-            affects the estimate; otherwise use a somewhat lower amount here.
+            ⚠ {ssaEstimateAssumes(early)} {SSA_FEWER_YEARS} {early === 'spouse' ? `You retire together, when your spouse is ${plan.retirementAge + plan.spouseCurrentAge - plan.currentAge}. ` : ''}
+            A my Social Security account can show how changing future earnings affects the estimate; otherwise use a
+            somewhat lower amount here.
           </p>
         )}
       </Section>

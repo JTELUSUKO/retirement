@@ -1,21 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
-import { TAX_CONFIG, type Plan } from '../engine'
+import type { Plan } from '../engine'
 import { useBackgroundSimulations } from '../sim/useSimulation'
 import { MAX_SCENARIOS, usePlanStore } from '../store/planStore'
-import { HEAT_BANDS, HEAT_FLOOR, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, isHeatFloor, nearestStrong, showsRetiringEarly, type HeatCell, type HeatCheer } from '../utils/heatmap'
+import { claimsWhileWorking, HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatPct, heatUndoPatch, nearestStrong, type HeatCell, type HeatCheer } from '../utils/heatmap'
 import { VERDICT_WORD, verdictFor, type Verdict } from '../utils/levers'
 import { endLabel } from '../utils/labels'
-import { Icon } from './Icons'
+import { HeatmapNotes } from './HeatmapNotes'
+import { CheerText, HeatmapSelection, TRADE_OFFS } from './HeatmapSelection'
+import { HeatmapTakeaway } from './HeatmapTakeaway'
 import { InfoTip } from './InfoTip'
 import { ScrollRegion } from './ScrollRegion'
-import { PRIMARY, SECONDARY } from './styles'
 
 const PLAN_RING = 'ring-2 ring-slate-900 ring-offset-1 ring-offset-white dark:ring-white dark:ring-offset-slate-900'
 // The age column stays put while the cells scroll under it; the shadow also covers the gaps between cells
 const STICKY = 'sticky left-0 z-20 bg-white shadow-[0_0_0_3px_var(--color-white)] dark:bg-slate-900 dark:shadow-[0_0_0_3px_var(--color-slate-900)]'
 const STEP: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }
-const { fullRetirementAge } = TAX_CONFIG.socialSecurity
 
 /** The color key, grouped by what the colors mean */
 const KEY_GROUPS = (['at-risk', 'borderline', 'strong'] as Verdict[]).map((verdict) => ({
@@ -23,15 +23,27 @@ const KEY_GROUPS = (['at-risk', 'borderline', 'strong'] as Verdict[]).map((verdi
   bands: HEAT_BANDS.filter((band) => verdictFor(band.upTo / 100) === verdict),
 }))
 
-const TRADE_OFFS ='Every option has trade-offs, like more working years or a smaller benefit, and only you can weigh them. This is an estimate, not advice.'
-
-/** The emoji is decoration; the words carry the message */
-function CheerText({ cheer }: { cheer: HeatCheer }) {
-  return (
-    <>
-      <span aria-hidden="true">{cheer.emoji}</span> {cheer.text}
-    </>
-  )
+/**
+ * Keeps an element at least as tall as it has been at this width. The text above the chart gets longer and shorter as
+ * numbers arrive; without this, everything below it (Undo, Apply) moves at that moment and a tap can miss. Browsers
+ * that anchor scrolling hide the move; Safari doesn't.
+ */
+function useHeldHeight() {
+  const ref = useRef<HTMLDivElement>(null)
+  const held = useRef({ width: 0, height: 0 })
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (el.offsetWidth !== held.current.width) {
+      el.style.minHeight = ''
+      held.current = { width: el.offsetWidth, height: 0 }
+    }
+    if (el.offsetHeight > held.current.height) {
+      held.current.height = el.offsetHeight
+      el.style.minHeight = `${el.offsetHeight}px`
+    }
+  })
+  return ref
 }
 
 function Grid({ plan }: { plan: Plan }) {
@@ -57,6 +69,7 @@ function Grid({ plan }: { plan: Plan }) {
   // A cell to focus once the grid has it (Undo can return to ages the current grid doesn't show yet)
   const pendingFocus = useRef<string | null>(null)
   const tableRef = useRef<HTMLTableElement>(null)
+  const headRef = useHeldHeight()
   const cellsByKey = useMemo(() => new Map(grid.cells.map((c) => [c.key, c])), [grid])
   const cellAt = (key: string | null) => (key === null ? null : (cellsByKey.get(key) ?? null))
   // A plan edit can rule out the selected combination
@@ -140,38 +153,23 @@ function Grid({ plan }: { plan: Plan }) {
     window.location.hash = '#compare'
   }
 
-  const floorOf = (cell: HeatCell | null, rate: number | undefined) => cell !== null && rate !== undefined && isHeatFloor(cell, rate)
   const describe = (cell: HeatCell, rate: number | undefined) =>
     [
-      `Retire at ${cell.retirementAge}, claim at ${cell.claimAge}: ${rate === undefined ? 'calculating' : `${floorOf(cell, rate) ? 'at least ' : ''}${heatPct(rate, floorOf(cell, rate))}% chance`}`,
+      `Retire at ${cell.retirementAge}, claim at ${cell.claimAge}: ${rate === undefined ? 'calculating' : `${heatPct(rate)}% chance`}`,
       cell.key === planKey && 'your plan',
-      floorOf(cell, rate) && 'benefits start before retiring, see the note below',
+      claimsWhileWorking(plan, cell.retirementAge, cell.claimAge) && 'benefits start while still working, see the note below',
     ]
       .filter(Boolean)
       .join(', ')
 
   // While a new batch runs, the selected cell's number may still be the old plan's
   const selectedRate = selected && !updating ? values[selected.key] : undefined
-  const selectedIsFloor = floorOf(selected, selectedRate)
   const planRate = values[planKey]
-  const delta =
-    !updating && selectedRate !== undefined && planRate !== undefined
-      ? heatDelta(selectedRate, selectedIsFloor, planRate, floorOf(cellAt(planKey), planRate))
-      : null
-  // Only for a gain the numbers prove, which also means the plan's own number is firm
-  const cheer =
-    delta && delta.points > 0 && selectedRate !== undefined && planRate !== undefined
-      ? heatCheer(heatPct(selectedRate, selectedIsFloor), heatPct(planRate, false), selectedIsFloor)
-      : null
+  const delta = !updating && selectedRate !== undefined && planRate !== undefined ? heatDelta(selectedRate, planRate) : null
+  const cheer = delta && selectedRate !== undefined && planRate !== undefined ? heatCheer(heatPct(selectedRate), heatPct(planRate)) : null
 
   // The takeaway, once every number is in
-  const planIsFloor = floorOf(cellAt(planKey), planRate)
-  const planPct = planRate === undefined ? null : heatPct(planRate, planIsFloor)
-  // Judged like the headline, so the two can't disagree
-  const planVerdict = planRate === undefined ? null : verdictFor(planRate)
-  const closest = !updating && planVerdict !== 'strong' ? nearestStrong(grid, values, plan) : null
-  const closestRate = closest ? values[closest.key] : undefined
-  const closestIsFloor = floorOf(closest, closestRate)
+  const closest = !updating && planRate !== undefined && verdictFor(planRate) !== 'strong' ? nearestStrong(grid, values, plan) : null
   const selectCell = (key: string) => {
     setSelectedKey(key)
     setFocusKey(key)
@@ -192,64 +190,40 @@ function Grid({ plan }: { plan: Plan }) {
 
   return (
     <div className="mt-3 space-y-3">
-      {!error && (
-        // Stays up while recalculating, so the grid and Undo below it don't jump
-        <div className="rounded-md bg-slate-50 p-3 text-sm dark:bg-slate-800/60">
-          <p>
-            <strong className="font-semibold">
-              Your plan (retire {plan.retirementAge}, claim {plan.socialSecurityClaimAge}):{' '}
-              {updating || planPct === null || planVerdict === null
-                ? 'calculating…'
-                : planIsFloor
-                  ? `at least ${planPct}%.`
-                  : `${planPct}%, ${VERDICT_WORD[planVerdict]}.`}
-            </strong>
+      <div ref={headRef} className="space-y-3">
+        {!error && (
+          <HeatmapTakeaway plan={plan} updating={updating} planRate={planRate} closest={closest} closestRate={closest ? values[closest.key] : undefined} onShow={showCell} />
+        )}
+
+        <div className="flex items-start gap-1">
+          <p aria-live="polite" className="min-h-5 text-sm text-muted tabular-nums">
+            {error ? (
+              <span className="text-red-700 dark:text-red-400">✕ The simulation failed: {error}</span>
+            ) : updating ? (
+              <>
+                Calculating… <span aria-hidden="true">{done} of {jobs.length} done</span>
+              </>
+            ) : (
+              'Select a square to compare it with your plan.'
+            )}
           </p>
-          {updating ? (
-            <p className="mt-0.5">Looking for the closest combination that reaches strong (85%+)…</p>
-          ) : closest && closestRate !== undefined ? (
-            <p className="mt-0.5">
-              Closest combination that reaches strong (85%+): retire {closest.retirementAge}, claim {closest.claimAge} (
-              {closestIsFloor ? 'at least ' : 'about '}
-              {heatPct(closestRate, closestIsFloor)}%).{' '}
-              <button type="button" onClick={() => showCell(closest.key)} className="font-medium text-teal-700 underline underline-offset-2 dark:text-teal-300">
-                Show me
-              </button>
-            </p>
-          ) : (
-            planVerdict !== 'strong' && <p className="mt-0.5">No combination here reaches strong (85%+). Spending less may help more; see “What would help most” above.</p>
-          )}
+          <InfoTip label="reading this chart">
+            <span className="block">
+              Each square is your chance of the money lasting if you retire at the age above it and claim Social Security at
+              the age beside it. The rest of your plan stays the same.
+            </span>
+            <span className="mt-1.5 block">
+              The square with the bold outline is your plan. Moving right (retiring later) or up (claiming later) usually helps.
+            </span>
+            <span className="mt-1.5 block">
+              A – means your plan’s other settings rule that combination out. Select any square with a number to compare it
+              with your plan; nothing changes until you apply it.
+            </span>
+          </InfoTip>
         </div>
-      )}
 
-      <div className="flex items-start gap-1">
-        <p aria-live="polite" className="min-h-5 text-sm text-muted tabular-nums">
-          {error ? (
-            <span className="text-red-700 dark:text-red-400">✕ The simulation failed: {error}</span>
-          ) : updating ? (
-            <>
-              Calculating… <span aria-hidden="true">{done} of {jobs.length} done</span>
-            </>
-          ) : (
-            'Select a square to compare it with your plan.'
-          )}
-        </p>
-        <InfoTip label="reading this chart">
-          <span className="block">
-            Each square is your chance of the money lasting if you retire at the age above it and claim Social Security at
-            the age beside it. The rest of your plan stays the same.
-          </span>
-          <span className="mt-1.5 block">
-            The square with the bold outline is your plan. Moving right (retiring later) or up (claiming later) usually helps.
-          </span>
-          <span className="mt-1.5 block">
-            A + means at least that number, and a – means your plan’s other settings rule that combination out. Select any
-            square with a number to compare it with your plan; nothing changes until you apply it.
-          </span>
-        </InfoTip>
+        <p className="text-xs text-muted">Each number is the % chance your money lasts. Further right is retiring later; higher up is claiming later.</p>
       </div>
-
-      <p className="text-xs text-muted">Each number is the % chance your money lasts. Further right is retiring later; higher up is claiming later.</p>
 
       <ScrollRegion label="Chance money lasts by retirement age and Social Security claiming age" className="overflow-x-auto pb-1">
         <table ref={tableRef} role="grid" aria-label={`Chance money lasts to ${endLabel(plan)}, by retirement age and Social Security claiming age`} className="w-full border-separate border-spacing-[3px] text-xs select-none">
@@ -289,12 +263,7 @@ function Grid({ plan }: { plan: Plan }) {
                     )
                   }
                   const rate = values[cell.key]
-                  const color =
-                    rate === undefined
-                      ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                      : isHeatFloor(cell, rate)
-                        ? HEAT_FLOOR
-                        : heatBand(rate).className
+                  const color = rate === undefined ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' : heatBand(rate).className
                   const label = describe(cell, rate)
                   return (
                     <td key={cell.key} className="p-0">
@@ -309,8 +278,7 @@ function Grid({ plan }: { plan: Plan }) {
                         onKeyDown={(event) => onKeyDown(event, cell)}
                         className={`h-9 w-full cursor-pointer rounded font-medium tabular-nums hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-600 dark:hover:brightness-125 ${color} ${cell.key === planKey ? PLAN_RING : ''} ${cell.key === selectedKey ? 'outline-2 outline-offset-1 outline-slate-900 outline-dashed dark:outline-white' : ''}`}
                       >
-                        {rate === undefined ? '·' : heatPct(rate, isHeatFloor(cell, rate))}
-                        {floorOf(cell, rate) && '+'}
+                        {rate === undefined ? '·' : heatPct(rate)}
                       </button>
                     </td>
                   )
@@ -337,10 +305,6 @@ function Grid({ plan }: { plan: Plan }) {
           <span aria-hidden="true" className={`h-3 w-5 rounded-sm ${PLAN_RING}`} />
           Your plan
         </li>
-        <li className="flex items-center gap-1.5">
-          <span aria-hidden="true" className={`h-3 w-5 rounded-sm ${HEAT_FLOOR}`} />
-          65+ means at least 65% (see below)
-        </li>
       </ul>
 
       <div ref={detailRef} aria-live="polite" className="space-y-2">
@@ -364,83 +328,11 @@ function Grid({ plan }: { plan: Plan }) {
         )}
         {undone && latestPlan === undone && <p className="text-sm font-medium text-muted">↩ Your plan is back to how it was.</p>}
         {selected && (
-          <div className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800">
-            <p>
-              <strong className="font-semibold">
-                Retire at {selected.retirementAge}, claim Social Security at {selected.claimAge}:
-              </strong>{' '}
-              {selectedRate === undefined ? (
-                'calculating…'
-              ) : (
-                <span className="tabular-nums">
-                  {selectedIsFloor && 'at least '}
-                  {heatPct(selectedRate, selectedIsFloor)}% chance your money lasts to {endLabel(plan)}
-                </span>
-              )}
-              {selected.key !== planKey && delta !== null && (
-                <span className={`ml-1 font-medium tabular-nums ${delta.points > 0 ? 'text-teal-700 dark:text-teal-300' : delta.points < 0 ? 'text-red-700 dark:text-red-400' : 'text-muted'}`}>
-                  {delta.points === 0 ? 'No change' : `${delta.points > 0 ? '▲' : '▼'} ${delta.atLeast ? 'at least ' : ''}${Math.abs(delta.points)} ${Math.abs(delta.points) === 1 ? 'point' : 'points'}`} vs your plan
-                </span>
-              )}
-              {selected.key === planKey && <span className="ml-1 text-muted">This is your plan.</span>}
-            </p>
-            {cheer && (
-              <div className="mt-1.5">
-                <p className="font-medium text-teal-700 dark:text-teal-300">
-                  <CheerText cheer={cheer} />
-                </p>
-                <p className="text-xs text-muted">{TRADE_OFFS}</p>
-              </div>
-            )}
-            {selectedIsFloor && (
-              <p className="mt-1 text-xs text-muted">Benefits start before you retire, so the real chance may be higher. See the note below.</p>
-            )}
-            {selected.retirementAge < fullRetirementAge && (
-              <p className="mt-1 text-xs text-muted">Retiring before {fullRetirementAge} can lower your Social Security, so this could be optimistic. See the note below.</p>
-            )}
-            {selected.key !== planKey && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={() => apply(selected)} className={`${PRIMARY} inline-flex items-center gap-1.5 px-3 py-1.5 text-sm`}>
-                  <Icon name="check" size={15} />
-                  Apply to my plan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => compare(selected)}
-                  disabled={full}
-                  title={full ? `Compare holds up to ${MAX_SCENARIOS} scenarios; remove one first` : undefined}
-                  className={`${SECONDARY} inline-flex items-center gap-1.5 px-3 py-1.5 text-sm`}
-                >
-                  <Icon name="columns" size={15} />
-                  Compare side by side
-                </button>
-              </div>
-            )}
-          </div>
+          <HeatmapSelection plan={plan} selected={selected} rate={selectedRate} delta={delta} cheer={cheer} compareFull={full} onApply={apply} onCompare={compare} />
         )}
       </div>
 
-      <div className="space-y-1 text-xs text-muted">
-        <p>
-          <strong className="font-semibold">Outlined squares with a +:</strong>{' '}
-          {plan.filingStatus === 'married' ? 'you or your spouse would start' : 'you’d start'} Social Security before you stop
-          working. The planner counts the smaller benefit but not the checks that arrive before you retire, so the real
-          chance may be higher. Working can also reduce those checks before full retirement age.
-        </p>
-        {showsRetiringEarly(grid) && (
-          <p>
-            <strong className="font-semibold">Retiring before {fullRetirementAge}:</strong> these squares use the Social
-            Security amount in your plan, but your ssa.gov estimate assumes you keep earning until {fullRetirementAge}. Stopping
-            sooner can lower your benefit, so unless your amount already allows for that, the real chance could be lower than
-            shown. In a square with a +, “at least” assumes the amount in your plan.
-          </p>
-        )}
-        <p>
-          Each combination is an estimate from 1,000 simulated markets with the rest of your plan unchanged. A number could be
-          a few points off, so one near a color boundary could really belong on the other side of it.
-          {plan.filingStatus === 'married' && ` You retire together; your spouse’s claiming age stays at ${plan.spouseClaimAge}.`}
-        </p>
-      </div>
+      <HeatmapNotes plan={plan} grid={grid} />
     </div>
   )
 }

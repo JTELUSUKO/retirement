@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { VERDICT_NOTE, VERDICT_WORD, verdictFor } from '../utils/levers'
+import { BORDERLINE_PCT, STRONG_PCT, VERDICT_NOTE, VERDICT_WORD, verdictFor } from '../utils/levers'
 
 // Half-circle dial for the chance the money lasts. The arc is drawn left (0%) to right (100%) around (100, 100).
 const R = 80
@@ -46,7 +46,7 @@ function useCountUp(target: number, ms = 450) {
 }
 
 /**
- * The success rate as a dial, coloured by verdict, with ticks at 70% and 85% (where the verdict changes).
+ * The success rate as a dial, coloured by verdict, with ticks at the two verdict lines (70% and 85%).
  * `baseline` adds a marker for the rate it's being compared with.
  */
 export function SuccessGauge({ rate, baseline, label, pending }: { rate: number; baseline?: number; label: string; pending?: boolean }) {
@@ -69,7 +69,7 @@ export function SuccessGauge({ rate, baseline, label, pending }: { rate: number;
           stroke="currentColor"
           className={`${TONE[verdict]} transition-[stroke-dasharray,color] duration-500 ease-out motion-reduce:transition-none`}
         />
-        {[0.7, 0.85].map((share) => {
+        {[BORDERLINE_PCT / 100, STRONG_PCT / 100].map((share) => {
           const a = at(share, R - 11)
           const b = at(share, R + 11)
           return <line key={share} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth="2" className="stroke-white dark:stroke-slate-900" />
