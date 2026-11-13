@@ -2,6 +2,18 @@
 
 What slowed each working session down and what would help next time, newest first.
 
+## 2026-11-13: Installed the Replica skill pack, then moved it out of this repo (no commits)
+
+1. **What was difficult to find?** Nothing: the repo's README lists the install steps and the files.
+2. **What documentation was missing?** Nothing said whether `claude-replical-skills/` belonged in this repo. It sat
+   inside it, untracked and not ignored, so `git add -A` would have committed someone else's 11 skills with the app.
+   It now lives beside the repo at `~/my-project/claude-replical-skills`.
+3. **Which files required excessive exploration?** None.
+4. **What caused unnecessary work?** `cp -R "$dir/" dest/` on macOS copies the folder's contents, not the folder, so
+   the first copy flattened all 11 skills into one directory and had to be redone without the trailing slash.
+5. **What improvement would save the most time next session?** Start sessions for work unrelated to the app in a
+   folder outside this repo.
+
 ## 2026-11-10: "Enter a number" for letters, then a review of the Nov 9 work before pushing it (a664cba..)
 
 1. **What was difficult to find?** Nothing: the "Minimum 0" text led straight to `src/components/NumberField.tsx`,
