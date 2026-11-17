@@ -2,6 +2,26 @@
 
 What slowed each working session down and what would help next time, newest first.
 
+## 2026-11-17: Checked whether the 2027 figures are out, then fixed the spousal top-up checks from a review (9ae3009)
+
+1. **What was difficult to find?** The CMS 2027 Medicare fact sheet: two searches found only projections and Medicare
+   Advantage pages, so the 2027 update waits on it. The IRS Rev. Proc. 2026-35, the 2027 plan limits and the SSA
+   earnings test were all out.
+2. **What documentation was missing?** Nothing in the UI code says where the engine decides who gets a benefit. A
+   spouse with none of their own still gets a spousal top-up once both have claimed (`withSpousal` in
+   `src/engine/survivor.ts`), and pay counts only when every working spouse's is entered (`payKnown` in
+   `projection.ts`). `src/utils/heatmap.ts` and `HeatmapNotes.tsx` had each re-derived these rules and got them wrong.
+3. **Which files required excessive exploration?** `src/engine/projection.ts`, to find the earnings-limit loop and
+   the name of the yearly Social Security figure. It's `income` on a year, not `socialSecurity`, which cost a failed
+   test run.
+4. **What caused unnecessary work?** The review overstated one finding: because the top-up can't start before you
+   claim, `claimsWhileWorking` only changes when your own benefit is 0. The real effect was in `earningsLimitApplies`
+   and the pay note. Reading `withSpousal` first settled it. Separately, `/model` has no Fable 5.2 (only Fable 5.1),
+   though the Nov 10 entry planned a Fable 5.2 migration.
+5. **What improvement would save the most time next session?** Export one engine helper for "when does each person's
+   first benefit start" and use it in the UI, so the two can't drift again. Also find out why `npm run e2e` skips 204
+   specs.
+
 ## 2026-11-13: Installed the Replica skill pack, then moved it out of this repo (no commits)
 
 1. **What was difficult to find?** Nothing: the repo's README lists the install steps and the files.
