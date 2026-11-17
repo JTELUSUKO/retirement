@@ -64,24 +64,32 @@ export function heatmapGrid(plan: Plan): HeatGrid {
   return { retireAges, claimAges, cells }
 }
 
-const hasSpouseBenefit = (plan: Plan) => plan.filingStatus === 'married' && plan.spouseSocialSecurityAtFRA > 0
+/**
+ * Your age when your spouse's first benefit starts, as the engine pays it (survivor.ts): their own from their claiming
+ * age, or with none of their own, a spousal top-up on your record once both have claimed. Infinity if they get none.
+ */
+function spouseBenefitStart(plan: Plan, claimAge: number): number {
+  if (plan.filingStatus !== 'married') return Infinity
+  const ownClaim = plan.spouseClaimAge - spouseOffset(plan)
+  if (plan.spouseSocialSecurityAtFRA > 0) return ownClaim
+  return plan.socialSecurityAtFRA > 0 ? Math.max(ownClaim, claimAge) : Infinity
+}
 
 /**
  * Whether a benefit (yours or your spouse's) would start while you're still working at these ages, which is when
  * the earnings limit and the plan's pay come into it
  */
 export function claimsWhileWorking(plan: Plan, retirementAge: number, claimAge: number): boolean {
-  // In your age, as the engine times it; never if there's no spouse's benefit
-  const spouseClaim = hasSpouseBenefit(plan) ? plan.spouseClaimAge - spouseOffset(plan) : Infinity
   // Retiring now leaves no working years
-  return plan.currentAge < retirementAge && Math.min(claimAge, spouseClaim) < retirementAge
+  return plan.currentAge < retirementAge && Math.min(claimAge, spouseBenefitStart(plan, claimAge)) < retirementAge
 }
 
 /** Whether one of those benefits would start before full retirement age, so the earnings limit could withhold it */
 export function earningsLimitApplies(plan: Plan, retirementAge: number, claimAge: number): boolean {
   const { fullRetirementAge } = TAX_CONFIG.socialSecurity
   const yours = claimAge < Math.min(retirementAge, fullRetirementAge)
-  const spouses = hasSpouseBenefit(plan) && plan.spouseClaimAge < fullRetirementAge && plan.spouseClaimAge - spouseOffset(plan) < retirementAge
+  const spouseStart = spouseBenefitStart(plan, claimAge)
+  const spouses = spouseStart < retirementAge && spouseStart + spouseOffset(plan) < fullRetirementAge
   return plan.currentAge < retirementAge && (yours || spouses)
 }
 

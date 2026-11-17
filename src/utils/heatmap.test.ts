@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { projectPlan, runMonteCarlo, TAX_CONFIG } from '../engine'
 import { basePlan } from '../engine/testFixtures'
 import type { Plan } from '../engine'
-import { claimsWhileWorking, HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatUndoPatch, nearestStrong, showsClaimingWhileWorking, showsRetiringEarly } from './heatmap'
+import { claimsWhileWorking, earningsLimitApplies, HEAT_BANDS, heatBand, heatCellPatch, heatCheer, heatDelta, heatKey, heatmapGrid, heatUndoPatch, nearestStrong, showsClaimingWhileWorking, showsRetiringEarly } from './heatmap'
 import { verdictFor } from './levers'
 
 const plan: Plan = { ...basePlan, currentAge: 55, retirementAge: 65, lifeExpectancy: 95, socialSecurityClaimAge: 67, socialSecurityAtFRA: 2500 }
@@ -52,6 +52,20 @@ describe('heatmap grid', () => {
     expect(claimsWhileWorking(couple, 67, 67)).toBe(true)
     expect(claimsWhileWorking(couple, 60, 67)).toBe(false)
     expect(claimsWhileWorking({ ...couple, spouseSocialSecurityAtFRA: 0 }, 67, 67)).toBe(false)
+  })
+
+  it('notices the earnings limit on a spousal top-up for a spouse with no benefit of their own', () => {
+    // Your spouse is 5 years younger with no record: the top-up starts when you claim at 67, at their 62
+    const couple: Plan = { ...plan, filingStatus: 'married', spouseCurrentAge: 50, spouseClaimAge: 62, spouseSocialSecurityAtFRA: 0 }
+    expect(earningsLimitApplies(couple, 69, 67)).toBe(true)
+    expect(claimsWhileWorking(couple, 69, 67)).toBe(true)
+    // The engine does hold it back: without your spouse's pay entered, the top-up isn't paid before you retire
+    const at67 = (p: Plan) => projectPlan(cellOf(p, 69, 67).plan!).years.find((y) => y.age === 67)!.income
+    const nearer = { ...couple, currentAge: 66, spouseCurrentAge: 61 }
+    expect(at67({ ...nearer, annualPay: 100_000, spouseAnnualPay: 1 })).toBeGreaterThan(at67(nearer))
+    // No top-up without a benefit on your record, and none before you claim
+    expect(earningsLimitApplies({ ...couple, socialSecurityAtFRA: 0 }, 69, 67)).toBe(false)
+    expect(earningsLimitApplies(couple, 67, 67)).toBe(false)
   })
 
   it('notices nothing when retiring now, with no working years left', () => {

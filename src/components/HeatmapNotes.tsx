@@ -8,7 +8,8 @@ const { fullRetirementAge, earningsLimit, earningsWithholdingRate } = TAX_CONFIG
 /** What the chart's numbers assume and how far to trust them */
 export function HeatmapNotes({ plan, grid }: { plan: Plan; grid: HeatGrid }) {
   const married = plan.filingStatus === 'married'
-  const hasPay = plan.annualPay > 0 && (!married || plan.spouseSocialSecurityAtFRA <= 0 || plan.spouseAnnualPay > 0)
+  // As the engine judges it (payKnown in projection.ts): a couple's pay counts only with both spouses' entered
+  const hasPay = plan.annualPay > 0 && (!married || plan.spouseAnnualPay > 0)
   // The plan's own ages decide whose estimate the note is about; the grid decides whether it's needed
   const earlyInPlan = stopsEarningEarly(plan, plan.retirementAge)
   return (
