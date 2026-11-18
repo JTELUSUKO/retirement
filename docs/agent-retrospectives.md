@@ -2,6 +2,16 @@
 
 What slowed each working session down and what would help next time, newest first.
 
+## 2026-11-18: Security review, then `npm audit fix` and workflow actions pinned to commit hashes (uncommitted)
+
+1. **What was difficult to find?** Whether the 6 high `npm audit` findings could be fixed: all come from picomatch's
+   ReDoS advisory (GHSA-fc5q-39xc-vjpf), which covers every release up to 4.0.7, the newest. `npm audit fix --force`
+   would downgrade Vite 8→6 and Vitest 5→3, so it was not run. They are build-time only; `npm audit --omit=dev` is clean.
+2. **What documentation was missing?** Nothing said how to update a pinned action. `deploy.yml` now has a note:
+   look up the new release's commit hash and change the hash and the version comment together.
+3. **What would help next time?** `gh api repos/<owner>/<repo>/commits/<tag> --jq .sha` resolves a tag to its commit.
+   Re-run `npm audit` once picomatch ships a fix; a plain `npm audit fix` should then clear the rest.
+
 ## 2026-11-17: Checked whether the 2027 figures are out, then fixed the spousal top-up checks from a review (9ae3009)
 
 1. **What was difficult to find?** The CMS 2027 Medicare fact sheet: two searches found only projections and Medicare
