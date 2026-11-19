@@ -2,6 +2,18 @@
 
 What slowed each working session down and what would help next time, newest first.
 
+## 2026-11-19: Privacy policy page and a Terms of Use / Privacy Policy link row in every footer
+
+1. **What was difficult to find?** Whether the live site sets a Cloudflare bot cookie (`__cf_bm`): checking with curl was
+   denied, so the policy says Cloudflare "may" set a strictly necessary security cookie, and the footers and terms say
+   "no cookies of our own". Confirm in a real browser's dev tools. A code review caught the policy saying Ask sends "a
+   summary" of the plan (it sends all of it, `planSnapshot`) and that Reset deletes the plan (Undo can restore it).
+2. **What documentation was missing?** That the six calculator pages have their own hand-written footers in each
+   `*/index.html`, so footer changes go in seven places. `src/seo/pages.test.ts` also rejects any year in `src/`, so a
+   new page with a "last updated" date needs an exception there.
+3. **What would help next time?** Headless Chrome (`--screenshot`) can't go narrower than about 500px, so phone-width
+   screenshots look clipped; trust `expectFitsScreen` in the e2e suite instead.
+
 ## 2026-11-18: Security review, then `npm audit fix` and workflow actions pinned to commit hashes (uncommitted)
 
 1. **What was difficult to find?** Whether the 6 high `npm audit` findings could be fixed: all come from picomatch's

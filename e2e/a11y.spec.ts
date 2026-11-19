@@ -55,6 +55,10 @@ const STATES: [string, (page: Page) => Promise<void>][] = [
     await page.goto('./#terms')
     await expect(page.locator('#root')).toContainText('Disclaimer and terms of use')
   }],
+  ['privacy', async (page) => {
+    await page.goto('./#privacy')
+    await expect(page.locator('#root')).toContainText('Privacy policy')
+  }],
   ['Roth calculator (with Medicare and tax notes)', async (page) => {
     await page.goto('./roth-conversion-calculator/')
     await fill(page, 'Your age this year', '67')

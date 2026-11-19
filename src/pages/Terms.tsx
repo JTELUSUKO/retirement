@@ -1,13 +1,6 @@
-const UPDATED = 'November 1, 2026'
+import { LegalSection as Section } from '../components/LegalSection'
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-2">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{children}</div>
-    </section>
-  )
-}
+const UPDATED = 'November 19, 2026'
 
 /** Full disclaimer and terms of use. */
 export function Terms() {
@@ -115,10 +108,14 @@ export function Terms() {
 
       <Section title="10. Your data and privacy">
         <p>
-          The calculator has no accounts, cookies, tracking or analytics. What you enter stays in your browser and is
+          The calculator has no accounts, tracking or analytics, and sets no cookies of its own. What you enter stays in your browser and is
           not sent to us. If you use the optional Ask Claude assistant, your plan and questions go from your browser
           to Anthropic (see section 5). Clearing your browser data erases your plan, so use Export to keep a copy. Like any web host,
-          our hosting provider keeps standard server logs of page visits.
+          our hosting provider keeps standard server logs of page visits. See the{' '}
+          <a href="#privacy" className="underline underline-offset-2">
+            privacy policy
+          </a>{' '}
+          for details.
         </p>
       </Section>
 

@@ -129,13 +129,15 @@ retirement/
 │   │   ├── SuccessGauge.tsx     # Half-circle dial for the chance the money lasts, colored by verdict
 │   │   ├── WatchOuts.tsx        # Tax and Medicare points worth a look (also used by the printed summary)
 │   │   ├── WhatIfPanel.tsx      # Sliders for the biggest levers with a live dial; nothing changes until Apply
+│   │   ├── LegalSection.tsx     # Numbered section for the terms and privacy pages
 │   │   └── YearTable.tsx        # Year-by-year table: average returns, by account type, or simulation range
 │   ├── pages/
 │   │   ├── Dashboard.tsx        # "My plan": form + results (stat cards, charts, yearly table)
 │   │   ├── Scenarios.tsx        # "Compare scenarios": up to 3 what-ifs side by side with your plan
 │   │   ├── Summary.tsx          # "Print summary": one report (results, chart, scenarios, inputs, milestones)
 │   │   ├── Ask.tsx              # "Ask Claude": API key entry and chat (src/ai/)
-│   │   └── Terms.tsx            # Full disclaimer and terms of use
+│   │   ├── Terms.tsx            # Full disclaimer and terms of use
+│   │   └── Privacy.tsx          # Privacy policy (#privacy); linked from every footer's Terms of Use / Privacy Policy row
 │   ├── seo/                     # Standalone calculator pages that bring search traffic to the planner
 │   │   ├── mountThemeSwitch.tsx # Fills a calculator page's #theme-switch placeholder
 │   │   ├── incomeTax.ts         # Shared: extra federal/state tax, bracket room and IRMAA from added retirement income
@@ -247,7 +249,7 @@ retirement/
 6. **Data stays local.** No accounts, no server. The plan lives in the browser (`localStorage` key `retirement-plan`).
    The one exception is **Ask Claude** (in the menu, marked Beta): with the visitor's own API key, the plan is sent
    to api.anthropic.com when they ask a question. The header (in the same sentence as the
-   promise), footer, terms and the Ask page all say so.
+   promise), footer, terms, privacy policy and the Ask page all say so. Keep them in step when storage or Ask changes.
    **Export** saves a JSON backup; **Import** restores one (older versions are upgraded, bad files are rejected
    with a reason, and Undo brings back the previous plan).
 7. **Changing the plan shape:** bump `PLAN_VERSION` in `planStore.ts` and add a step to `migratePlanState`.

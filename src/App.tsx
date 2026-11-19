@@ -12,11 +12,12 @@ import { tabClass } from './components/styles'
 const Scenarios = lazy(() => import('./pages/Scenarios').then((m) => ({ default: m.Scenarios })))
 const Summary = lazy(() => import('./pages/Summary').then((m) => ({ default: m.Summary })))
 const Terms = lazy(() => import('./pages/Terms').then((m) => ({ default: m.Terms })))
+const Privacy = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.Privacy })))
 const Ask = lazy(() => import('./pages/Ask').then((m) => ({ default: m.Ask })))
 
-type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms'
+type Page = 'plan' | 'compare' | 'summary' | 'ask' | 'terms' | 'privacy'
 
-const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms']
+const PAGES: Page[] = ['plan', 'compare', 'summary', 'ask', 'terms', 'privacy']
 const pageFromHash = (): Page => {
   // #print was briefly the printer icon's address; old links and bookmarks open the summary
   if (window.location.hash === '#print') history.replaceState(null, '', '#summary')
@@ -40,6 +41,8 @@ export default function App() {
     const onHash = () => {
       const next = pageFromHash()
       setPage(next)
+      // A link at the bottom of a long page (the footer's Terms and Privacy) shouldn't open the next one scrolled down
+      window.scrollTo(0, 0)
       // Leaving the summary cancels a print that was still waiting for the results
       if (next !== 'summary') setPrintRequested(false)
     }
@@ -125,6 +128,7 @@ export default function App() {
             <Summary print={printRequested} onPrintDone={printDone} printNowRef={printNow} />
           )}
           {page === 'terms' && <Terms />}
+          {page === 'privacy' && <Privacy />}
           {page === 'ask' && <Ask />}
         </Suspense>
       </main>

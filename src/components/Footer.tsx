@@ -37,11 +37,9 @@ export function Footer() {
         <a href="#terms" className="underline underline-offset-2">Full disclaimer and terms</a>.
       </p>
       <p>
-        <strong className="text-slate-700 dark:text-slate-300">Privacy:</strong> This app has no accounts, cookies, tracking
-        or analytics. Everything you enter stays in this browser and is never sent anywhere, except to Anthropic when you
-        ask Claude a question (optional, with your own API key). Your plan is saved only on
-        this device; clearing your browser data erases it, so use Export to keep a copy. (Our hosting provider, like any
-        web host, keeps standard server logs of page visits.)
+        <strong className="text-slate-700 dark:text-slate-300">Privacy:</strong> No accounts, tracking or analytics, and
+        no cookies of our own. Everything you enter stays in this browser, except what you send to Anthropic when you ask
+        Claude a question.
       </p>
       <div>
         <p>
@@ -61,7 +59,13 @@ export function Footer() {
         </ul>
       </div>
       <CalculatorGrid />
-      <p>© {YEAR} willitlast.app. All rights reserved.</p>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <nav aria-label="Legal" className="flex gap-6 font-medium">
+          <a href="#terms" className="hover:text-slate-900 hover:underline dark:hover:text-slate-100">Terms of Use</a>
+          <a href="#privacy" className="hover:text-slate-900 hover:underline dark:hover:text-slate-100">Privacy Policy</a>
+        </nav>
+        <p>© {YEAR} willitlast.app. All rights reserved.</p>
+      </div>
     </footer>
   )
 }

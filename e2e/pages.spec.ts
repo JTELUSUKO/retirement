@@ -90,9 +90,10 @@ test('planner: example plan, every tab, saved plan', async ({ page }) => {
   await expect(page.getByRole('textbox', { name: 'Retire at' })).toHaveValue('67')
   await expect(whatIf).not.toContainText('(was')
   await expectFitsScreen(page)
-  for (const tab of ['compare', 'summary', 'terms']) {
+  const legal: Record<string, string> = { terms: 'Disclaimer and terms of use', privacy: 'Privacy policy' }
+  for (const tab of ['compare', 'summary', 'terms', 'privacy']) {
     await page.goto(`./#${tab}`)
-    await expect(page.locator('#root')).toContainText(tab === 'terms' ? 'Disclaimer and terms of use' : /\d+%/, { timeout: 15_000 })
+    await expect(page.locator('#root')).toContainText(legal[tab] ?? /\d+%/, { timeout: 15_000 })
     await expectFitsScreen(page)
   }
   await page.reload()

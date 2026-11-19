@@ -46,8 +46,8 @@ describe('calculator pages and the yearly update', () => {
           .filter(([, , line]) => /\b20[2-3]\d\b/.test(line.replace(/\/\/.*$/, '').replace(/https?:\/\/\S+/g, ''))),
       )
       .map(([path, line, text]) => `${path}:${line}: ${text.trim()}`)
-    // The terms page carries its own legal "last updated" date
-    expect(found.filter((line) => !line.startsWith('src/pages/Terms.tsx:1:'))).toEqual([])
+    // The terms and privacy pages carry their own legal "last updated" date
+    expect(found.filter((line) => !/^src\/pages\/(Terms|Privacy)\.tsx:\d+: const UPDATED = /.test(line))).toEqual([])
   })
 
   it.each(PAGES.filter(([, path]) => path))('%s page is protected from Cloudflare script injection', (_, path) => {
